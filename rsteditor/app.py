@@ -224,6 +224,7 @@ class MainWindow(QtGui.QMainWindow):
         filename = QtGui.QFileDialog.getOpenFileName(self, self.tr('Open a file'))
         if filename:
             filename = toUtf8(filename)
+            self.setWindowTitle('%s - %s'% (__app_name__, filename))
             self.explorer.loadFile(filename)
         return
 
@@ -329,6 +330,7 @@ class MainWindow(QtGui.QMainWindow):
                 text = None
                 with open(path) as f:
                     text = f.read()
+                    self.setWindowTitle('%s - %s'% (__app_name__, path))
                     self.editor.setValue(text, path)
                     self.preview(text, path)
                     self.editor.setFocus()
