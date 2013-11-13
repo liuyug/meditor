@@ -11,6 +11,7 @@ from optparse import OptionParser
 from PyQt4 import QtGui, QtCore
 
 from rsteditor import __app_name__
+from rsteditor import __app_version__
 from rsteditor import __default_filename__
 from rsteditor import __data_path__
 from rsteditor import __home_data_path__
@@ -327,7 +328,11 @@ class MainWindow(QtGui.QMainWindow):
 
     def onAbout(self):
         title = toUtf8(self.tr('About %s'))% __app_name__
-        text = toUtf8(self.tr('%s is the editor for ReStructedText.'))% __app_name__
+        text = toUtf8(self.tr(
+"""
+%s %s
+The editor for ReStructedText.
+"""))% (__app_name__, __app_version__)
         QtGui.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
