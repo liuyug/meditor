@@ -2,4 +2,5 @@ include *.rst
 include *.in
 include *.py
 include docs
+include template
 

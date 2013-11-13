@@ -4,6 +4,7 @@
 import os
 import sys
 import subprocess
+import shutil
 from functools import partial
 from optparse import OptionParser
 
@@ -391,10 +392,13 @@ class MainWindow(QtGui.QMainWindow):
         return True
 
     def loadFile(self, path):
+        """ widget load file from command line """
         self.explorer.loadFile(path)
 
 
 def main():
+    if not os.path.exists(__home_data_path__):
+        shutil.copytree(__data_path__, __home_data_path__)
     usage = 'usage: %prog [directory or file]'
     parser = OptionParser(usage)
     (options, args) = parser.parse_args()
