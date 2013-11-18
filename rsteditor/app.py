@@ -385,7 +385,7 @@ The editor for ReStructedText.
     def preview(self, text, path):
         ext = os.path.splitext(path)[1].lower()
         html = ''
-        if ext == '.rst':
+        if ext in ['.rst', '.rest', '.txt']:
             html = output.rst2html(text)
         else:
             path = None
