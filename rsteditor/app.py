@@ -73,7 +73,6 @@ class MainWindow(QtGui.QMainWindow):
         self.pasteAction.setShortcut('Ctrl+V')
         self.pasteAction.triggered.connect(partial(self.onEdit, 'paste'))
         self.deleteAction = QtGui.QAction(self.tr('&Delete'), self)
-        self.deleteAction.setShortcut('Del')
         self.deleteAction.triggered.connect(partial(self.onEdit, 'delete'))
         self.selectallAction = QtGui.QAction(self.tr('Select &All'), self)
         self.selectallAction.setShortcut('Ctrl+A')
@@ -294,7 +293,7 @@ class MainWindow(QtGui.QMainWindow):
         elif label == 'paste':
             self.editor.paste()
         elif label == 'delete':
-            self.editor.removeSelectedText()
+            self.editor.delete()
         elif label == 'selectall':
             self.editor.selectAll()
         elif label == 'find':
@@ -402,7 +401,7 @@ The editor for ReStructedText.
 
     def saveAndContinue(self):
         if self.editor.isModified():
-            msgBox = QtGui.QMessageBox()
+            msgBox = QtGui.QMessageBox(self)
             msgBox.setIcon(QtGui.QMessageBox.Question)
             msgBox.setText(self.tr('The document has been modified.'))
             msgBox.setInformativeText(self.tr('Do you want to save your changes?'))

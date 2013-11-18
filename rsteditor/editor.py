@@ -2,7 +2,7 @@
 from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciScintilla
 
-from rsteditor import util
+from rsteditor.util import toUtf8
 
 class FindDialog(QtGui.QDialog):
     findNext = QtCore.pyqtSignal(str, int)
@@ -92,15 +92,27 @@ class Editor(QsciScintilla):
         self.find_text = None
         self.find_forward = True
 
-    def keyReleaseEvent(self, event):
-        self.input_count += 1
-        if (self.input_count > 5 or
-                (self.input_count > 1 and
-                    ( event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return ))
-                ):
-            self.lineInputed.emit()
-            self.input_count = 0
-        super(Editor, self).keyReleaseEvent(event)
+    def inputMethodEvent(self, event):
+        super(Editor, self).inputMethodEvent(event)
+        commit_text = toUtf8(event.commitString())
+        if commit_text:
+            self.input_count += len(commit_text)
+            if self.input_count > 5:
+                self.lineInputed.emit()
+                self.input_count = 0
+        return
+
+    def keyPressEvent(self, event):
+        super(Editor, self).keyPressEvent(event)
+        input_text = toUtf8(event.text())
+        if (input_text or
+            ( event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return )):
+            self.input_count += 1
+            if (self.input_count > 5 or
+                    ( event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return )):
+                self.lineInputed.emit()
+                self.input_count = 0
+        return
 
     def setCopyAvailable(self, yes):
         self.copy_available = yes
@@ -133,10 +145,13 @@ class Editor(QsciScintilla):
 
     def setValue(self, text, path=None):
         """ set utf8 text """
-        self.setText(util.toUtf8(text))
+        self.setText(toUtf8(text))
         self.setCursorPosition(1,0)
         self.filename = path
         self.setModified(False)
+
+    def delete(self):
+        self.removeSelectedText()
 
     def find(self):
         self.findDialog.exec_()
