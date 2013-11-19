@@ -2,6 +2,7 @@
 # -*- encoding:utf-8 -*-
 
 import os
+import sys
 import glob
 
 from distutils.core import setup
@@ -18,9 +19,15 @@ class my_install(distutils.command.install_scripts.install_scripts):
     """ remove script ext """
     def run(self):
         distutils.command.install_scripts.install_scripts.run(self)
-        for script in self.get_outputs():
-            if script.endswith(".py"):
-                os.rename(script, script[:-3])
+        if sys.platform == 'win32':
+            for script in self.get_outputs():
+                if script.endswith(".py"):
+                    os.rename(script, '%s_gui.py'% script[:-3])
+        else:
+            for script in self.get_outputs():
+                if script.endswith(".py"):
+                    os.rename(script, script[:-3])
+        return
 
 with open('README.rst') as f:
     long_description=f.read()
