@@ -22,11 +22,17 @@ class my_install(distutils.command.install_scripts.install_scripts):
         if sys.platform == 'win32':
             for script in self.get_outputs():
                 if script.endswith(".py"):
-                    os.rename(script, '%s_gui.py'% script[:-3])
+                    new_name = '%s_gui.py'% script[:-3]
+                    if os.path.exists(new_name):
+                        os.remove(new_name)
+                    os.rename(script, new_name)
         else:
             for script in self.get_outputs():
                 if script.endswith(".py"):
-                    os.rename(script, script[:-3])
+                    new_name = script[:-3]
+                    if os.path.exists(new_name):
+                        os.remove(new_name)
+                    os.rename(script, new_name)
         return
 
 with open('README.rst') as f:
@@ -36,7 +42,7 @@ setup(name=__app_name__.lower(),
       version=__app_version__,
       author='Yugang LIU',
       author_email='liuyug@gmail.com',
-      url='https://github.com/liuyug/',
+      url='https://github.com/liuyug/rsteditor-qt.git',
       license='GPLv3',
       description='Editor for ReStructedText',
       long_description=long_description,

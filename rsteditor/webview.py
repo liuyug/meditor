@@ -26,7 +26,7 @@ class WebView(QtWebKit.QWebView):
     def setHtml(self, html, url=None):
         if not url:
             url = ''
-        super(WebView, self).setHtml(util.toUtf8(html), QtCore.QUrl(url))
+        super(WebView, self).setHtml(util.toUtf8(html), QtCore.QUrl.fromLocalFile(url))
 
     def getVScrollMaximum(self):
         return self.page().mainFrame().scrollBarMaximum(QtCore.Qt.Vertical)
