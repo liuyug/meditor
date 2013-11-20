@@ -72,6 +72,8 @@ setup(name=__app_name__.lower(),
               'pygments',
               'ConfigParser',
               'docutils',
+              'PyQt4.QtNetwork',
+              'sip',
               ],
           'excludes':[
               ],
