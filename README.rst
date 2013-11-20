@@ -11,6 +11,10 @@ Install them on all platform:
 + Pygments
 + pyqt4
 
+Py2exe
+=======
+To make a Py2exe package, you need copy docutils and pygments files into ``dist`` directory manually.
+
 Template
 ========
 template::
