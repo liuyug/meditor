@@ -236,7 +236,11 @@ class MainWindow(QtGui.QMainWindow):
         self.preview(text, filename)
 
     def onNewWindow(self):
-        subprocess.Popen([self.app_exec])
+        if sys.platform == 'win32' and self.app_exec.endswith('.py'):
+            subprocess.Popen(['python', self.app_exec])
+        else:
+            subprocess.Popen([self.app_exec])
+        return
 
     def onOpen(self):
         if not self.saveAndContinue():
@@ -335,7 +339,11 @@ class MainWindow(QtGui.QMainWindow):
 
     def onHelp(self):
         help_path = os.path.join(__data_path__, 'docs', 'demo.rst')
-        subprocess.Popen([self.app_exec, help_path])
+        if sys.platform == 'win32' and self.app_exec.endswith('.py'):
+            subprocess.Popen(['python', self.app_exec, help_path])
+        else:
+            subprocess.Popen([self.app_exec, help_path])
+        return
 
     def onAbout(self):
         title = toUtf8(self.tr('About %s'))% __app_name__
