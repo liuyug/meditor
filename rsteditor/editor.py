@@ -1,6 +1,9 @@
 
+import os.path
+
 from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciScintilla
+from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
 
 from rsteditor.util import toUtf8
 
@@ -74,7 +77,7 @@ class Editor(QsciScintilla):
     def __init__(self, *args, **kwargs):
         super(Editor, self).__init__(*args, **kwargs)
         self.filename = None
-        self.setFont(QtGui.QFont('Monospace', 12))
+        self.setStyle(self.filename)
         self.setMarginType(0, QsciScintilla.NumberMargin)
         self.setMarginWidth(0, 30)
         self.setMarginWidth(1, 5)
@@ -149,6 +152,7 @@ class Editor(QsciScintilla):
         self.setCursorPosition(1,0)
         self.filename = path
         self.setModified(False)
+        self.setStyle(self.filename)
 
     def delete(self):
         self.removeSelectedText()
@@ -190,6 +194,25 @@ class Editor(QsciScintilla):
                 )
         return
 
+    def setStyle(self, filename):
+        lexer = None
+        if filename:
+            ext = os.path.splitext(self.filename)[1].lower()
+            if ext in ['.html', '.htm']:
+                lexer = QsciLexerHTML(self)
+            elif ext in ['.py']:
+                lexer = QsciLexerPython(self)
+            elif ext in ['.sh']:
+                lexer = QsciLexerBash(self)
+        if lexer:
+            lexer.setDefaultFont(QtGui.QFont('Monospace', 12))
+            self.setLexer(lexer)
+        else:
+            self.setLexer(None)
+            self.setFont(QtGui.QFont('Monospace', 12))
+        return
+
+
 class CodeViewer(Editor):
     """ code viewer, readonly """
     def __init__(self, *args, **kwargs):
@@ -202,4 +225,7 @@ class CodeViewer(Editor):
         self.setReadOnly(False)
         super(CodeViewer, self).setValue(text, path)
         self.setReadOnly(True)
+        lexer = QsciLexerHTML(self)
+        lexer.setDefaultFont(QtGui.QFont('Monospace', 12))
+        self.setLexer(lexer)
 
