@@ -1,4 +1,6 @@
-from PyQt4 import QtGui, QtCore
+import re
+
+from PyQt4 import QtGui
 from PyQt4.Qsci import QsciLexerCustom
 
 from rsteditor.util import toUtf8
@@ -6,13 +8,28 @@ from rsteditor.util import toUtf8
 
 class SciLexerReStructedText(QsciLexerCustom):
     styles = {
-        'default':0,
-        'comment':1,
+        'default': 0,
+        'comment': 1,
+        'newline': 31,
+        'indent': 31,
     }
     properties = {
-        0: 'fore:#000000',
+        0: 'fore:#808080',
         1: 'fore:#007f00,back:#efefff',
+        31: '',
     }
+    tokens = [
+        ('comment', r'^\.\. .*\s*'),
+        ('newline', r'^[\n\r]+'),
+        ('indent', r'^[ \t]+.*\s*'),
+        ('default', r'^.+\s*'),
+    ]
+    get_token = None
+
+    def __init__(self, *args, **kwargs):
+        super(SciLexerReStructedText, self).__init__(*args, **kwargs)
+        tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in self.tokens)
+        self.get_token = re.compile(tok_regex).match
 
     def language(self):
         return 'ReStructedText'
@@ -25,21 +42,46 @@ class SciLexerReStructedText(QsciLexerCustom):
         return ''
 
     def styleText(self, start, end):
+        """
+        1. ReStructedText is context syntax struct, so I have to scan all text
+        everytimes to config style. It reduce some performance.
+        2. It must use line match bacuase can not get line number from
+        character position.
+        3. To support non-latin character, function 'positionFromLineIndex'
+        will be called for difference length between latin and non-latin.
+        """
         if not self.editor():
             return
-        line_s, index_s = self.editor().lineIndexFromPosition(start)
-        line_e, index_e = self.editor().lineIndexFromPosition(end)
-        for line in range(line_s, line_e + 1):
-            offset = self.editor().positionFromLineIndex(line, 0)
+        start = 0
+        end = self.editor().length()
+        start_line, start_index = self.editor().lineIndexFromPosition(start)
+        end_line, end_index = self.editor().lineIndexFromPosition(end)
+        last_typ = 'default'
+        for line in range(start_line, end_line + 1):
             text = toUtf8(self.editor().text(line))
-            if text.startswith('.. '):
-                self.startStyling(offset)
-                self.setStyling(len(text), self.styles['comment'])
-                print('comment:', text)
-            else:
-                self.startStyling(offset)
-                self.setStyling(len(text), self.styles['default'])
-                print('default:', text)
+            offset = 0
+            mo = self.get_token(text)
+            while mo is not None:
+                typ = mo.lastgroup
+                m_start = self.editor().positionFromLineIndex(line, offset)
+                m_end = self.editor().positionFromLineIndex(line, mo.end())
+                print(line, typ, text[offset:mo.end()], offset, mo.end())
+                if typ in ['indent']:
+                    typ = last_typ
+                self.startStyling(m_start)
+                self.setStyling(m_end - m_start, self.styles[typ])
+                last_typ = typ
+                offset = mo.end()
+                mo = self.get_token(text, offset)
+            if offset < len(text):
+                print(line, 'unknown', text[offset:len(text)])
+                #print(line, offset, len(text))
+                #m_start = self.editor().positionFromLineIndex(line, offset)
+                #m_end = self.editor().positionFromLineIndex(line, len(text))
+                #print(line, 'default', text[offset:len(text)])
+                #self.startStyling(offset)
+                #self.setStyling(m_end - m_start, self.styles['default'])
+                #print(m_start, m_end)
         return
 
     def defaultColor(self, style):
