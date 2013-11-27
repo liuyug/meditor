@@ -260,6 +260,7 @@ class MainWindow(QtGui.QMainWindow):
             text = toUtf8(self.editor.getValue())
             with open(filename, 'wb') as f:
                 f.write(text.encode('utf-8'))
+                self.editor.setModified(False)
             if self.settings.value('preview/onsave').toBool():
                 self.preview(text, filename)
         return
@@ -272,6 +273,7 @@ class MainWindow(QtGui.QMainWindow):
             text = toUtf8(self.editor.getValue())
             with open(filename, 'w') as f:
                 f.write(text.encode('utf-8'))
+                self.editor.setModified(False)
             self.explorer.setRootPath(os.path.dirname(filename))
             if self.settings.value('preview/onsave').toBool():
                 self.preview(text, filename)
