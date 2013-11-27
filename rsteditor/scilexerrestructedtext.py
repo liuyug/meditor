@@ -8,28 +8,37 @@ from rsteditor.util import toUtf8
 
 class SciLexerReStructedText(QsciLexerCustom):
     styles = {
-        'default': 0,
+        'string': 0,
+        'space': 0,
         'comment': 1,
+        'title': 2,
+        'section': 3,
+        'field': 4,
         'newline': 31,
-        'indent': 31,
     }
     properties = {
         0: 'fore:#808080',
         1: 'fore:#007f00,back:#efefff',
+        2: 'fore:#f00000',
+        3: 'fore:#f0f000',
+        4: 'fore:#f00010',
         31: '',
     }
     tokens = [
-        ('comment', r'^\.\. .*\s*'),
-        ('newline', r'^[\n\r]+'),
-        ('indent', r'^[ \t]+.*\s*'),
-        ('default', r'^.+\s*'),
+        ('comment', r'\.\. .*'),
+        ('title',   r'[=\-]+\n.*\n[=\-]+'),
+        ('section', r'.*\n[=\-]+'),
+        ('field',   r':[^:]+:[ \t]+.+'),
+        ('newline', r'\n'),
+        ('space',   r'[ \t]+'),
+        ('string',  r'[^ \t\n\r\v\f]+'),
     ]
     get_token = None
 
     def __init__(self, *args, **kwargs):
         super(SciLexerReStructedText, self).__init__(*args, **kwargs)
         tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in self.tokens)
-        self.get_token = re.compile(tok_regex).match
+        self.get_token = re.compile(tok_regex, re.UNICODE).match
 
     def language(self):
         return 'ReStructedText'
@@ -45,43 +54,44 @@ class SciLexerReStructedText(QsciLexerCustom):
         """
         1. ReStructedText is context syntax struct, so I have to scan all text
         everytimes to config style. It reduce some performance.
-        2. It must use line match bacuase can not get line number from
-        character position.
-        3. To support non-latin character, function 'positionFromLineIndex'
+        2. To support non-latin character, function 'positionFromLineIndex'
         will be called for difference length between latin and non-latin.
+        3. Must use match global for searching section
         """
         if not self.editor():
             return
-        start = 0
-        end = self.editor().length()
-        start_line, start_index = self.editor().lineIndexFromPosition(start)
-        end_line, end_index = self.editor().lineIndexFromPosition(end)
-        last_typ = 'default'
-        for line in range(start_line, end_line + 1):
-            text = toUtf8(self.editor().text(line))
-            offset = 0
-            mo = self.get_token(text)
-            while mo is not None:
-                typ = mo.lastgroup
-                m_start = self.editor().positionFromLineIndex(line, offset)
-                m_end = self.editor().positionFromLineIndex(line, mo.end())
-                print(line, typ, text[offset:mo.end()], offset, mo.end())
-                if typ in ['indent']:
-                    typ = last_typ
+        text = toUtf8(self.editor().text())
+        text_length = len(text)
+        offset = 0  # character position at text
+        line = 0    # line number
+        index = 0   # character position at line
+        mo = self.get_token(text, offset)
+        while mo is not None:
+            typ = mo.lastgroup
+            print(line, typ)
+            if typ == 'newline':
+                line += 1
+                index = 0
+            else:
+                line_fix = 0
+                if typ in ['section']:  # span multiline in section
+                    line_fix = 1
+                if typ in ['title']:
+                    line_fix = 2
+                m_length = mo.end() - offset
+                m_start = self.editor().positionFromLineIndex(line, index)
+                m_end = self.editor().positionFromLineIndex(line + line_fix,
+                                                            index + m_length)
                 self.startStyling(m_start)
                 self.setStyling(m_end - m_start, self.styles[typ])
-                last_typ = typ
-                offset = mo.end()
-                mo = self.get_token(text, offset)
-            if offset < len(text):
-                print(line, 'unknown', text[offset:len(text)])
-                #print(line, offset, len(text))
-                #m_start = self.editor().positionFromLineIndex(line, offset)
-                #m_end = self.editor().positionFromLineIndex(line, len(text))
-                #print(line, 'default', text[offset:len(text)])
-                #self.startStyling(offset)
-                #self.setStyling(m_end - m_start, self.styles['default'])
-                #print(m_start, m_end)
+                print('match:', line, index, m_length, text[offset:mo.end()])
+                line += line_fix
+                index += m_length
+            offset = mo.end()
+            mo = self.get_token(text, offset)
+            print('next chars:', line, index, text[offset:offset + 10], offset, text_length)
+        self.startStyling(end)
+        self.setStyling(end, self.styles['newline'])
         return
 
     def defaultColor(self, style):
