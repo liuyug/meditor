@@ -5,7 +5,9 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciScintilla
 from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
 
+from rsteditor.scilexerrestructedtext import SciLexerReStructedText
 from rsteditor.util import toUtf8
+
 
 class FindDialog(QtGui.QDialog):
     findNext = QtCore.pyqtSignal(str, int)
@@ -101,9 +103,9 @@ class Editor(QsciScintilla):
         commit_text = toUtf8(event.commitString())
         if commit_text:
             self.input_count += len(commit_text)
-            if self.input_count > 5:
-                self.lineInputed.emit()
-                self.input_count = 0
+        if self.input_count > 5:
+            self.lineInputed.emit()
+            self.input_count = 0
         return
 
     def keyPressEvent(self, event):
@@ -112,10 +114,10 @@ class Editor(QsciScintilla):
         if (input_text or
             ( event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return )):
             self.input_count += 1
-            if (self.input_count > 5 or
-                    ( event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return )):
-                self.lineInputed.emit()
-                self.input_count = 0
+        if (self.input_count > 5 or
+            ( event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return )):
+            self.lineInputed.emit()
+            self.input_count = 0
         return
 
     def setCopyAvailable(self, yes):
@@ -162,37 +164,37 @@ class Editor(QsciScintilla):
         self.findDialog.exec_()
         self.find_text = self.findDialog.getFindText()
         self.findFirst(self.find_text,
-                False,  # re
-                self.findDialog.isCaseSensitive(),  # cs
-                self.findDialog.isWholeWord(),   # wo
-                True,   # wrap
-                True,   # forward
-                )
+                       False,  # re
+                       self.findDialog.isCaseSensitive(),  # cs
+                       self.findDialog.isWholeWord(),   # wo
+                       True,   # wrap
+                       True,   # forward
+                       )
         return
 
     def findNext(self):
         line, index = self.getCursorPosition()
         self.findFirst(self.find_text,
-                False,  # re
-                self.findDialog.isCaseSensitive(),  # cs
-                self.findDialog.isWholeWord(),   # wo
-                True,   # wrap
-                True,   # forward
-                line, index
-                )
+                       False,  # re
+                       self.findDialog.isCaseSensitive(),  # cs
+                       self.findDialog.isWholeWord(),   # wo
+                       True,   # wrap
+                       True,   # forward
+                       line, index
+                       )
         return
 
     def findPrevious(self):
         line, index = self.getCursorPosition()
         index -= len(self.find_text)
         self.findFirst(self.find_text,
-                False,  # re
-                self.findDialog.isCaseSensitive(),  # cs
-                self.findDialog.isWholeWord(),   # wo
-                True,   # wrap
-                False,   # forward
-                line, index
-                )
+                       False,  # re
+                       self.findDialog.isCaseSensitive(),  # cs
+                       self.findDialog.isWholeWord(),   # wo
+                       True,   # wrap
+                       False,   # forward
+                       line, index
+                       )
         return
 
     def setStyle(self, filename):
@@ -205,7 +207,11 @@ class Editor(QsciScintilla):
                 lexer = QsciLexerPython(self)
             elif ext in ['.sh']:
                 lexer = QsciLexerBash(self)
+            elif ext in ['.rst', '.rest']:
+                lexer = SciLexerReStructedText(self)
         if lexer:
+            lexer.setDefaultColor(QtGui.QColor('#000000'))
+            lexer.setDefaultPaper(QtGui.QColor('#ffffff'))
             lexer.setDefaultFont(QtGui.QFont('Monospace', 12))
             self.setLexer(lexer)
         else:
