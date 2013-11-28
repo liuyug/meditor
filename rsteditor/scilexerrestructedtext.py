@@ -8,8 +8,8 @@ from rsteditor.util import toUtf8
 
 class SciLexerReStructedText(QsciLexerCustom):
     styles = {
-        'string': 0,
-        'space': 0,
+        'string': 29,
+        'space': 30,
         'comment': 1,
         'title': 2,
         'section': 3,
@@ -17,21 +17,23 @@ class SciLexerReStructedText(QsciLexerCustom):
         'newline': 31,
     }
     properties = {
-        0: 'fore:#808080',
-        1: 'fore:#007f00,back:#efefff',
-        2: 'fore:#f00000',
-        3: 'fore:#f0f000',
-        4: 'fore:#f00010',
-        31: '',
+        0:  'fore:#808080',
+        1:  'fore:#007f00,back:#efefff',
+        2:  'fore:#f00000',
+        3:  'fore:#f0f000',
+        4:  'fore:#f00010',
+        29: 'fore:#f00000,back:#00f000',
+        30: 'fore:#000000,back:#f00000',
+        31: 'fore:#f0f000,back:#00f000',
     }
     tokens = [
-        ('comment', r'\.\. .*'),
-        ('title',   r'[=\-]+\n.*\n[=\-]+'),
-        ('section', r'.*\n[=\-]+'),
-        ('field',   r':[^:]+:[ \t]+.+'),
-        ('newline', r'\n'),
-        ('space',   r'[ \t]+'),
-        ('string',  r'[^ \t\n\r\v\f]+'),
+        ('comment', r'''\.\. .*(\n[ \t]+.*)*'''),
+        ('title',   r'''[=`'"~^_*+#-]{2,}\n.*\n[=`'"~^_*+#-]{2,}'''),
+        ('section', r'''.*\n[=`'"~^_*+#-]{2,}'''),
+        ('field',   r''':[^:]+:[ \t]+.+(\n[ \t]+.*)*'''),
+        ('newline', r'''\n'''),
+        ('space',   r'''[ \t]+'''),
+        ('string',  r'''[^ \t\n\r\v\f]+'''),
     ]
     get_token = None
 
@@ -68,25 +70,26 @@ class SciLexerReStructedText(QsciLexerCustom):
         mo = self.get_token(text, offset)
         while mo is not None:
             typ = mo.lastgroup
-            print(line, typ)
+            m_string = text[offset:mo.end()]
+            print(line, typ, m_string)
             if typ == 'newline':
                 line += 1
                 index = 0
             else:
-                line_fix = 0
-                if typ in ['section']:  # span multiline in section
-                    line_fix = 1
-                if typ in ['title']:
-                    line_fix = 2
-                m_length = mo.end() - offset
+                line_fix = m_string.count('\n')
+                if line_fix > 0:    # calculate length in last line
+                    index_end = len(m_string) - m_string.rfind('\n') - 1
+                else:
+                    index_end = index + len(m_string)
                 m_start = self.editor().positionFromLineIndex(line, index)
                 m_end = self.editor().positionFromLineIndex(line + line_fix,
-                                                            index + m_length)
+                                                            index_end)
                 self.startStyling(m_start)
                 self.setStyling(m_end - m_start, self.styles[typ])
-                print('match:', line, index, m_length, text[offset:mo.end()])
+                print('match:', line, index, text[offset:mo.end()])
+                print('style:',m_start, m_end, index, index_end)
                 line += line_fix
-                index += m_length
+                index = index_end
             offset = mo.end()
             mo = self.get_token(text, offset)
             print('next chars:', line, index, text[offset:offset + 10], offset, text_length)
