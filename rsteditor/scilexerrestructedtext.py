@@ -13,7 +13,9 @@ class SciLexerReStructedText(QsciLexerCustom):
         'comment': 1,
         'title': 2,
         'section': 3,
-        'field': 4,
+        'transition': 4,
+        'bullet': 5,
+        'field': 6,
         'newline': 31,
     }
     properties = {
@@ -21,16 +23,20 @@ class SciLexerReStructedText(QsciLexerCustom):
         1:  'fore:#007f00,back:#efefff',
         2:  'fore:#f00000',
         3:  'fore:#f0f000',
-        4:  'fore:#f00010',
+        4:  'fore:#808080',
+        5:  'fore:#f00010',
+        6:  'fore:#f00010',
         29: 'fore:#f00000,back:#00f000',
         30: 'fore:#000000,back:#f00000',
         31: 'fore:#f0f000,back:#0000f0',
     }
     tokens = [
-        ('comment', r'''\.\. .*(\n[ \t]+.*)*\n'''),
-        ('title',   r'''[=`'"~^_*+#-]{2,}\n.*\n[=`'"~^_*+#-]{2,}\n'''),
-        ('section', r'''.*\n[=`'"~^_*+#-]{2,}\n'''),
-        ('field',   r''':[^:]+:[ \t]+.+(\n[ \t]+.*)*\n'''),
+        ('comment', r'''\.\. .+(\n[ \t]+.+)*\n'''),
+        ('title',   r'''[=`'"~^_*+#-]{2,}\n.+\n[=`'"~^_*+#-]{2,}\n'''),
+        ('section', r'''.+\n[=`'"~^_*+#-]{2,}\n'''),
+        ('transition', r'''[=`'"~^_*+#-]{4,}\n'''),
+        ('bullet',   r'''bullet'''),
+        ('field',   r''':[^:]+:[ \t\n]+.+(\n+[ \t]+.+)*\n'''),
         ('newline', r'''\n'''),
         ('space',   r'''[ \t]+'''),
         ('string',  r'''[^ \t\n\r\v\f]+'''),
@@ -89,8 +95,6 @@ class SciLexerReStructedText(QsciLexerCustom):
             offset = mo.end()
             mo = self.get_token(text, offset)
             print('next chars:', line, index, text[offset:offset + 10], offset, text_length)
-        #self.startStyling(end)
-        #self.setStyling(end, self.styles['newline'])
         return
 
     def defaultColor(self, style):
