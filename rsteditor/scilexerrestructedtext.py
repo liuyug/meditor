@@ -24,13 +24,13 @@ class SciLexerReStructedText(QsciLexerCustom):
         4:  'fore:#f00010',
         29: 'fore:#f00000,back:#00f000',
         30: 'fore:#000000,back:#f00000',
-        31: 'fore:#f0f000,back:#00f000',
+        31: 'fore:#f0f000,back:#0000f0',
     }
     tokens = [
-        ('comment', r'''\.\. .*(\n[ \t]+.*)*'''),
-        ('title',   r'''[=`'"~^_*+#-]{2,}\n.*\n[=`'"~^_*+#-]{2,}'''),
-        ('section', r'''.*\n[=`'"~^_*+#-]{2,}'''),
-        ('field',   r''':[^:]+:[ \t]+.+(\n[ \t]+.*)*'''),
+        ('comment', r'''\.\. .*(\n[ \t]+.*)*\n'''),
+        ('title',   r'''[=`'"~^_*+#-]{2,}\n.*\n[=`'"~^_*+#-]{2,}\n'''),
+        ('section', r'''.*\n[=`'"~^_*+#-]{2,}\n'''),
+        ('field',   r''':[^:]+:[ \t]+.+(\n[ \t]+.*)*\n'''),
         ('newline', r'''\n'''),
         ('space',   r'''[ \t]+'''),
         ('string',  r'''[^ \t\n\r\v\f]+'''),
@@ -72,29 +72,25 @@ class SciLexerReStructedText(QsciLexerCustom):
             typ = mo.lastgroup
             m_string = text[offset:mo.end()]
             print(line, typ, m_string)
-            if typ == 'newline':
-                line += 1
-                index = 0
+            line_fix = m_string.count('\n')
+            if line_fix > 0:    # calculate length in last line
+                index_end = len(m_string) - m_string.rfind('\n') - 1
             else:
-                line_fix = m_string.count('\n')
-                if line_fix > 0:    # calculate length in last line
-                    index_end = len(m_string) - m_string.rfind('\n') - 1
-                else:
-                    index_end = index + len(m_string)
-                m_start = self.editor().positionFromLineIndex(line, index)
-                m_end = self.editor().positionFromLineIndex(line + line_fix,
-                                                            index_end)
-                self.startStyling(m_start)
-                self.setStyling(m_end - m_start, self.styles[typ])
-                print('match:', line, index, text[offset:mo.end()])
-                print('style:',m_start, m_end, index, index_end)
-                line += line_fix
-                index = index_end
+                index_end = index + len(m_string)
+            m_start = self.editor().positionFromLineIndex(line, index)
+            m_end = self.editor().positionFromLineIndex(line + line_fix,
+                                                        index_end)
+            self.startStyling(m_start)
+            self.setStyling(m_end - m_start, self.styles[typ])
+            print('match:', line, index, text[offset:mo.end()])
+            print('style:',m_start, m_end, index, index_end)
+            line += line_fix
+            index = index_end
             offset = mo.end()
             mo = self.get_token(text, offset)
             print('next chars:', line, index, text[offset:offset + 10], offset, text_length)
-        self.startStyling(end)
-        self.setStyling(end, self.styles['newline'])
+        #self.startStyling(end)
+        #self.setStyling(end, self.styles['newline'])
         return
 
     def defaultColor(self, style):
