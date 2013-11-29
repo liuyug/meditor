@@ -357,6 +357,8 @@ The editor for ReStructedText.
         QtGui.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
+        if not self.saveAndContinue():
+            return
         path = toUtf8(path)
         if os.path.exists(path):
             ext = os.path.splitext(path)[1].lower()
