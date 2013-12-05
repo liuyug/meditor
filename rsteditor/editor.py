@@ -84,7 +84,7 @@ class Editor(QsciScintilla):
         self.setMarginWidth(0, 30)
         self.setMarginWidth(1, 5)
         self.setIndentationsUseTabs(False)
-        self.setAutoIndent(True)
+        self.setAutoIndent(False)
         self.setTabWidth(4)
         self.setIndentationGuides(True)
         self.setEdgeMode(QsciScintilla.EdgeLine)
