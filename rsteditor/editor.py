@@ -210,9 +210,6 @@ class Editor(QsciScintilla):
             elif ext in ['.rst', '.rest']:
                 lexer = SciLexerReStructedText(self)
         if lexer:
-            lexer.setDefaultColor(QtGui.QColor('#000000'))
-            lexer.setDefaultPaper(QtGui.QColor('#ffffff'))
-            lexer.setDefaultFont(QtGui.QFont('Monospace', 12))
             self.setLexer(lexer)
         else:
             self.setLexer(None)

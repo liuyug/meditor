@@ -55,6 +55,7 @@ setup(name=__app_name__.lower(),
           ('share/%s'% __app_name__.lower(), [
               'README.rst',
               'MANIFEST.in',
+              'rst.properties',
               ]),
           ('share/%s/template'% __app_name__.lower(), glob.glob('template/*.*')),
           ('share/%s/docs'% __app_name__.lower(), glob.glob('docs/*.rst')),

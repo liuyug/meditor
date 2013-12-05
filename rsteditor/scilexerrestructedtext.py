@@ -1,9 +1,11 @@
+import os.path
 import re
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciLexerCustom
 
 from rsteditor.util import toUtf8
+from rsteditor import __home_data_path__
 
 
 class SciLexerReStructedText(QsciLexerCustom):
@@ -79,6 +81,37 @@ class SciLexerReStructedText(QsciLexerCustom):
 
     def __init__(self, *args, **kwargs):
         super(SciLexerReStructedText, self).__init__(*args, **kwargs)
+        self.setDefaultColor(QtGui.QColor('#000000'))
+        self.setDefaultPaper(QtGui.QColor('#ffffff'))
+        self.setDefaultFont(QtGui.QFont('Monospace', 12))
+        prop_file = os.path.join(__home_data_path__, 'rst.properties')
+        prop_settings = QtCore.QSettings(prop_file, QtCore.QSettings.IniFormat)
+        for num in range(0, len(self.properties)):
+            value = toUtf8(prop_settings.value('style.rst.%s' % num).toString())
+            if not value:
+                continue
+            prop_list = value.split(',')
+            fgcolor = self.defaultColor(num)
+            bgcolor = self.defaultPaper(num)
+            font = self.defaultFont(num)
+            for prop in prop_list:
+                if prop.startswith('face:'):
+                    fgcolor = QtGui.QColor(prop.split(':')[1])
+                    self.setColor(fgcolor, num)
+                elif prop.startswith('back:'):
+                    bgcolor = QtGui.QColor(prop.split(':')[1])
+                    self.setPaper(bgcolor, num)
+                else:
+                    if prop.startswith('$(font.'):
+                        mo = re.match(r'^\$\(font\.(.+)\)', prop)
+                        font = QtGui.QFont(mo.group(1))
+                    elif prop == 'bold':
+                        font.setBold(True)
+                    elif prop == 'italic':
+                        font.setItalic(True)
+                    elif prop == 'underline':
+                        font.setUnderline(True)
+                    self.setFont(font, num)
         for key, regex in self.token_regex:
             self.tokens.append((key, re.compile(regex, re.U | re.M).match))
         return
@@ -117,7 +150,6 @@ class SciLexerReStructedText(QsciLexerCustom):
             if not mo:
                 break
             m_string = text[offset:mo.end()]
-            #print(line, typ, m_string)
             line_fix = m_string.count('\n')
             if line_fix > 0:    # calculate length in last line
                 index_end = len(m_string) - m_string.rfind('\n') - 1
@@ -128,12 +160,9 @@ class SciLexerReStructedText(QsciLexerCustom):
                                                         index_end)
             self.startStyling(m_start)
             self.setStyling(m_end - m_start, self.styles[typ])
-            #print('match:', line, index, text[offset:mo.end()])
-            #print('style:',m_start, m_end, index, index_end)
             line += line_fix
             index = index_end
             offset = mo.end()
-            #print('next chars:', line, index, text[offset:offset + 10], offset, text_length)
         return
 
     def defaultColor(self, style):
@@ -154,21 +183,20 @@ class SciLexerReStructedText(QsciLexerCustom):
 
     def defaultFont(self, style):
         prop_list = self.getProperty(style)
+        font = super(SciLexerReStructedText, self).defaultFont(style)
         for prop in prop_list:
             if ':' in prop:
-                if prop.startswith('face:'):
-                    font = prop.split(':')[1]
-                    return QtGui.QFont(font)
-            else:
-                font = super(SciLexerReStructedText, self).defaultFont(style)
-                if prop == 'bold':
-                    font.setBold(True)
-                elif prop == 'italic':
-                    font.setItalic(True)
-                elif prop == 'underline':
-                    font.setUnderline(True)
-                return font
-        return super(SciLexerReStructedText, self).defaultFont(style)
+                continue
+            if prop.startswith('$(font.'):
+                mo = re.match(r'^\$\(font\.(.+)\)', prop)
+                font = QtGui.QFont(mo.group(1))
+            elif prop == 'bold':
+                font.setBold(True)
+            elif prop == 'italic':
+                font.setItalic(True)
+            elif prop == 'underline':
+                font.setUnderline(True)
+        return font
 
     def getProperty(self, style):
         if style in self.properties:
