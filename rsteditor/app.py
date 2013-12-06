@@ -29,12 +29,15 @@ ALLOWED_LOADS = ['.rst', '.rest',
                  '.py'
                  ]
 
+
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.app_exec = os.path.realpath(sys.argv[0])
-        self.setWindowTitle(__app_name__)
-        self.settings = settings = QtCore.QSettings(__app_name__.lower(), 'config')
+        self.settings = settings = QtCore.QSettings(
+            __app_name__.lower(),
+            'config'
+        )
         # status bar
         self.statusBar().showMessage(self.tr('Ready'))
         # action
@@ -76,7 +79,8 @@ class MainWindow(QtGui.QMainWindow):
         self.deleteAction.triggered.connect(partial(self.onEdit, 'delete'))
         self.selectallAction = QtGui.QAction(self.tr('Select &All'), self)
         self.selectallAction.setShortcut('Ctrl+A')
-        self.selectallAction.triggered.connect(partial(self.onEdit, 'selectall'))
+        self.selectallAction.triggered.connect(partial(self.onEdit,
+                                                       'selectall'))
         self.findAction = QtGui.QAction(self.tr('&Find'), self)
         self.findAction.setShortcut('Ctrl+F')
         self.findAction.triggered.connect(partial(self.onEdit, 'find'))
@@ -87,17 +91,23 @@ class MainWindow(QtGui.QMainWindow):
         self.findprevAction.setShortcut('Shift+F3')
         self.findprevAction.triggered.connect(partial(self.onEdit, 'findprev'))
         ## view
-        self.explorerAction = QtGui.QAction(self.tr('File explorer'), self, checkable=True)
+        self.explorerAction = QtGui.QAction(self.tr('File explorer'),
+                                            self,
+                                            checkable=True)
         self.explorerAction.triggered.connect(partial(self.onView, 'explorer'))
         value = settings.value('view/explorer', True).toBool()
         settings.setValue('view/explorer', value)
         self.explorerAction.setChecked(value)
-        self.webviewAction = QtGui.QAction(self.tr('Web Viewer'), self, checkable=True)
+        self.webviewAction = QtGui.QAction(self.tr('Web Viewer'),
+                                           self,
+                                           checkable=True)
         self.webviewAction.triggered.connect(partial(self.onView, 'webview'))
         value = settings.value('view/webview', True).toBool()
         settings.setValue('view/webview', value)
         self.webviewAction.setChecked(value)
-        self.codeviewAction = QtGui.QAction(self.tr('Code Viewer'), self, checkable=True)
+        self.codeviewAction = QtGui.QAction(self.tr('Code Viewer'),
+                                            self,
+                                            checkable=True)
         self.codeviewAction.triggered.connect(partial(self.onView, 'codeview'))
         value = settings.value('view/codeview', True).toBool()
         settings.setValue('view/codeview', value)
@@ -106,18 +116,27 @@ class MainWindow(QtGui.QMainWindow):
         previewAction = QtGui.QAction(self.tr('&Preview'), self)
         previewAction.setShortcut('Ctrl+P')
         previewAction.triggered.connect(partial(self.onPreview, 'preview'))
-        previewsaveAction = QtGui.QAction(self.tr('Preview on save'), self, checkable=True)
-        previewsaveAction.triggered.connect(partial(self.onPreview, 'previewonsave'))
+        previewsaveAction = QtGui.QAction(self.tr('Preview on save'),
+                                          self,
+                                          checkable=True)
+        previewsaveAction.triggered.connect(partial(self.onPreview,
+                                                    'previewonsave'))
         value = settings.value('preview/onsave', True).toBool()
         settings.setValue('preview/onsave', value)
         previewsaveAction.setChecked(value)
-        previewinputAction = QtGui.QAction(self.tr('Preview on input'), self, checkable=True)
-        previewinputAction.triggered.connect(partial(self.onPreview, 'previewoninput'))
+        previewinputAction = QtGui.QAction(self.tr('Preview on input'),
+                                           self,
+                                           checkable=True)
+        previewinputAction.triggered.connect(partial(self.onPreview,
+                                                     'previewoninput'))
         value = settings.value('preview/oninput', True).toBool()
         settings.setValue('preview/oninput', value)
         previewinputAction.setChecked(value)
-        previewsyncAction = QtGui.QAction(self.tr('Scroll synchronize'), self, checkable=True)
-        previewsyncAction.triggered.connect(partial(self.onPreview, 'previewsync'))
+        previewsyncAction = QtGui.QAction(self.tr('Scroll synchronize'),
+                                          self,
+                                          checkable=True)
+        previewsyncAction.triggered.connect(partial(self.onPreview,
+                                                    'previewsync'))
         value = settings.value('preview/sync', True).toBool()
         settings.setValue('preview/sync', value)
         previewsyncAction.setChecked(value)
@@ -201,13 +220,26 @@ class MainWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
         # event
         self.explorer.fileLoaded.connect(self.onFileLoaded)
-        self.editor.verticalScrollBar().valueChanged.connect(self.onValueChanged)
+        self.explorer.fileNew.connect(self.onNew)
+        self.explorer.fileRenamed.connect(self.onFileRenamed)
+        self.explorer.fileDeleted.connect(self.onFileDeleted)
+        self.editor.verticalScrollBar().valueChanged.connect(
+            self.onValueChanged)
         self.editor.lineInputed.connect(self.onInputPreview)
         # window state
         self.restoreGeometry(settings.value('geometry').toByteArray())
         self.restoreState(settings.value('windowState').toByteArray())
-        self.explorer.setRootPath(toUtf8(settings.value('explorer/rootPath', os.path.expanduser('~')).toString()))
+        self.explorer.setRootPath(
+            toUtf8(
+                settings.value('explorer/rootPath',
+                               os.path.expanduser('~')
+                               ).toString()
+            )
+        )
         self.setFont(QtGui.QFont('Monospace', 12))
+        self.editor.emptyFile()
+        self.preview('', __default_filename__)
+        self.setWindowTitle('%s - %s' % (__app_name__, __default_filename__))
 
     def closeEvent(self, event):
         if self.saveAndContinue():
@@ -224,14 +256,17 @@ class MainWindow(QtGui.QMainWindow):
         if not self.saveAndContinue():
             return
         filename = __default_filename__
-        self.setWindowTitle('%s - %s'% (__app_name__, filename))
+        self.setWindowTitle('%s - %s' % (__app_name__, filename))
         ext = os.path.splitext(filename)[1].lower()
         text = ''
-        skeleton = os.path.join(__home_data_path__, 'template','skeleton%s'% ext)
+        skeleton = os.path.join(__home_data_path__,
+                                'template',
+                                'skeleton%s' % ext)
         if os.path.exists(skeleton):
             with open(skeleton, 'r') as f:
                 text = f.read()
-        self.editor.setValue(text, filename)
+        self.editor.setValue(text)
+        self.editor.setFileName(filename)
         self.editor.setFocus()
         self.preview(text, filename)
 
@@ -245,11 +280,12 @@ class MainWindow(QtGui.QMainWindow):
     def onOpen(self):
         if not self.saveAndContinue():
             return
-        filename = QtGui.QFileDialog.getOpenFileName(self, self.tr('Open a file'))
+        filename = QtGui.QFileDialog.getOpenFileName(self,
+                                                     self.tr('Open a file'))
         if filename:
             filename = toUtf8(filename)
-            self.setWindowTitle('%s - %s'% (__app_name__, filename))
-            self.explorer.loadFile(filename)
+            self.setWindowTitle('%s - %s' % (__app_name__, filename))
+            self.loadFile(filename)
         return
 
     def onSave(self):
@@ -257,26 +293,25 @@ class MainWindow(QtGui.QMainWindow):
         if filename == __default_filename__:
             self.onSaveAs()
         else:
-            text = toUtf8(self.editor.getValue())
-            with open(filename, 'wb') as f:
-                f.write(text.encode('utf-8'))
-                self.editor.setModified(False)
+            self.editor.writeFile()
             if self.settings.value('preview/onsave').toBool():
+                text = toUtf8(self.editor.getValue())
                 self.preview(text, filename)
         return
 
     def onSaveAs(self):
-        filename = QtGui.QFileDialog.getSaveFileName(self, self.tr('Save file as ...'))
+        filename = QtGui.QFileDialog.getSaveFileName(
+            self,
+            self.tr('Save file as ...')
+        )
         if filename:
             filename = toUtf8(filename)
-            self.setWindowTitle('%s - %s'% (__app_name__, filename))
-            text = toUtf8(self.editor.getValue())
-            with open(filename, 'w') as f:
-                f.write(text.encode('utf-8'))
-                self.editor.setModified(False)
-            self.explorer.setRootPath(os.path.dirname(filename))
+            self.editor.writeFile(filename)
+            self.setWindowTitle('%s - %s' % (__app_name__, filename))
             if self.settings.value('preview/onsave').toBool():
+                text = toUtf8(self.editor.getValue())
                 self.preview(text, filename)
+            self.explorer.setRootPath(os.path.dirname(filename), True)
         return
 
     def onEditMenuShow(self):
@@ -348,12 +383,12 @@ class MainWindow(QtGui.QMainWindow):
         return
 
     def onAbout(self):
-        title = toUtf8(self.tr('About %s'))% __app_name__
+        title = toUtf8(self.tr('About %s')) % __app_name__
         text = toUtf8(self.tr(
 """
 %s %s
 The editor for ReStructedText.
-"""))% (__app_name__, __app_version__)
+""")) % (__app_name__, __app_version__)
         QtGui.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
@@ -364,12 +399,11 @@ The editor for ReStructedText.
             ext = os.path.splitext(path)[1].lower()
             if ext in ALLOWED_LOADS:
                 text = None
-                with open(path) as f:
-                    text = f.read()
-                    self.setWindowTitle('%s - %s'% (__app_name__, path))
-                    self.editor.setValue(text, path)
-                    self.preview(text, path)
+                if self.editor.readFile(path):
                     self.editor.setFocus()
+                    self.setWindowTitle('%s - %s' % (__app_name__, path))
+                    text = toUtf8(self.editor.getValue())
+                    self.preview(text, path)
         return
 
     def onValueChanged(self, value):
@@ -387,6 +421,19 @@ The editor for ReStructedText.
             text = toUtf8(self.editor.getValue())
             self.preview(text, self.editor.getFileName())
         return
+
+    def onFileRenamed(self, old_name, new_name):
+        filename = self.editor.getFileName()
+        if toUtf8(old_name) == filename:
+            self.editor.setFileName(toUtf8(new_name))
+            self.setWindowTitle('%s - %s' % (__app_name__, toUtf8(new_name)))
+
+    def onFileDeleted(self, name):
+        filename = self.editor.getFileName()
+        if toUtf8(name) == filename:
+            self.editor.emptyFile()
+            self.setWindowTitle('%s - %s' % (__app_name__, __default_filename__))
+            self.preview('', __default_filename__)
 
     def moveCenter(self):
         qr = self.frameGeometry()
@@ -449,4 +496,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

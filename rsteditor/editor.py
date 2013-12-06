@@ -7,6 +7,7 @@ from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
 
 from rsteditor.scilexerrestructedtext import SciLexerReStructedText
 from rsteditor.util import toUtf8
+from rsteditor import __default_filename__
 
 
 class FindDialog(QtGui.QDialog):
@@ -112,10 +113,12 @@ class Editor(QsciScintilla):
         super(Editor, self).keyPressEvent(event)
         input_text = toUtf8(event.text())
         if (input_text or
-            ( event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return )):
+            (event.key() == QtCore.Qt.Key_Enter or
+             event.key() == QtCore.Qt.Key_Return)):
             self.input_count += 1
         if (self.input_count > 5 or
-            ( event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return )):
+            (event.key() == QtCore.Qt.Key_Enter or
+             event.key() == QtCore.Qt.Key_Return)):
             self.lineInputed.emit()
             self.input_count = 0
         return
@@ -145,17 +148,46 @@ class Editor(QsciScintilla):
     def getFileName(self):
         return self.filename
 
+    def setFileName(self, path):
+        self.filename = path
+        if self.filename:
+            self.setStyle(self.filename)
+
     def getValue(self):
         """ get all text """
         return self.text()
 
-    def setValue(self, text, path=None):
+    def setValue(self, text):
         """ set utf8 text """
         self.setText(toUtf8(text))
-        self.setCursorPosition(1,0)
-        self.filename = path
+        self.setCursorPosition(0, 0)
         self.setModified(False)
-        self.setStyle(self.filename)
+
+    def readFile(self, filename):
+        with open(filename) as f:
+            text = f.read()
+            self.setValue(text)
+            self.setFileName(filename)
+            return True
+        return False
+
+    def writeFile(self, filename=None):
+        text = toUtf8(self.getValue())
+        if filename is None:
+            filename = self.getFileName()
+        else:
+            self.setFileName(filename)
+        if filename:
+            with open(filename, 'wb') as f:
+                f.write(text.encode('utf-8'))
+                self.setModified(False)
+                return True
+        return False
+
+    def emptyFile(self):
+        self.clear()
+        self.filename = __default_filename__
+        self.setModified(False)
 
     def delete(self):
         self.removeSelectedText()
@@ -224,12 +256,11 @@ class CodeViewer(Editor):
         #self.SetStyle('.html')
         self.setReadOnly(True)
 
-    def setValue(self, text, path=None):
+    def setValue(self, text):
         """ set all readonly text """
         self.setReadOnly(False)
-        super(CodeViewer, self).setValue(text, path)
+        super(CodeViewer, self).setValue(text)
         self.setReadOnly(True)
         lexer = QsciLexerHTML(self)
         lexer.setDefaultFont(QtGui.QFont('Monospace', 12))
         self.setLexer(lexer)
-
