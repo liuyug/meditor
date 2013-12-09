@@ -149,6 +149,9 @@ class Editor(QsciScintilla):
         return self.filename
 
     def setFileName(self, path):
+        """
+        set filename and enable lexer
+        """
         self.filename = path
         if self.filename:
             self.setStyle(self.filename)
@@ -158,7 +161,10 @@ class Editor(QsciScintilla):
         return self.text()
 
     def setValue(self, text):
-        """ set utf8 text """
+        """
+        set utf8 text
+        modified state is false
+        """
         self.setText(toUtf8(text))
         self.setCursorPosition(0, 0)
         self.setModified(False)
