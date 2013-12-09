@@ -37,13 +37,13 @@ class SciLexerReStructedText(QsciLexerCustom):
         'in_strong': 17,
         'in_literal': 18,
         'in_url1': 19,
-        'in_url2': 20,
-        'in_url3': 20,
-        'in_url4': 21,
-        'in_footnote': 22,
-        'in_substitution': 23,
-        'in_target': 24,
-        'in_reference': 25,
+        'in_url2': 19,
+        'in_link1': 20,
+        'in_link2': 20,
+        'in_footnote': 21,
+        'in_substitution': 22,
+        'in_target': 23,
+        'in_reference': 24,
     }
     properties = {
         0:  'fore:#000000',
@@ -67,11 +67,10 @@ class SciLexerReStructedText(QsciLexerCustom):
         18: 'fore:#204a87,$(font.Monospace)',
         19: 'fore:#4e9a06,underline',
         20: 'fore:#4e9a06,underline',
-        21: 'fore:#4e9a06,underline',
-        22: 'fore:#555753',
+        21: 'fore:#555753',
+        22: 'fore:#4e9a06',
         23: 'fore:#4e9a06',
         24: 'fore:#4e9a06',
-        25: 'fore:#4e9a06',
     }
     token_regex = [
         # block markup
@@ -103,9 +102,9 @@ class SciLexerReStructedText(QsciLexerCustom):
         ('in_strong',   r'''(\*\*\w.*\w\*\*)'''),
         ('in_literal',  r'''(``\w.*\w``)'''),
         ('in_url1',     r'''\W((?:http://|https://|ftp://)[\w\-\.:/]+)\W'''),
-        ('in_url2',     r'''(\w+_)'''),
-        ('in_url3',     r'''(`\w.*\w`_)'''),
-        ('in_url4',     r'''(`[^<]+<[^>]+>`_)'''),
+        ('in_url2',     r'''(`[^<]+<[^>]+>`_)'''),
+        ('in_link1',    r'''(\w+_)\W'''),
+        ('in_link2',    r'''(`\w.*\w`_)'''),
         ('in_footnote', r'''(\[[\w\*#]+\]_)'''),
         ('in_substitution', r'''(\|\w.*\w\|)'''),
         ('in_target',    r'''(_`\w.*\w`)'''),
@@ -175,14 +174,20 @@ class SciLexerReStructedText(QsciLexerCustom):
         if not self.editor():
             return
         text = toUtf8(self.editor().text())
-        offset = 0  # character position at text
-        line = 0    # line number
+        bs = text.rfind('\n\n', 0, start)
+        bs = start if bs == -1 else bs
+        be = text.find('\n\n', end)
+        be = end if be == -1 else be + 2
+        bs_line, bs_index = self.editor().lineIndexFromPosition(bs)
+        be_line, be_index = self.editor().lineIndexFromPosition(be)
+        offset = bs  # character position at text
+        line = bs_line    # line number
         index = 0   # character position at line
         mo = None
         # for block
         while True:
             for key, tok in self.block_tokens:
-                mo = tok.match(text, offset)
+                mo = tok.match(text, offset, be)
                 if mo:
                     break
             if mo is None:
@@ -202,17 +207,19 @@ class SciLexerReStructedText(QsciLexerCustom):
             index = index_end
             offset = mo.end()
         # for inline
-        for line in range(0, self.editor().lines()):
-            text = toUtf8(self.editor().text(line))
+        for line in range(bs_line, be_line + 1):
+            line_text = toUtf8(self.editor().text(line))
             for key, tok in self.inline_tokens:
-                mo_list = tok.finditer(text)
+                mo_list = tok.finditer(line_text)
                 for mo in mo_list:
-                    start = mo.start(1)
-                    end = mo.end(1)
-                    m_start = self.editor().positionFromLineIndex(line, start)
-                    m_end = self.editor().positionFromLineIndex(line, end)
+                    g_start = mo.start(1)
+                    g_end = mo.end(1)
+                    m_start = self.editor().positionFromLineIndex(line, g_start)
+                    m_end = self.editor().positionFromLineIndex(line, g_end)
                     self.startStyling(m_start)
                     self.setStyling(m_end - m_start, self.styles[key])
+        # move style position to end
+        self.startStyling(end)
         return
 
     def defaultColor(self, style):
