@@ -385,25 +385,25 @@ class MainWindow(QtGui.QMainWindow):
     def onAbout(self):
         title = toUtf8(self.tr('About %s')) % __app_name__
         text = toUtf8(self.tr(
-"""
-%s %s
-The editor for ReStructedText.
-""")) % (__app_name__, __app_version__)
+            "%s %s\n\n"
+            "The editor for ReStructedText."
+        )) % (__app_name__, __app_version__)
         QtGui.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
         if not self.saveAndContinue():
             return
         path = toUtf8(path)
-        if os.path.exists(path):
-            ext = os.path.splitext(path)[1].lower()
-            if ext in ALLOWED_LOADS:
-                text = None
-                if self.editor.readFile(path):
-                    self.editor.setFocus()
-                    self.setWindowTitle('%s - %s' % (__app_name__, path))
-                    text = toUtf8(self.editor.getValue())
-                    self.preview(text, path)
+        if not os.path.exists(path):
+            return
+        ext = os.path.splitext(path)[1].lower()
+        if ext in ALLOWED_LOADS:
+            text = None
+            if self.editor.readFile(path):
+                self.editor.setFocus()
+                self.setWindowTitle('%s - %s' % (__app_name__, path))
+                text = toUtf8(self.editor.getValue())
+                self.preview(text, path)
         return
 
     def onValueChanged(self, value):
@@ -413,7 +413,10 @@ The editor for ReStructedText.
             editor_vmax = self.editor.getVScrollMaximum()
             webview_vmax = self.webview.getVScrollMaximum()
             if editor_vmax:
-                self.webview.setScrollBarValue(dx, dy * webview_vmax / editor_vmax)
+                self.webview.setScrollBarValue(
+                    dx,
+                    dy * webview_vmax / editor_vmax
+                )
         return
 
     def onInputPreview(self):
@@ -432,7 +435,10 @@ The editor for ReStructedText.
         filename = self.editor.getFileName()
         if toUtf8(name) == filename:
             self.editor.emptyFile()
-            self.setWindowTitle('%s - %s' % (__app_name__, __default_filename__))
+            self.setWindowTitle('%s - %s' % (
+                __app_name__,
+                __default_filename__)
+            )
             self.preview('', __default_filename__)
 
     def moveCenter(self):
@@ -463,8 +469,14 @@ The editor for ReStructedText.
             msgBox = QtGui.QMessageBox(self)
             msgBox.setIcon(QtGui.QMessageBox.Question)
             msgBox.setText(self.tr('The document has been modified.'))
-            msgBox.setInformativeText(self.tr('Do you want to save your changes?'))
-            msgBox.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
+            msgBox.setInformativeText(
+                self.tr('Do you want to save your changes?')
+            )
+            msgBox.setStandardButtons(
+                QtGui.QMessageBox.Save |
+                QtGui.QMessageBox.Discard |
+                QtGui.QMessageBox.Cancel
+            )
             msgBox.setDefaultButton(QtGui.QMessageBox.Save)
             ret = msgBox.exec_()
             if ret == QtGui.QMessageBox.Cancel:

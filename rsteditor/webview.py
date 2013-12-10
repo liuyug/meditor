@@ -8,6 +8,8 @@ from rsteditor import util
 class WebView(QtWebKit.QWebView):
     def __init__(self, *args, **kwargs):
         super(WebView, self).__init__(*args, **kwargs)
+        settings = self.settings()
+        settings.setAttribute(settings.PluginsEnabled, False)
         self.dx = 0
         self.dy = 0
         self.wait = False
@@ -18,7 +20,8 @@ class WebView(QtWebKit.QWebView):
         self.popupMenu.addAction(self.pageAction(self.page().SelectAll))
 
     def contextMenuEvent(self, event):
-        self.popupMenu.popup(event.globalPos())
+        if event.reason() == event.Mouse:
+            self.popupMenu.popup(event.globalPos())
 
     def onLoadFinished(self, ok):
         if ok and self.wait:

@@ -123,6 +123,10 @@ class Editor(QsciScintilla):
             self.input_count = 0
         return
 
+    def contextMenuEvent(self, event):
+        if event.reason() == event.Mouse:
+            super(Editor, self).contextMenuEvent(event)
+
     def setCopyAvailable(self, yes):
         self.copy_available = yes
 
