@@ -1,11 +1,11 @@
 
-from PyQt4 import QtCore
+from PyQt4 import QtGui, QtCore
 from PyQt4 import QtWebKit
 
 from rsteditor import util
 
+
 class WebView(QtWebKit.QWebView):
-    """ """
     def __init__(self, *args, **kwargs):
         super(WebView, self).__init__(*args, **kwargs)
         self.dx = 0
@@ -13,9 +13,12 @@ class WebView(QtWebKit.QWebView):
         self.wait = False
         self.setHtml('')
         self.loadFinished.connect(self.onLoadFinished)
+        self.popupMenu = QtGui.QMenu(self)
+        self.popupMenu.addAction(self.pageAction(self.page().Copy))
+        self.popupMenu.addAction(self.pageAction(self.page().SelectAll))
 
     def contextMenuEvent(self, event):
-        return
+        self.popupMenu.popup(event.globalPos())
 
     def onLoadFinished(self, ok):
         if ok and self.wait:
@@ -26,7 +29,10 @@ class WebView(QtWebKit.QWebView):
     def setHtml(self, html, url=None):
         if not url:
             url = ''
-        super(WebView, self).setHtml(util.toUtf8(html), QtCore.QUrl.fromLocalFile(url))
+        super(WebView, self).setHtml(
+            util.toUtf8(html),
+            QtCore.QUrl.fromLocalFile(url)
+        )
 
     def getVScrollMaximum(self):
         return self.page().mainFrame().scrollBarMaximum(QtCore.Qt.Vertical)
@@ -43,4 +49,3 @@ class WebView(QtWebKit.QWebView):
     def scroll(self, dx, dy):
         self.page().mainFrame().setScrollBarValue(QtCore.Qt.Horizontal, dx)
         self.page().mainFrame().setScrollBarValue(QtCore.Qt.Vertical, dy)
-
