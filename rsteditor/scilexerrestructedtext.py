@@ -98,16 +98,16 @@ class SciLexerReStructedText(QsciLexerCustom):
         ('string',      r'''[^: \n]+'''),
         ('colon',       r''':'''),
         # inline markup
-        ('in_emphasis', r'''(?<!\*)(\*\w.*\w\*)(?!\*)'''),
-        ('in_strong',   r'''(\*\*\w.*\w\*\*)'''),
-        ('in_literal',  r'''(``\w.*\w``)'''),
+        ('in_emphasis', r'''(?<!\*)(\*\w.*?\w\*)(?!\*)'''),
+        ('in_strong',   r'''(\*\*\w.*?\w\*\*)'''),
+        ('in_literal',  r'''(``\w.*?\w``)'''),
         ('in_url1',     r'''\W((?:http://|https://|ftp://)[\w\-\.:/]+)\W'''),
         ('in_url2',     r'''(`[^<]+<[^>]+>`_)'''),
         ('in_link1',    r'''(\w+_)\W'''),
-        ('in_link2',    r'''(`\w.*\w`_)'''),
+        ('in_link2',    r'''(`\w.*?\w`_)'''),
         ('in_footnote', r'''(\[[\w\*#]+\]_)'''),
-        ('in_substitution', r'''(\|\w.*\w\|)'''),
-        ('in_target',    r'''(_`\w.*\w`)'''),
+        ('in_substitution', r'''(\|\w.*?\w\|)'''),
+        ('in_target',    r'''(_`\w.*?\w`)'''),
         ('in_reference', r'''(:\w+:`\w+`)'''),
     ]
 
@@ -174,20 +174,14 @@ class SciLexerReStructedText(QsciLexerCustom):
         if not self.editor():
             return
         text = toUtf8(self.editor().text())
-        bs = text.rfind('\n\n', 0, start)
-        bs = start if bs == -1 else bs
-        be = text.find('\n\n', end)
-        be = end if be == -1 else be + 2
-        bs_line, bs_index = self.editor().lineIndexFromPosition(bs)
-        be_line, be_index = self.editor().lineIndexFromPosition(be)
-        offset = bs  # character position at text
-        line = bs_line    # line number
+        offset = 0  # character position at text
+        line = 0    # line number
         index = 0   # character position at line
         mo = None
         # for block
         while True:
             for key, tok in self.block_tokens:
-                mo = tok.match(text, offset, be)
+                mo = tok.match(text, offset)
                 if mo:
                     break
             if mo is None:
@@ -207,6 +201,8 @@ class SciLexerReStructedText(QsciLexerCustom):
             index = index_end
             offset = mo.end()
         # for inline
+        bs_line = 0
+        be_line = self.editor().lines()
         for line in range(bs_line, be_line + 1):
             line_text = toUtf8(self.editor().text(line))
             for key, tok in self.inline_tokens:
