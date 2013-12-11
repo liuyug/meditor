@@ -317,34 +317,81 @@ class MainWindow(QtGui.QMainWindow):
         return
 
     def onEditMenuShow(self):
-        self.undoAction.setEnabled(self.editor.isUndoAvailable())
-        self.redoAction.setEnabled(self.editor.isRedoAvailable())
-        self.cutAction.setEnabled(self.editor.isCopyAvailable())
-        self.copyAction.setEnabled(self.editor.isCopyAvailable())
-        self.pasteAction.setEnabled(self.editor.isPasteAvailable())
-        self.deleteAction.setEnabled(self.editor.isCopyAvailable())
+        widget = self.focusWidget()
+        if isinstance(widget, editor.CodeViewer):
+            self.undoAction.setEnabled(False)
+            self.redoAction.setEnabled(False)
+            self.cutAction.setEnabled(False)
+            self.copyAction.setEnabled(widget.isCopyAvailable())
+            self.pasteAction.setEnabled(False)
+            self.deleteAction.setEnabled(False)
+            self.selectallAction.setEnabled(True)
+            self.findAction.setEnabled(True)
+            self.findnextAction.setEnabled(True)
+            self.findprevAction.setEnabled(True)
+        elif isinstance(widget, editor.Editor):
+            self.undoAction.setEnabled(widget.isUndoAvailable())
+            self.redoAction.setEnabled(widget.isRedoAvailable())
+            self.cutAction.setEnabled(widget.isCopyAvailable())
+            self.copyAction.setEnabled(widget.isCopyAvailable())
+            self.pasteAction.setEnabled(widget.isPasteAvailable())
+            self.deleteAction.setEnabled(widget.isCopyAvailable())
+            self.selectallAction.setEnabled(True)
+            self.findAction.setEnabled(True)
+            self.findnextAction.setEnabled(True)
+            self.findprevAction.setEnabled(True)
+        elif isinstance(widget, webview.WebView):
+            self.undoAction.setEnabled(False)
+            self.redoAction.setEnabled(False)
+            self.cutAction.setEnabled(False)
+            action = widget.pageAction(widget.page().Copy)
+            self.copyAction.setEnabled(action.isEnabled())
+            self.pasteAction.setEnabled(False)
+            self.deleteAction.setEnabled(False)
+            self.selectallAction.setEnabled(True)
+            self.findAction.setEnabled(False)
+            self.findnextAction.setEnabled(False)
+            self.findprevAction.setEnabled(False)
 
     def onEdit(self, label):
-        if label == 'undo':
-            self.editor.undo()
-        elif label == 'redo':
-            self.editor.redo()
-        elif label == 'cut':
-            self.editor.cut()
-        elif label == 'copy':
-            self.editor.copy()
-        elif label == 'paste':
-            self.editor.paste()
-        elif label == 'delete':
-            self.editor.delete()
-        elif label == 'selectall':
-            self.editor.selectAll()
-        elif label == 'find':
-            self.editor.find()
-        elif label == 'findnext':
-            self.editor.findNext()
-        elif label == 'findprev':
-            self.editor.findPrevious()
+        widget = self.focusWidget()
+        if isinstance(widget, editor.CodeViewer):
+            if label == 'copy':
+                widget.copy()
+            elif label == 'selectall':
+                widget.selectAll()
+            elif label == 'find':
+                widget.find()
+            elif label == 'findnext':
+                widget.findNext()
+            elif label == 'findprev':
+                widget.findPrevious()
+        elif isinstance(widget, editor.Editor):
+            if label == 'undo':
+                widget.undo()
+            elif label == 'redo':
+                widget.redo()
+            elif label == 'cut':
+                widget.cut()
+            elif label == 'copy':
+                widget.copy()
+            elif label == 'paste':
+                widget.paste()
+            elif label == 'delete':
+                widget.delete()
+            elif label == 'selectall':
+                widget.selectAll()
+            elif label == 'find':
+                widget.find()
+            elif label == 'findnext':
+                widget.findNext()
+            elif label == 'findprev':
+                widget.findPrevious()
+        elif isinstance(widget, webview.WebView):
+            if label == 'copy':
+                widget.triggerPageAction(widget.page().Copy)
+            elif label == 'selectall':
+                widget.triggerPageAction(widget.page().SelectAll)
         return
 
     def onViewMenuShow(self):

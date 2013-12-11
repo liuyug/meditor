@@ -7,7 +7,6 @@ from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
 
 from rsteditor.scilexerrestructedtext import SciLexerReStructedText
 from rsteditor.util import toUtf8
-from rsteditor import __default_filename__
 
 
 class FindDialog(QtGui.QDialog):
@@ -136,7 +135,7 @@ class Editor(QsciScintilla):
     def isPasteAvailable(self):
         """ always return 1 in GTK+ """
         result = self.SendScintilla(QsciScintilla.SCI_CANPASTE)
-        return True if result > 1 else False
+        return True if result > 0 else False
 
     def getHScrollValue(self):
         pos = self.horizontalScrollBar().value()
