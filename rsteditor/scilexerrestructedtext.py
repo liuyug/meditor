@@ -103,7 +103,7 @@ class SciLexerReStructedText(QsciLexerCustom):
         ('in_literal',  r'''(``\w.*?\w``)'''),
         ('in_url1',     r'''\W((?:http://|https://|ftp://)[\w\-\.:/]+)\W'''),
         ('in_url2',     r'''(`[^<]+<[^>]+>`_)'''),
-        ('in_link1',    r'''(\w+_)\W'''),
+        ('in_link1',    r'''([\w\-]+_)\W'''),
         ('in_link2',    r'''(`\w.*?\w`_)'''),
         ('in_footnote', r'''(\[[\w\*#]+\]_)'''),
         ('in_substitution', r'''(\|\w.*?\w\|)'''),
