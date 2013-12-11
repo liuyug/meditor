@@ -230,14 +230,16 @@ class MainWindow(QtGui.QMainWindow):
         self.restoreGeometry(settings.value('geometry').toByteArray())
         self.restoreState(settings.value('windowState').toByteArray())
         self.explorer.setRootPath(
-            toUtf8(
-                settings.value('explorer/rootPath',
-                               os.path.expanduser('~')
-                               ).toString()
-            )
+            toUtf8(settings.value(
+                'explorer/rootPath',
+                os.path.expanduser('~')
+            ).toString())
         )
         self.setFont(QtGui.QFont('Monospace', 12))
         self.editor.emptyFile()
+        value = settings.value('editor/enableLexer', True).toBool()
+        settings.setValue('editor/enableLexer', value)
+        self.editor.enableLexer(value)
         self.preview('', __default_filename__)
         self.setWindowTitle('%s - %s' % (__app_name__, __default_filename__))
 
@@ -505,6 +507,7 @@ def main():
     win.loadFile(path)
     win.show()
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()

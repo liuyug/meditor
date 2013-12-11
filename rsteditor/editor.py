@@ -76,11 +76,14 @@ class Editor(QsciScintilla):
     Scintilla Offical Document: http://www.scintilla.org/ScintillaDoc.html
     """
     lineInputed = QtCore.pyqtSignal()
+    enable_lexer = True
+    filename = None
+    input_count = 0
+    find_text = None
+    find_forward = True
 
     def __init__(self, *args, **kwargs):
         super(Editor, self).__init__(*args, **kwargs)
-        self.filename = None
-        self.setStyle(self.filename)
         self.setMarginType(0, QsciScintilla.NumberMargin)
         self.setMarginWidth(0, 30)
         self.setMarginWidth(1, 5)
@@ -92,12 +95,9 @@ class Editor(QsciScintilla):
         self.setEdgeColumn(78)
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setUtf8(True)
+        self.findDialog = FindDialog(self)
         self.copy_available = False
         self.copyAvailable.connect(self.setCopyAvailable)
-        self.input_count = 0
-        self.findDialog = FindDialog(self)
-        self.find_text = None
-        self.find_forward = True
 
     def inputMethodEvent(self, event):
         super(Editor, self).inputMethodEvent(event)
@@ -157,8 +157,10 @@ class Editor(QsciScintilla):
         set filename and enable lexer
         """
         self.filename = path
-        if self.filename:
-            self.setStyle(self.filename)
+        self.setStyle(self.filename)
+
+    def enableLexer(self, enable=True):
+        self.enable_lexer = enable
 
     def getValue(self):
         """ get all text """
@@ -196,7 +198,7 @@ class Editor(QsciScintilla):
 
     def emptyFile(self):
         self.clear()
-        self.filename = __default_filename__
+        self.setFileName(None)
         self.setModified(False)
 
     def delete(self):
@@ -241,8 +243,8 @@ class Editor(QsciScintilla):
 
     def setStyle(self, filename):
         lexer = None
-        if filename:
-            ext = os.path.splitext(self.filename)[1].lower()
+        if filename and self.enable_lexer:
+            ext = os.path.splitext(filename)[1].lower()
             if ext in ['.html', '.htm']:
                 lexer = QsciLexerHTML(self)
             elif ext in ['.py']:
@@ -263,7 +265,6 @@ class CodeViewer(Editor):
     """ code viewer, readonly """
     def __init__(self, *args, **kwargs):
         super(CodeViewer, self).__init__(*args, **kwargs)
-        #self.SetStyle('.html')
         self.setReadOnly(True)
 
     def setValue(self, text):
@@ -271,6 +272,4 @@ class CodeViewer(Editor):
         self.setReadOnly(False)
         super(CodeViewer, self).setValue(text)
         self.setReadOnly(True)
-        lexer = QsciLexerHTML(self)
-        lexer.setDefaultFont(QtGui.QFont('Monospace', 12))
-        self.setLexer(lexer)
+        self.setStyle('unknown.html')
