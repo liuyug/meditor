@@ -9,6 +9,42 @@ from rsteditor import __home_data_path__
 
 
 class SciLexerReStructedText(QsciLexerCustom):
+    keywords = [
+        'attention',
+        'caution',
+        'danger',
+        'error',
+        'hint',
+        'important',
+        'note',
+        'tip',
+        'warning',
+        'admonition',
+        'image', 'figure',
+        'topic',
+        'sidebar',
+        'code',
+        'math',
+        'rubric',
+        'epigraph',
+        'highlights',
+        'compound',
+        'container',
+        'table',
+        'csv-table',
+        'list-table',
+        'contents',
+        'sectnum', 'section-autonumbering',
+        'section-numbering',
+        'header', 'footer',
+        'target-notes',
+        'meta',
+        'include',
+        'raw',
+        'class',
+        'role',
+        'default-role',
+    ]
     styles = {
         'string': 0,
         'colon': 0,
@@ -17,11 +53,13 @@ class SciLexerReStructedText(QsciLexerCustom):
         'comment': 1,
         'title': 2,
         'section': 2,
-        'transition': 4,
-        'bullet': 5,
-        'enumerated': 5,
-        'definition': 6,
-        'field': 6,
+        'transition': 3,
+        'bullet': 4,
+        'enumerated': 4,
+        'definition1': 5,
+        'definition2': 5,
+        'field': 0,
+        'in_field': 6,
         'option': 7,
         'literal': 8,
         'line': 9,
@@ -32,7 +70,8 @@ class SciLexerReStructedText(QsciLexerCustom):
         'footnote': 13,
         'target1': 14,
         'target2': 14,
-        'directive': 15,
+        'directive': 0,
+        'in_directive': 15,
         'in_emphasis': 16,
         'in_strong': 17,
         'in_literal': 18,
@@ -48,23 +87,23 @@ class SciLexerReStructedText(QsciLexerCustom):
     properties = {
         0:  'fore:#000000',
         1:  'fore:#4e9a06',
-        2:  'fore:#8f5902,bold',
-        3:  'fore:#000000',
-        4:  'fore:#888a85',
-        5:  'fore:#5c3566',
+        2:  'fore:#204a87,bold',
+        3:  'fore:#888a85',
+        4:  'fore:#5c3566',
+        5:  'fore:#845902',
         6:  'fore:#a40000',
-        7:  'fore:#204a87',
-        8:  'fore:#204a87,$(font.Monospace)',
+        7:  'fore:#3465a4,back:#eeeeec',
+        8:  'fore:#3465a4,back:#eeeeec,$(font.Monospace)',
         9:  'fore:#8f5902',
         10: 'fore:#8f5902',
-        11: 'fore:#3465a4',
+        11: 'fore:#3465a4,back:#eeeeec',
         12: 'fore:#ce5c00',
         13: 'fore:#555753',
         14: 'fore:#4e9a06',
-        15: 'fore:#c4a000',
+        15: 'fore:#a40000',
         16: 'italic',
         17: 'bold',
-        18: 'fore:#204a87,$(font.Monospace)',
+        18: 'fore:#3465a4,back:#eeeeec,$(font.Monospace)',
         19: 'fore:#4e9a06,underline',
         20: 'fore:#4e9a06,underline',
         21: 'fore:#555753',
@@ -80,7 +119,8 @@ class SciLexerReStructedText(QsciLexerCustom):
         ('transition',  r'''^\n[=`'"~^_*+#-]{4,}\n\n'''),
         ('bullet',      r'''^ *[\-+*] +.+(?:\n+ +.+)*\n'''),
         ('enumerated',  r'''^ *\(?[0-9a-zA-Z#](?:\.|\)) +.+(?:\n+ +.+)*\n'''),
-        ('definition',  r'''^(?!\.\. |[ \|\-=+]).+\n( +).+(?:\n+\1.+)*\n'''),
+        ('definition1',  r'''^\w+\n( +).+(?:\n+\1.+)*\n'''),
+        ('definition2',  r'''^\w+ *:.*\n( +).+(?:\n+\1.+)*\n'''),
         ('field',       r'''^:[^:]+:[ \n]+.+(?:\n+ +.+)*\n'''),
         ('option',      r'''^[\-/]+.+(?:  .+)?(?:\n+ +.+)*\n'''),
         ('literal',     r'''::\n\n([ >]+).+(?:\n+\1.*)*\n\n'''),
@@ -109,6 +149,8 @@ class SciLexerReStructedText(QsciLexerCustom):
         ('in_substitution', r'''(\|\w.*?\w\|)'''),
         ('in_target',    r'''(_`\w.*?\w`)'''),
         ('in_reference', r'''(:\w+:`\w+`)'''),
+        ('in_directive', r'''^\.\. (%s)::''' % '|'.join(keywords)),
+        ('in_field',     r'''^:([^:]+?):(?!`)'''),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -119,7 +161,7 @@ class SciLexerReStructedText(QsciLexerCustom):
         prop_file = os.path.join(__home_data_path__, 'rst.properties')
         prop_settings = QtCore.QSettings(prop_file, QtCore.QSettings.IniFormat)
         for num in range(0, len(self.properties)):
-            value = toUtf8(prop_settings.value('style.rst.%s' % num).toString())
+            value = toUtf8(prop_settings.value('style.rst.%s' % num).toStringList().join(','))
             if not value:
                 continue
             prop_list = value.split(',')
@@ -149,9 +191,18 @@ class SciLexerReStructedText(QsciLexerCustom):
         self.inline_tokens = []
         for key, regex in self.token_regex:
             if key.startswith('in_'):
-                self.inline_tokens.append((key, re.compile(regex, re.U)))
+                self.inline_tokens.append((key, re.compile(
+                    regex,
+                    re.U |
+                    re.I
+                )))
             else:
-                self.block_tokens.append((key, re.compile(regex, re.U | re.M)))
+                self.block_tokens.append((key, re.compile(
+                    regex,
+                    re.U |
+                    re.M |
+                    re.I
+                )))
         return
 
     def language(self):
