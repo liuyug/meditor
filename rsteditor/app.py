@@ -501,6 +501,8 @@ class MainWindow(QtGui.QMainWindow):
         html = ''
         if ext in ['.rst', '.rest', '.txt']:
             html = output.rst2html(text)
+        elif ext in ['.htm', '.html', '.php', '.asp']:
+            html = toUtf8(text)
         else:
             path = None
         self.webview.setHtml(html, path)
