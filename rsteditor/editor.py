@@ -206,38 +206,59 @@ class Editor(QsciScintilla):
     def find(self):
         self.findDialog.exec_()
         self.find_text = self.findDialog.getFindText()
-        self.findFirst(self.find_text,
-                       False,  # re
-                       self.findDialog.isCaseSensitive(),  # cs
-                       self.findDialog.isWholeWord(),   # wo
-                       True,   # wrap
-                       True,   # forward
-                       )
+        bfind = self.findFirst(
+            self.find_text,
+            False,  # re
+            self.findDialog.isCaseSensitive(),  # cs
+            self.findDialog.isWholeWord(),   # wo
+            True,   # wrap
+            True,   # forward
+        )
+        if not bfind:
+            QtGui.QMessageBox.information(
+                self,
+                self.tr('Find'),
+                self.tr('Not found "%s"' % self.find_text),
+            )
         return
 
     def findNext(self):
         line, index = self.getCursorPosition()
-        self.findFirst(self.find_text,
-                       False,  # re
-                       self.findDialog.isCaseSensitive(),  # cs
-                       self.findDialog.isWholeWord(),   # wo
-                       True,   # wrap
-                       True,   # forward
-                       line, index
-                       )
+        bfind = self.findFirst(
+            self.find_text,
+            False,  # re
+            self.findDialog.isCaseSensitive(),  # cs
+            self.findDialog.isWholeWord(),   # wo
+            True,   # wrap
+            True,   # forward
+            line, index
+        )
+        if not bfind:
+            QtGui.QMessageBox.information(
+                self,
+                self.tr('Find'),
+                self.tr('Not found "%s"' % self.find_text),
+            )
         return
 
     def findPrevious(self):
         line, index = self.getCursorPosition()
         index -= len(self.find_text)
-        self.findFirst(self.find_text,
-                       False,  # re
-                       self.findDialog.isCaseSensitive(),  # cs
-                       self.findDialog.isWholeWord(),   # wo
-                       True,   # wrap
-                       False,   # forward
-                       line, index
-                       )
+        bfind = self.findFirst(
+            self.find_text,
+            False,  # re
+            self.findDialog.isCaseSensitive(),  # cs
+            self.findDialog.isWholeWord(),   # wo
+            True,   # wrap
+            False,   # forward
+            line, index
+        )
+        if not bfind:
+            QtGui.QMessageBox.information(
+                self,
+                self.tr('Find'),
+                self.tr('Not found "%s"' % self.find_text),
+            )
         return
 
     def setStyle(self, filename):
