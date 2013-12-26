@@ -274,7 +274,6 @@ class Editor(QsciScintilla):
             elif ext in ['.rst', '.rest']:
                 lexer = SciLexerReStructedText(self)
         if lexer:
-            lexer.setFont(QtGui.QFont('Monospace', 12))
             self.setLexer(lexer)
         else:
             self.setLexer(None)
