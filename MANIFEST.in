@@ -4,4 +4,5 @@ include *.py
 include docs
 include template
 include *.properties
+include *.png
 
