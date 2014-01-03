@@ -5,8 +5,9 @@ import os
 import sys
 import glob
 
+from subprocess import call
 from distutils.core import setup
-import distutils.command.install_scripts
+from distutils.command import install_scripts, install_data
 try:
     import py2exe
 except:
@@ -15,16 +16,17 @@ except:
 from rsteditor import __app_name__
 from rsteditor import __app_version__
 
-class my_install(distutils.command.install_scripts.install_scripts):
+class post_install_scripts(install_scripts.install_scripts):
     """ remove script ext """
     def run(self):
-        distutils.command.install_scripts.install_scripts.run(self)
+        install_scripts.install_scripts.run(self)
         if sys.platform == 'win32':
             for script in self.get_outputs():
                 if script.endswith(".py"):
                     new_name = '%s_gui.py'% script[:-3]
                     if os.path.exists(new_name):
                         os.remove(new_name)
+                    print('renaming %s -> %s' % (script, new_name))
                     os.rename(script, new_name)
         else:
             for script in self.get_outputs():
@@ -32,8 +34,18 @@ class my_install(distutils.command.install_scripts.install_scripts):
                     new_name = script[:-3]
                     if os.path.exists(new_name):
                         os.remove(new_name)
+                    print('renaming %s -> %s' % (script, new_name))
                     os.rename(script, new_name)
         return
+
+
+class post_install_data(install_data.install_data):
+    """ update desktop """
+    def run(self):
+        install_data.install_data.run(self)
+        print('running update-desktop-database')
+        call('update-desktop-database')
+
 
 with open('README.rst') as f:
     long_description=f.read()
@@ -57,13 +69,17 @@ setup(name=__app_name__.lower(),
               'MANIFEST.in',
               'rst.properties',
               ]),
+          ('share/applications', ['rsteditor.desktop']),
           ('share/%s/template'% __app_name__.lower(), glob.glob('template/*.*')),
           ('share/%s/docs'% __app_name__.lower(), glob.glob('docs/*.rst')),
           ('share/%s/docs/images'% __app_name__.lower(), glob.glob('docs/images/*')),
           ],
       scripts=['rsteditor.py'],
       requires=['docutils', 'pygments', 'pyqt4'],
-      cmdclass = {"install_scripts": my_install},
+      cmdclass = {
+          'install_scripts': post_install_scripts,
+          'install_data': post_install_data,
+      },
       # for py2exe
       windows=['rsteditor.py'],
       options={'py2exe':{
