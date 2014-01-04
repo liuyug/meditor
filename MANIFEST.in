@@ -5,4 +5,5 @@ include docs
 include template
 include *.properties
 include *.png
+include *.desktop
 
