@@ -8,7 +8,7 @@ from rsteditor.util import toUtf8
 from rsteditor import __home_data_path__
 
 
-class SciLexerReStructedText(QsciLexerCustom):
+class QsciLexerRest(QsciLexerCustom):
     keywords = [
         'attention',
         'caution',
@@ -156,7 +156,7 @@ class SciLexerReStructedText(QsciLexerCustom):
     ]
 
     def __init__(self, *args, **kwargs):
-        super(SciLexerReStructedText, self).__init__(*args, **kwargs)
+        super(QsciLexerRest, self).__init__(*args, **kwargs)
         self.setDefaultColor(QtGui.QColor('#000000'))
         self.setDefaultPaper(QtGui.QColor('#ffffff'))
         self.setDefaultFont(QtGui.QFont('Monospace', 12))
@@ -277,7 +277,7 @@ class SciLexerReStructedText(QsciLexerCustom):
             if prop.startswith('fore:'):
                 color = prop.split(':')[1]
                 return QtGui.QColor(color)
-        return super(SciLexerReStructedText, self).defaultColor(style)
+        return super(QsciLexerRest, self).defaultColor(style)
 
     def defaultPaper(self, style):
         prop_list = self.getProperty(style)
@@ -285,11 +285,11 @@ class SciLexerReStructedText(QsciLexerCustom):
             if prop.startswith('back:'):
                 color = prop.split(':')[1]
                 return QtGui.QColor(color)
-        return super(SciLexerReStructedText, self).defaultPaper(style)
+        return super(QsciLexerRest, self).defaultPaper(style)
 
     def defaultFont(self, style):
         prop_list = self.getProperty(style)
-        font = super(SciLexerReStructedText, self).defaultFont(style)
+        font = super(QsciLexerRest, self).defaultFont(style)
         for prop in prop_list:
             if ':' in prop:
                 continue

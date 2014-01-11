@@ -4,8 +4,11 @@ import os.path
 from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciScintilla
 from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
-
-from rsteditor.scilexerrestructedtext import SciLexerReStructedText
+try:
+    from rsteditor.scilexerrest import QsciLexerRest
+except Exception as err:
+    print('Use python lexer', err)
+    from rsteditor.scilexerrestructedtext import QsciLexerRest
 from rsteditor.util import toUtf8
 
 
@@ -272,9 +275,9 @@ class Editor(QsciScintilla):
             elif ext in ['.sh']:
                 lexer = QsciLexerBash(self)
             elif ext in ['.rst', '.rest']:
-                lexer = SciLexerReStructedText(self)
+                lexer = QsciLexerRest(self)
         if lexer:
-            if not isinstance(lexer, SciLexerReStructedText):
+            if not isinstance(lexer, QsciLexerRest):
                 lexer.setFont(QtGui.QFont('Monospace', 12))
             self.setLexer(lexer)
         else:

@@ -1,4 +1,4 @@
-%Module qscilexerrest
+%Module scilexerrest
 
 %Import QtCore/QtCoremod.sip
 %Import Qsci/qscimod4.sip
@@ -6,15 +6,18 @@
 class QsciLexerRest: QsciLexerCustom
 {
 %TypeHeaderCode
-#include <Qt/QtCore>
-#include <Qsci/scilexerrest.h>
+#include "scilexerrest.h"
 %End
     public:
         QsciLexerRest(QObject * parent=0);
-        ~QsciLexerRest();
-        const char * language() const;
-        const char * lexer() const;
-        void styleText(int start, int end);
+        virtual ~QsciLexerRest();
+        virtual const char * language() const;
+        virtual const char * lexer() const;
+        virtual QString description(int style) const;
+        virtual void styleText(int start, int end);
+        virtual QColor defaultColor(int style) const;
+        virtual QColor defaultPaper(int style) const;
+        virtual QFont defaultFont(int style) const;
 };
 
 

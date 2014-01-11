@@ -6,4 +6,7 @@ include template
 include *.properties
 include *.png
 include *.desktop
+include rsteditor/*.h
+include rsteditor/*.cpp
+include rsteditor/*.sip
 

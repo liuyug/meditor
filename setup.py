@@ -8,6 +8,7 @@ import glob
 from subprocess import call
 from distutils.core import setup, Extension
 from distutils.command import install_scripts, install_data
+from PyQt4 import pyqtconfig
 import sipdistutils
 
 try:
@@ -21,13 +22,11 @@ from rsteditor import __app_version__
 
 class my_build_ext(sipdistutils.build_ext):
     def _sip_compile(self, sip_bin, source, sbf):
-        import sipconfig
-        cfg = sipconfig.Configuration()
-        self.spawn([sip_bin,
-                    "-I", '%s/PyQt4' % cfg.default_sip_dir,
-                    "-c", self.build_temp,
-                    "-b", sbf,
-                    source])
+        cfg = pyqtconfig.Configuration()
+        self.spawn([sip_bin, "-I", cfg.pyqt_sip_dir] +
+                   cfg.pyqt_sip_flags.split(' ') +
+                   ["-c", self.build_temp, "-b", sbf, source]
+                   )
 
 
 class post_install_scripts(install_scripts.install_scripts):
@@ -91,8 +90,18 @@ setup(name=__app_name__.lower(),
       scripts=['rsteditor.py'],
       requires=['docutils', 'pygments', 'pyqt4', 'sip'],
       ext_modules=[
-          Extension("scilexerrest",
-                    ["rsteditor/scilexerrest.sip", "rsteditor/scilexerrest.cpp"]
+          Extension("rsteditor/scilexerrest",
+                    [
+                        "rsteditor/scilexerrest.sip",
+                        "rsteditor/scilexerrest.cpp"
+                    ],
+                    include_dirs=[
+                        '/usr/include/QtCore',
+                        '/usr/include/QtGui',
+                        'rsteditor',
+                    ],
+                    #library_dirs=[''],
+                    libraries=['qscintilla2'],
                     ),
       ],
       cmdclass={
