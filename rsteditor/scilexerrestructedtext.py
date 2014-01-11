@@ -154,6 +154,7 @@ class SciLexerReStructedText(QsciLexerCustom):
         ('in_directive', r'''^\.\. (%s)::''' % '|'.join(keywords)),
         ('in_field',     r'''^:([^:]+?):(?!`)'''),
     ]
+    text_styles = {}
 
     def __init__(self, *args, **kwargs):
         super(SciLexerReStructedText, self).__init__(*args, **kwargs)
@@ -216,21 +217,38 @@ class SciLexerReStructedText(QsciLexerCustom):
                 return k
         return ''
 
-    def styleText(self, start, end):
-        """
-        1. ReStructedText is context syntax struct, so I have to scan all text
-        everytimes to config style. It reduce some performance.
-        2. To support non-latin character, function 'positionFromLineIndex'
-        will be called for difference length between latin and non-latin.
-        3. Must use match global for searching section
-        """
+    def getTextRange(self, start, end):
         if not self.editor():
-            return
-        text = toUtf8(self.editor().text())
+            return ''
+        bs_line, index = self.editor().lineIndexFromPosition(start)
+        be_line, index = self.editor().lineIndexFromPosition(end)
+        text = []
+        for line in range(bs_line, be_line + 1):
+            text.append(toUtf8(self.editor().text(line)))
+        return ''.join(text)
+        # segment fault ??
+        #text = self.editor().SendScintilla(QsciScintilla.SCI_GETTEXTRANGE, start, start + 2)
+
+    def getStyleText(self, start, end):
+        if not self.text_styles:
+            start = 0
+            end = self.editor().length()
+        else:
+            for key, value in self.text_styles.items():
+                if start <= (key + value[0]):
+                    start = key
+                    break
+        return (start, end, self.getTextRange(start, end))
+
+    def parseText(self, start, end):
+        tstart, tend, text = self.getStyleText(start, end)
+        print(tstart, tend)
         offset = 0  # character position at text
-        line = 0    # line number
-        index = 0   # character position at line
+        # line number
+        # character position at line
+        line, index = self.editor().lineIndexFromPosition(tstart)
         mo = None
+        text_styles = {}
         # for block
         while True:
             for key, tok in self.block_tokens:
@@ -248,14 +266,33 @@ class SciLexerReStructedText(QsciLexerCustom):
             m_start = self.editor().positionFromLineIndex(line, index)
             m_end = self.editor().positionFromLineIndex(line + line_fix,
                                                         index_end)
-            self.startStyling(m_start)
-            self.setStyling(m_end - m_start, self.styles[key])
+            text_styles[m_start] = (m_end - m_start, self.styles[key])
             line += line_fix
             index = index_end
             offset = mo.end()
+        if tend != m_end:
+            raise Exception("tend != m_end")
+        return (tstart, tend, text_styles)
+
+    def styleText(self, start, end):
+        """
+        1. ReStructedText is context syntax struct, so I have to scan all text
+        everytimes to config style. It reduce some performance.
+        2. To support non-latin character, function 'positionFromLineIndex'
+        will be called for difference length between latin and non-latin.
+        3. Must use match global for searching section
+        """
+        if not self.editor():
+            return
+        tstart, tend, tstyles = self.parseText(start, end)
+        for key, value in tstyles.items():
+            self.startStyling(key)
+            self.setStyling(*value)
+        self.text_styles.update(tstyles)
         # for inline
-        bs_line = 0
-        be_line = self.editor().lines()
+        mo = None
+        bs_line, index = self.editor().lineIndexFromPosition(tstart)
+        be_line, index = self.editor().lineIndexFromPosition(tend)
         for line in range(bs_line, be_line + 1):
             line_text = toUtf8(self.editor().text(line))
             for key, tok in self.inline_tokens:
