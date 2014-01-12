@@ -124,14 +124,14 @@ class SciLexerReStructedText(QsciLexerCustom):
         ('definition2', r'''^\w+ *:.*\n( +).+(?:\n+\1.+)*\n'''),
         ('field',       r'''^:[^:]+:[ \n]+.+(?:\n+ +.+)*\n'''),
         ('option',      r'''^[\-/]+.+(?:  .+)?(?:\n+ +.+)*\n'''),
-        ('literal1',    r'''::\n\n([ >]+).+(?:\n+\1.*)*\n\n'''),
-        ('literal2',    r'''.. code::(?:.*)\n\n([ >]+).+(?:\n+\1.*)*\n\n'''),
+        ('literal1',    r'''::\n\n([ >]+).+(?:\n+\1.*)*\n'''),
+        ('literal2',    r'''.. code::(?:.*)\n\n([ >]+).+(?:\n+\1.*)*\n'''),
         ('line',        r'''^ *\|(?: +.+)?(?:\n +.+)*\n'''),
-        ('quote',       r'''^( {2,}).+(?:\n\1.+)*\n\n'''),
+        ('quote',       r'''^( {2,}).+(?:\n\1.+)*\n'''),
         ('doctest',     r'''^>>>.+\n'''),
-        ('table1',      r'''^( *)[\-=+]{2,}(\n\1[\|+].+)+\n\n'''),
-        ('table2',      r'''^( *)[\-=]{2,} [\-= ]+(\n\1.+)+\n\n'''),
-        ('footnote',    r'''^\.\. \[[^\n\]]+\][ \n]+.+(\n+ +.+)*\n\n'''),
+        ('table1',      r'''^( *)[\-=+]{2,}(\n\1[\|+].+)+\n'''),
+        ('table2',      r'''^( *)[\-=]{2,} [\-= ]+(\n\1.+)+\n'''),
+        ('footnote',    r'''^\.\. \[[^\n\]]+\][ \n]+.+(\n+ +.+)*\n'''),
         ('target1',     r'''^\.\. _.+:(\n +)*.*\n'''),
         ('target2',     r'''^__(?: .+)*\n'''),
         ('directive',   r'''^\.\. (?!_|\[).+::.*(\n+ +.+)*\n'''),
@@ -226,29 +226,31 @@ class SciLexerReStructedText(QsciLexerCustom):
         for line in range(bs_line, be_line + 1):
             text.append(toUtf8(self.editor().text(line)))
         return ''.join(text)
-        # segment fault ??
-        #text = self.editor().SendScintilla(QsciScintilla.SCI_GETTEXTRANGE, start, start + 2)
+        # FIXME: segment fault ??
+        #text = self.editor().SendScintilla(QsciScintilla.SCI_GETTEXTRANGE, start, end)
 
     def getStyleText(self, start, end):
         if not self.text_styles:
             start = 0
             end = self.editor().length()
         else:
-            for key, value in self.text_styles.items():
-                if start <= (key + value[0]):
+            found = False
+            for key in sorted(self.text_styles):
+                if found:
+                    del self.text_styles[key]
+                elif start <= (key + self.text_styles[key][0]):
+                    found = True
                     start = key
-                    break
         return (start, end, self.getTextRange(start, end))
 
     def parseText(self, start, end):
         tstart, tend, text = self.getStyleText(start, end)
-        print(tstart, tend)
         offset = 0  # character position at text
         # line number
         # character position at line
         line, index = self.editor().lineIndexFromPosition(tstart)
         mo = None
-        text_styles = {}
+        tstyles = {}
         # for block
         while True:
             for key, tok in self.block_tokens:
@@ -266,13 +268,15 @@ class SciLexerReStructedText(QsciLexerCustom):
             m_start = self.editor().positionFromLineIndex(line, index)
             m_end = self.editor().positionFromLineIndex(line + line_fix,
                                                         index_end)
-            text_styles[m_start] = (m_end - m_start, self.styles[key])
+            if m_end < m_start:
+                print('[ERROR]', key, offset, mo.end(), text[offset:mo.end()])
+                print('[ERROR]', m_start, m_end, line, index, line + line_fix, index_end)
+            else:
+                tstyles[m_start] = (m_end - m_start, self.styles[key])
             line += line_fix
             index = index_end
             offset = mo.end()
-        if tend != m_end:
-            raise Exception("tend != m_end")
-        return (tstart, tend, text_styles)
+        return (tstart, max(tend, m_end), tstyles)
 
     def styleText(self, start, end):
         """
