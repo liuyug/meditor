@@ -232,7 +232,6 @@ class SciLexerReStructedText(QsciLexerCustom):
     def getStyleText(self, start, end):
         if not self.text_styles:
             start = 0
-            end = self.editor().length()
         else:
             found = False
             for key in sorted(self.text_styles):
@@ -241,14 +240,15 @@ class SciLexerReStructedText(QsciLexerCustom):
                 elif start <= (key + self.text_styles[key][0]):
                     found = True
                     start = key
+        end = self.editor().length()
         return (start, end, self.getTextRange(start, end))
 
     def parseText(self, start, end):
         tstart, tend, text = self.getStyleText(start, end)
-        offset = 0  # character position at text
         # line number
         # character position at line
         line, index = self.editor().lineIndexFromPosition(tstart)
+        offset = index  # character position at text
         mo = None
         tstyles = {}
         # for block
@@ -262,7 +262,7 @@ class SciLexerReStructedText(QsciLexerCustom):
             m_string = text[offset:mo.end()]
             line_fix = m_string.count('\n')
             if line_fix > 0:    # calculate length in last line
-                index_end = len(m_string) - m_string.rfind('\n') - 1
+                index_end = 0
             else:
                 index_end = index + len(m_string)
             m_start = self.editor().positionFromLineIndex(line, index)
