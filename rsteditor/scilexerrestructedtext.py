@@ -4,7 +4,7 @@ import re
 from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciLexerCustom
 
-from rsteditor.util import toUtf8
+from rsteditor.util import toUtf8, logDebug
 from rsteditor import __home_data_path__
 
 
@@ -272,6 +272,8 @@ class SciLexerReStructedText(QsciLexerCustom):
                 print('[ERROR]', key, offset, mo.end(), text[offset:mo.end()])
                 print('[ERROR]', m_start, m_end, line, index, line + line_fix, index_end)
             else:
+                logDebug(key, offset, mo.end(), text[offset:mo.end()])
+                logDebug(m_start, m_end, line, index, line + line_fix, index_end)
                 tstyles[m_start] = (m_end - m_start, self.styles[key])
             line += line_fix
             index = index_end

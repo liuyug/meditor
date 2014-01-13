@@ -10,3 +10,7 @@ def toUtf8(text):
     if not isinstance(text, unicode):
         return text.decode('utf-8', 'ignore')
     return text
+
+
+def logDebug(*args):
+    print('[DEBUG]', args)
