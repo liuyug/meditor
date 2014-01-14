@@ -1,10 +1,11 @@
 import os.path
 import re
+import logging
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciLexerCustom
 
-from rsteditor.util import toUtf8, logDebug
+from rsteditor.util import toUtf8
 from rsteditor import __home_data_path__
 
 
@@ -249,6 +250,7 @@ class SciLexerReStructedText(QsciLexerCustom):
         # character position at line
         line, index = self.editor().lineIndexFromPosition(tstart)
         offset = index  # character position at text
+        logging.debug('[text] %s', repr(text[offset:]))
         mo = None
         tstyles = {}
         # for block
@@ -269,11 +271,11 @@ class SciLexerReStructedText(QsciLexerCustom):
             m_end = self.editor().positionFromLineIndex(line + line_fix,
                                                         index_end)
             if m_end < m_start:
-                print('[ERROR]', key, offset, mo.end(), text[offset:mo.end()])
-                print('[ERROR]', m_start, m_end, line, index, line + line_fix, index_end)
+                logging.error('%s: %d - %d : %s', key, offset, mo.end(), repr(text[offset:mo.end()]))
+                logging.error('%d - %d, %d:%d - %d:%d', m_start, m_end, line, index, line + line_fix, index_end)
             else:
-                logDebug(key, offset, mo.end(), text[offset:mo.end()])
-                logDebug(m_start, m_end, line, index, line + line_fix, index_end)
+                logging.debug('%s: %d - %d : %s', key, offset, mo.end(), repr(text[offset:mo.end()]))
+                logging.debug('%d - %d, %d:%d - %d:%d', m_start, m_end, line, index, line + line_fix, index_end)
                 tstyles[m_start] = (m_end - m_start, self.styles[key])
             line += line_fix
             index = index_end

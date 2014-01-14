@@ -5,8 +5,9 @@ import os
 import sys
 import subprocess
 import shutil
+import logging
+import argparse
 from functools import partial
-from optparse import OptionParser
 
 from PyQt4 import QtGui, QtCore
 
@@ -538,22 +539,25 @@ class MainWindow(QtGui.QMainWindow):
 
     def loadFile(self, path):
         """ widget load file from command line """
-        self.explorer.loadFile(path)
+        self.explorer.loadFile(os.path.realpath(path))
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version',
+                        version='%%(prog)s %s' % __app_version__)
+    parser.add_argument('-v', '--verbose', help='verbose help',
+                        action='count', default=0)
+    parser.add_argument('rstfile', nargs='?', help='rest file')
+    args = parser.parse_args()
+    rstfile = os.path.realpath(args.rstfile) if args.rstfile else None
+    logging.basicConfig(format='[%(levelname)s] %(message)s',
+                        level=logging.WARNING - args.verbose * 10)
     if not os.path.exists(__home_data_path__):
         shutil.copytree(__data_path__, __home_data_path__)
-    usage = 'usage: %prog [directory or file]'
-    parser = OptionParser(usage)
-    (options, args) = parser.parse_args()
-    if args:
-        path = os.path.realpath(args[0])
-    else:
-        path = None
     app = QtGui.QApplication(sys.argv)
     win = MainWindow()
-    win.loadFile(path)
+    win.loadFile(rstfile)
     win.show()
     sys.exit(app.exec_())
 
