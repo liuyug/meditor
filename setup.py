@@ -75,7 +75,7 @@ setup(name=__app_name__.lower(),
           ('share/%s/docs/images'% __app_name__.lower(), glob.glob('docs/images/*')),
           ],
       scripts=['rsteditor.py'],
-      requires=['docutils', 'pygments', 'pyqt4'],
+      requires=['docutils', 'pygments', 'pyqt4', 'argparse'],
       cmdclass = {
           'install_scripts': post_install_scripts,
           'install_data': post_install_data,
