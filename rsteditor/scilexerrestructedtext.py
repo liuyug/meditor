@@ -231,16 +231,14 @@ class SciLexerReStructedText(QsciLexerCustom):
         #text = self.editor().SendScintilla(QsciScintilla.SCI_GETTEXTRANGE, start, end)
 
     def getStyleText(self, start, end):
+        for key in sorted(self.text_styles, reverse=True):
+            if start > key and self.text_styles[key][1] != 0:
+                start = key
+                break
+            else:
+                del self.text_styles[key]
         if not self.text_styles:
             start = 0
-        else:
-            found = False
-            for key in sorted(self.text_styles):
-                if found:
-                    del self.text_styles[key]
-                elif start <= (key + self.text_styles[key][0]):
-                    found = True
-                    start = key
         end = self.editor().length()
         return (start, end, self.getTextRange(start, end))
 

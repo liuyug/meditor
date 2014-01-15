@@ -230,12 +230,10 @@ class MainWindow(QtGui.QMainWindow):
         # window state
         self.restoreGeometry(settings.value('geometry').toByteArray())
         self.restoreState(settings.value('windowState').toByteArray())
-        self.explorer.setRootPath(
-            toUtf8(settings.value(
-                'explorer/rootPath',
-                os.path.expanduser('~')
-            ).toString())
-        )
+        path = toUtf8(settings.value('explorer/rootPath').toString())
+        if not os.path.exists(path):
+            path = os.path.expanduser('~')
+        self.explorer.setRootPath(path)
         self.setFont(QtGui.QFont('Monospace', 12))
         self.editor.emptyFile()
         value = settings.value('editor/enableLexer', True).toBool()
@@ -539,7 +537,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def loadFile(self, path):
         """ widget load file from command line """
-        self.explorer.loadFile(os.path.realpath(path))
+        self.explorer.loadFile(path)
 
 
 def main():
