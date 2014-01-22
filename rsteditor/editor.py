@@ -83,6 +83,7 @@ class Editor(QsciScintilla):
     input_count = 0
     find_text = None
     find_forward = True
+    lexer = None
 
     def __init__(self, *args, **kwargs):
         super(Editor, self).__init__(*args, **kwargs)
@@ -276,6 +277,7 @@ class Editor(QsciScintilla):
                 lexer = QsciLexerBash(self)
             elif ext in ['.rst', '.rest']:
                 lexer = QsciLexerRest(self)
+        self.lexer = lexer
         if lexer:
             if not isinstance(lexer, QsciLexerRest):
                 lexer.setFont(QtGui.QFont('Monospace', 12))

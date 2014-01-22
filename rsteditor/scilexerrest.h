@@ -3,6 +3,11 @@
 #include <QtGui>
 #include <Qsci/qscilexercustom.h>
 
+struct STYLEDTEXT{
+    int length;
+    int style;
+};
+
 class QsciLexerRest: public QsciLexerCustom
 {
     public:
@@ -18,10 +23,14 @@ class QsciLexerRest: public QsciLexerCustom
     private:
         QStringList keywords;
         QMap <QString, int> descs;
+        QList<QString> regex_keys;
         QMap <QString, QRegExp> regexs;
         QMap <QString, QRegExp> inline_regexs;
         QMap <int, QString> properties;
-        QStringList & getProperties(int style);
+        QMap <int, struct STYLEDTEXT> styled_text;
+        QString rangeText(int start, int end);
+        QString stylingText(int * start, int * end);
+        QMap <int, struct STYLEDTEXT> parseText(int * start, int * end);
 };
 
 #endif
