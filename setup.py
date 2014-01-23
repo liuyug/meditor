@@ -102,7 +102,6 @@ setup(name=__app_name__.lower(),
                     ],
                     #library_dirs=[''],
                     libraries=['qscintilla2'],
-                    define_macros=[('QT_NO_DEBUG_OUTPUT', '1')],
                     ),
       ],
       cmdclass={

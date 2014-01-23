@@ -153,17 +153,17 @@ QsciLexerRest::QsciLexerRest(QObject * parent): QsciLexerCustom(parent)
     regexs.insert("comment",     QRegExp("^\\.\\. (?!_|\\[)(?![^\\n]+::)[^\\n]+(?:\\n{0,2} {3,}[^\\n]+)*\\n"));
     regexs.insert("title",       QRegExp("^([=`'\"~^_*+#-]{2,})\\n[^\\n]+\\n\\1\\n"));
     regexs.insert("section",     QRegExp("^[^\\n]+\\n[=`'\"~^_*+#-]{2,}\\n"));
-    regexs.insert("transition",  QRegExp("^\\n[=`'\"~^_*+#-]{4,}\\n"));
+    regexs.insert("transition",  QRegExp("^\\n[=`'\"~^_*+#-]{4,}\\n\\n"));
     regexs.insert("bullet",      QRegExp("^ *[\\-+*] +[^\\n]+(?:\\n+ +[^\\n]+)*\\n"));
     regexs.insert("enumerated",  QRegExp("^ *\\(?[0-9a-zA-Z#](?:\\.|\\)) +[^\\n]+(?:\\n+ +[^\\n]+)*\\n"));
     regexs.insert("definition1", QRegExp("^\\w+\\n( +)[^\\n]+(?:\\n+\\1[^\\n]+)*\\n"));
     regexs.insert("definition2", QRegExp("^\\w+ *:[^\\n]*\\n( +)[^\\n]+(?:\\n+\\1[^\\n]+)*\\n"));
-    regexs.insert("field",       QRegExp("^:[^:]+:[ \\n]+[^\\n]+(?:\\n+ +[^\\n]+)*\\n"));
-    regexs.insert("option",      QRegExp("^[\\-/]+[^\\n]+(?:  [^\\n]+)?(?:\\n+ +[^\\n]+)*\\n"));
-    regexs.insert("literal1",    QRegExp("^::\\n\\n([ >]+)[^\\n]+(?:\\n+\\1[^\\n]*)*\\n"));
-    regexs.insert("literal2",    QRegExp("^.. code::(?:[^\\n]*)\\n\\n([ >]+)[^\\n]+(?:\\n+\\1[^\\n]*)*\\n"));
+    regexs.insert("field",       QRegExp("^:[^:\\n]+:[ \\n]+[^\\n]+(?:\\n+ +[^\\n]+)*\\n"));
+    regexs.insert("option",      QRegExp("^(?:-{1,2}|/)\\w[^\\n]+(?:\\n+ +[^\\n]+)*\\n"));
+    regexs.insert("literal1",    QRegExp("^::\\n\\n( +|>)[^\\n]+(?:\\n+\\1[^\\n]*)*\\n"));
+    regexs.insert("literal2",    QRegExp("^\\.\\. code::(?:[^\\n]*)\\n\\n([ >]+)[^\\n]+(?:\\n+\\1[^\\n]*)*\\n"));
     regexs.insert("line",        QRegExp("^ *\\|(?: +[^\\n]+)?(?:\\n +[^\\n]+)*\\n"));
-    regexs.insert("quote",       QRegExp("^( {2,})[^\\n]+(?:\\n\\1[^\\n]+)*\\n"));
+    regexs.insert("quote",       QRegExp("^\\n( {2,})[^\\n]+(?:\\n\\1[^\\n]+)*\\n"));
     regexs.insert("doctest",     QRegExp("^>>>[^\\n]+\\n"));
     regexs.insert("table1",      QRegExp("^( *)[\\-=+]{2,}(\\n\\1[\\|+][^\\n]+)+\\n"));
     regexs.insert("table2",      QRegExp("^( *)[\\-=]{2,} [\\-= ]+(\\n\\1[^\\n]+)+\\n"));
@@ -176,33 +176,22 @@ QsciLexerRest::QsciLexerRest(QObject * parent): QsciLexerCustom(parent)
     regexs.insert("string",      QRegExp("^[^: \\n]+"));
     regexs.insert("colon",       QRegExp("^:"));
     inline_regexs.insert("in_emphasis",     QRegExp("(\\*[^\\n\\*]+\\*)(?!\\*)"));
-    inline_regexs.insert("in_strong",       QRegExp("(?!\\w)(\\*\\*[^\\n]+\\*\\*)(?!\\w)"));
-    inline_regexs.insert("in_literal",      QRegExp("(``.*``)"));
-    inline_regexs.insert("in_url1",         QRegExp("\\W((?:http://|https://|ftp://)[\\w\\-\\.:/]+)\\W"));
-    inline_regexs.insert("in_url2",         QRegExp("(`[^<]+<[^>]+>`_)"));
-    inline_regexs.insert("in_link1",        QRegExp("([\\w\\-]+_)\\W"));
-    inline_regexs.insert("in_link2",        QRegExp("(`\\w.*?\\w`_)"));
-    inline_regexs.insert("in_footnote",     QRegExp("(\\[[\\w\\*#]+\\]_)"));
-    inline_regexs.insert("in_substitution", QRegExp("(\\|\\w.*?\\w\\|)"));
-    inline_regexs.insert("in_target",       QRegExp("(_`\\w.*?\\w`)"));
-    inline_regexs.insert("in_reference",    QRegExp("(:\\w+:`\\w+`)"));
-    inline_regexs.insert("in_directive",    QRegExp("^\\.\\. (" + keywords.join("|") + ")::"));
+    inline_regexs.insert("in_strong",       QRegExp("(\\*\\*[^\\n\\*]+\\*\\*)"));
+    inline_regexs.insert("in_literal",      QRegExp("(``[^`]+``)"));
+    inline_regexs.insert("in_url1",         QRegExp("(\\w+://[\\w\\-\\.:/]+)"));
+    inline_regexs.insert("in_url2",         QRegExp("(`[^<]+<[^>]+>`_+)"));
+    inline_regexs.insert("in_link1",        QRegExp("([\\w\\-]+_)(?!\\w)"));
+    inline_regexs.insert("in_link2",        QRegExp("(`\\w[^\\n]*\\w`_+)(?!\\w)"));
+    inline_regexs.insert("in_footnote",     QRegExp("(\\[[\\w\\*#]+\\]_)(?!\\w)"));
+    inline_regexs.insert("in_substitution", QRegExp("(\\|\\w[^\\n]+\\w\\|)"));
+    inline_regexs.insert("in_target",       QRegExp("(_`[^`]+`)"));
+    inline_regexs.insert("in_reference",    QRegExp("(:\\w+:`[^`]+`)"));
+    inline_regexs.insert("in_directive",    QRegExp("^(\\.\\. (?:" + keywords.join("|") + ")::)"));
     inline_regexs.insert("in_field",        QRegExp("^:([^:]+):(?!`)"));
     setDefaultColor(QColor("#000000"));
     setDefaultPaper(QColor("#ffffff"));
     setDefaultFont(QFont("Monospace", 12));
-    /*
-    QMap <int, QString>::iterator item;
-    for(item=properties.begin(); item!=properties.end(); item++){
-        prop = item.value();
-        fgcolor = defaultColor(item.key());
-        bgcolor = defaultPaper(item.key());
-        font = defaultFont(item.key());
-        if(prop.startsWith("face:")){
-            //fgcolor = QColor(prop.
-        }
-    }
-    */
+    debug = 30;
 }
 
 QsciLexerRest::~QsciLexerRest()
@@ -279,12 +268,12 @@ QMap <int, struct STYLEDTEXT> QsciLexerRest::parseText(int * start, int * end)
             if((*item).startsWith("in_")) continue;
             key = *item;
             rx = regexs[*item];
-            pos = rx.indexIn(text.mid(offset, -1));
+            pos = rx.indexIn(text, offset, QRegExp::CaretAtOffset);
             if(pos>=0) break;
         }
         if(pos<0) break;
         mstring = rx.cap(0);
-        qDebug()<<line<<":"<<key<<":"<<rx.matchedLength()<<": "<<mstring;
+        if(debug<15) qDebug()<<line<<":"<<key<<":"<<rx.matchedLength()<<": "<<mstring;
         line_fix = mstring.count('\n');
         if(line_fix>0) {
             index_end = 0;
@@ -306,7 +295,7 @@ QMap <int, struct STYLEDTEXT> QsciLexerRest::parseText(int * start, int * end)
 
 void QsciLexerRest::styleText(int start, int end)
 {
-    qDebug()<<__FUNCTION__<<" start: "<<start<<" end: "<<end;
+    if(debug<15) qDebug()<<__FUNCTION__<<" start: "<<start<<" end: "<<end;
     if(!editor())
         return;
     QMap <int, struct STYLEDTEXT> tstyles;
@@ -322,7 +311,7 @@ void QsciLexerRest::styleText(int start, int end)
     int bs_line, be_line, index;
     editor()->lineIndexFromPosition(start, &bs_line, &index);
     editor()->lineIndexFromPosition(end, &be_line, &index);
-    int line, pos;
+    int line, offset, cap_idx = 1;
     int m_start, m_end;
     QString line_text;
     QList<QString>::iterator item;
@@ -332,14 +321,14 @@ void QsciLexerRest::styleText(int start, int end)
         for(item=regex_keys.begin();item!=regex_keys.end();item++){
             if(!(*item).startsWith("in_")) continue;
             rx = inline_regexs[*item];
-            pos = 0;
-            while(rx.indexIn(line_text, pos) != -1){
-                m_start = editor()->positionFromLineIndex(line, rx.pos(0));
-                m_end = editor()->positionFromLineIndex(line, rx.pos(0) + rx.cap(0).length());
+            offset = 0;
+            while(rx.indexIn(line_text, offset) != -1){
+                m_start = editor()->positionFromLineIndex(line, rx.pos(cap_idx));
+                m_end = editor()->positionFromLineIndex(line, rx.pos(cap_idx) + rx.cap(cap_idx).length());
                 startStyling(m_start);
                 setStyling(m_end - m_start, descs[*item]);
-                qDebug()<<line<<":"<<*item<<":"<<rx.matchedLength()<<": "<<rx.cap(0);
-                pos += (rx.pos(0) + rx.matchedLength());
+                if(debug<15) qDebug()<<line<<":"<<*item<<":"<<rx.matchedLength()<<": "<<rx.cap(cap_idx);
+                offset = rx.pos(0) + rx.matchedLength();
             }
         }
     }
@@ -387,4 +376,45 @@ QFont QsciLexerRest::defaultFont(int style) const
         }
     }
     return font;
+}
+
+void QsciLexerRest::setDebugLevel(int level)
+{
+    debug = level;
+}
+
+void QsciLexerRest::readConfig(QString & prop_file)
+{
+    QSettings prop_settings(prop_file, QSettings::IniFormat);
+    QMap<int, QString>::iterator item;
+    QStringList::iterator sitem;
+    QStringList prop_list;
+    QString prop_key;
+    QFont ffont;
+    QRegExp rx("\\$\\(font\\.(\\w+)\\)");
+    for(item=properties.begin();item!=properties.end();item++){
+        prop_key.sprintf("style.%s.%d", language(), item.key());
+        prop_list = prop_settings.value(prop_key).toStringList();
+        for(sitem=prop_list.begin();sitem!=prop_list.end();sitem++){
+            if((*sitem).startsWith("face:")){
+                setColor(QColor((*sitem).split(":")[1]), item.key());
+            } else if((*sitem).startsWith("back:")){
+                setPaper(QColor((*sitem).split(":")[1]), item.key());
+            } else if((*sitem).contains(rx)){
+                setFont(QFont(rx.cap(1)), item.key()); 
+            } else if((*sitem) == "bold"){
+                ffont = font(item.key());
+                ffont.setBold(1);
+                setFont(ffont, item.key());
+            } else if((*sitem) == "italic"){
+                ffont = font(item.key());
+                ffont.setItalic(1);
+                setFont(ffont, item.key());
+            } else if((*sitem) == "underline"){
+                ffont = font(item.key());
+                ffont.setUnderline(1);
+                setFont(ffont, item.key());
+            }
+        }
+    }
 }

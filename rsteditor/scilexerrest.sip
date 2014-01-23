@@ -18,6 +18,8 @@ class QsciLexerRest: QsciLexerCustom
         virtual QColor defaultColor(int style) const;
         virtual QColor defaultPaper(int style) const;
         virtual QFont defaultFont(int style) const;
+        void setDebugLevel(int level);
+        void readConfig(QString & prop_file);
 };
 
 
