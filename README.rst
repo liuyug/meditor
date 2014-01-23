@@ -10,6 +10,8 @@ Install them on all platform:
 + docutils
 + Pygments
 + pyqt4
++ argparse
++ sip
 
 Feature
 =======

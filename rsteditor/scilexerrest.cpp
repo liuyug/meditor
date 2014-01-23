@@ -273,7 +273,7 @@ QMap <int, struct STYLEDTEXT> QsciLexerRest::parseText(int * start, int * end)
         }
         if(pos<0) break;
         mstring = rx.cap(0);
-        if(debug<15) qDebug()<<line<<":"<<key<<":"<<rx.matchedLength()<<": "<<mstring;
+        if(debug<15) qDebug()<<"[DEBUG] "<<line<<":"<<key<<":"<<rx.matchedLength()<<": "<<mstring;
         line_fix = mstring.count('\n');
         if(line_fix>0) {
             index_end = 0;
@@ -295,7 +295,7 @@ QMap <int, struct STYLEDTEXT> QsciLexerRest::parseText(int * start, int * end)
 
 void QsciLexerRest::styleText(int start, int end)
 {
-    if(debug<15) qDebug()<<__FUNCTION__<<" start: "<<start<<" end: "<<end;
+    if(debug<15) qDebug()<<"[DEBUG] "<<__FUNCTION__<<" start: "<<start<<" end: "<<end;
     if(!editor())
         return;
     QMap <int, struct STYLEDTEXT> tstyles;
@@ -327,7 +327,7 @@ void QsciLexerRest::styleText(int start, int end)
                 m_end = editor()->positionFromLineIndex(line, rx.pos(cap_idx) + rx.cap(cap_idx).length());
                 startStyling(m_start);
                 setStyling(m_end - m_start, descs[*item]);
-                if(debug<15) qDebug()<<line<<":"<<*item<<":"<<rx.matchedLength()<<": "<<rx.cap(cap_idx);
+                if(debug<15) qDebug()<<"[DEBUG] "<<line<<":"<<*item<<":"<<rx.matchedLength()<<": "<<rx.cap(cap_idx);
                 offset = rx.pos(0) + rx.matchedLength();
             }
         }

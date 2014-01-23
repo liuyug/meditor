@@ -21,6 +21,7 @@ from rsteditor import webview
 from rsteditor import explorer
 from rsteditor import output
 from rsteditor.util import toUtf8
+from rsteditor import globalvars
 
 ALLOWED_LOADS = ['.rst', '.rest',
                  '.html', '.htm',
@@ -541,6 +542,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
 def main():
+    globalvars.init()
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version',
                         version='%%(prog)s %s' % __app_version__)
@@ -549,8 +551,9 @@ def main():
     parser.add_argument('rstfile', nargs='?', help='rest file')
     args = parser.parse_args()
     rstfile = os.path.realpath(args.rstfile) if args.rstfile else None
+    globalvars.logging_level = logging.WARNING - (args.verbose * 10)
     logging.basicConfig(format='[%(levelname)s] %(message)s',
-                        level=logging.WARNING - args.verbose * 10)
+                        level=globalvars.logging_level)
     if not os.path.exists(__home_data_path__):
         shutil.copytree(__data_path__, __home_data_path__)
     app = QtGui.QApplication(sys.argv)

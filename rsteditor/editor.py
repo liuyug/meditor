@@ -7,11 +7,13 @@ from PyQt4.Qsci import QsciScintilla
 from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
 try:
     from rsteditor.scilexerrest import QsciLexerRest
-except Exception as err:
-    print('Use python lexer', err)
+except Exception:
+    logging.warning('[WARN] Do not find c++ lexer, use python lexer')
     from rsteditor.scilexerrestructedtext import QsciLexerRest
 from rsteditor.util import toUtf8
 from rsteditor import __home_data_path__
+from rsteditor import globalvars
+
 
 class FindDialog(QtGui.QDialog):
     findNext = QtCore.pyqtSignal(str, int)
@@ -281,13 +283,13 @@ class Editor(QsciScintilla):
                 lexer.setFont(QtGui.QFont('Monospace', 12))
             elif ext in ['.rst', '.rest']:
                 lexer = QsciLexerRest(self)
-                lexer.setDebugLevel(10)
+                lexer.setDebugLevel(globalvars.logging_level)
                 rst_prop_file = os.path.join(__home_data_path__, 'rst.properties')
                 if os.path.exists(rst_prop_file):
                     logging.debug('Loading %s', rst_prop_file)
                     lexer.readConfig(rst_prop_file)
                 else:
-                    logging.info('Not found rst.properties')
+                    logging.info('Not found %s', rst_prop_file)
         self.lexer = lexer
         if lexer:
             self.setLexer(lexer)

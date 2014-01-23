@@ -173,7 +173,7 @@ class Explorer(QtGui.QTreeWidget):
         set root directory and sent signal to request load file.
         """
         if filename and os.path.exists(filename):
-            logging.debug('Load file: %s', filename)
+            logging.debug('Loading file: %s', filename)
             self.setRootPath(os.path.dirname(filename))
             self.fileLoaded.emit(filename)
         return
