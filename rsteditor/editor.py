@@ -1,13 +1,17 @@
 
 import os.path
+import logging
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciScintilla
 from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
-
-from rsteditor.scilexerrestructedtext import SciLexerReStructedText
+try:
+    from rsteditor.scilexerrest import QsciLexerRest
+except Exception as err:
+    print('Use python lexer', err)
+    from rsteditor.scilexerrestructedtext import QsciLexerRest
 from rsteditor.util import toUtf8
-
+from rsteditor import __home_data_path__
 
 class FindDialog(QtGui.QDialog):
     findNext = QtCore.pyqtSignal(str, int)
@@ -80,6 +84,7 @@ class Editor(QsciScintilla):
     input_count = 0
     find_text = None
     find_forward = True
+    lexer = None
 
     def __init__(self, *args, **kwargs):
         super(Editor, self).__init__(*args, **kwargs)
@@ -267,15 +272,24 @@ class Editor(QsciScintilla):
             ext = os.path.splitext(filename)[1].lower()
             if ext in ['.html', '.htm']:
                 lexer = QsciLexerHTML(self)
+                lexer.setFont(QtGui.QFont('Monospace', 12))
             elif ext in ['.py']:
                 lexer = QsciLexerPython(self)
+                lexer.setFont(QtGui.QFont('Monospace', 12))
             elif ext in ['.sh']:
                 lexer = QsciLexerBash(self)
-            elif ext in ['.rst', '.rest']:
-                lexer = SciLexerReStructedText(self)
-        if lexer:
-            if not isinstance(lexer, SciLexerReStructedText):
                 lexer.setFont(QtGui.QFont('Monospace', 12))
+            elif ext in ['.rst', '.rest']:
+                lexer = QsciLexerRest(self)
+                lexer.setDebugLevel(10)
+                rst_prop_file = os.path.join(__home_data_path__, 'rst.properties')
+                if os.path.exists(rst_prop_file):
+                    logging.debug('Loading %s', rst_prop_file)
+                    lexer.readConfig(rst_prop_file)
+                else:
+                    logging.info('Not found rst.properties')
+        self.lexer = lexer
+        if lexer:
             self.setLexer(lexer)
         else:
             self.setLexer(None)
