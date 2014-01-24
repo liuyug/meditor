@@ -273,8 +273,6 @@ class MainWindow(QtGui.QMainWindow):
         self.previewSignal.connect(self.previewDisplay)
         logging.debug('Preview worker start')
         self.previewWorker.start()
-        self.preview('', __default_filename__)
-        self.setWindowTitle('%s - %s' % (__app_name__, __default_filename__))
 
     def closeEvent(self, event):
         if self.saveAndContinue():
@@ -574,6 +572,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def loadFile(self, path):
         """ widget load file from command line """
+        if not path:
+            self.preview('', __default_filename__)
+            return
         self.explorer.loadFile(path)
 
 
