@@ -533,9 +533,9 @@ class MainWindow(QtGui.QMainWindow):
         self.move(qr.topLeft())
 
     def preview(self, text, path):
-        self.previewText = text
-        self.previewPath = path
         if not requestPreview.is_set():
+            self.previewText = text
+            self.previewPath = path
             requestPreview.set()
         else:
             logging.debug('Preview is working...')
