@@ -1,4 +1,3 @@
-import os.path
 import re
 import logging
 
@@ -6,7 +5,6 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.Qsci import QsciLexerCustom
 
 from rsteditor.util import toUtf8
-from rsteditor import __home_data_path__
 
 
 class QsciLexerRest(QsciLexerCustom):
@@ -162,35 +160,6 @@ class QsciLexerRest(QsciLexerCustom):
         self.setDefaultColor(QtGui.QColor('#000000'))
         self.setDefaultPaper(QtGui.QColor('#ffffff'))
         self.setDefaultFont(QtGui.QFont('Monospace', 12))
-        prop_file = os.path.join(__home_data_path__, 'rst.properties')
-        prop_settings = QtCore.QSettings(prop_file, QtCore.QSettings.IniFormat)
-        for num in range(0, len(self.properties)):
-            value = toUtf8(prop_settings.value('style.rst.%s' % num).toStringList().join(','))
-            if not value:
-                continue
-            prop_list = value.split(',')
-            fgcolor = self.defaultColor(num)
-            bgcolor = self.defaultPaper(num)
-            font = self.defaultFont(num)
-            for prop in prop_list:
-                if prop.startswith('face:'):
-                    fgcolor = QtGui.QColor(prop.split(':')[1])
-                    self.setColor(fgcolor, num)
-                elif prop.startswith('back:'):
-                    bgcolor = QtGui.QColor(prop.split(':')[1])
-                    self.setPaper(bgcolor, num)
-                else:
-                    if prop.startswith('$(font.'):
-                        mo = re.match(r'^\$\(font\.(.+)\)', prop)
-                        font = QtGui.QFont(mo.group(1))
-                    elif prop == 'bold':
-                        font.setBold(True)
-                    elif prop == 'italic':
-                        font.setItalic(True)
-                    elif prop == 'underline':
-                        font.setUnderline(True)
-                    self.setFont(font, num)
-
         self.block_tokens = []
         self.inline_tokens = []
         for key, regex in self.token_regex:
@@ -210,7 +179,7 @@ class QsciLexerRest(QsciLexerCustom):
         return
 
     def language(self):
-        return 'ReStructedText'
+        return 'rst'
 
     def description(self, style):
         for k, v in self.styles.items():
@@ -352,3 +321,37 @@ class QsciLexerRest(QsciLexerCustom):
             prop_list = self.properties[style].split(',')
             return prop_list
         return []
+
+    def setDebugLevel(self, logging_level):
+        pass
+
+    def readConfig(self, rst_prop_file):
+        prop_settings = QtCore.QSettings(rst_prop_file, QtCore.QSettings.IniFormat)
+        for num in range(0, len(self.properties)):
+            value = toUtf8(prop_settings.value(
+                'style.%s.%s' % (self.language(), num)
+            ).toStringList().join(','))
+            if not value:
+                continue
+            prop_list = value.split(',')
+            fgcolor = self.defaultColor(num)
+            bgcolor = self.defaultPaper(num)
+            font = self.defaultFont(num)
+            for prop in prop_list:
+                if prop.startswith('face:'):
+                    fgcolor = QtGui.QColor(prop.split(':')[1])
+                    self.setColor(fgcolor, num)
+                elif prop.startswith('back:'):
+                    bgcolor = QtGui.QColor(prop.split(':')[1])
+                    self.setPaper(bgcolor, num)
+                else:
+                    if prop.startswith('$(font.'):
+                        mo = re.match(r'^\$\(font\.(.+)\)', prop)
+                        font = QtGui.QFont(mo.group(1))
+                    elif prop == 'bold':
+                        font.setBold(True)
+                    elif prop == 'italic':
+                        font.setItalic(True)
+                    elif prop == 'underline':
+                        font.setUnderline(True)
+                    self.setFont(font, num)
