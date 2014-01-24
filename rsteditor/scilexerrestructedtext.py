@@ -217,7 +217,6 @@ class QsciLexerRest(QsciLexerCustom):
         # character position at line
         line, index = self.editor().lineIndexFromPosition(tstart)
         offset = index  # character position at text
-        logging.debug('[text] %s', repr(text[offset:]))
         mo = None
         tstyles = {}
         # for block

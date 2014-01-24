@@ -7,6 +7,7 @@ import subprocess
 import shutil
 import logging
 import argparse
+import threading
 from functools import partial
 
 from PyQt4 import QtGui, QtCore
@@ -31,8 +32,36 @@ ALLOWED_LOADS = ['.rst', '.rest',
                  '.py'
                  ]
 
+requestPreview = threading.Event()
+
+
+def previewWorker(self):
+    while True:
+        requestPreview.wait()
+        if self.previewQuit:
+            logging.debug('Preview exit')
+            break
+        logging.debug('Preview %s', self.previewPath)
+        ext = os.path.splitext(self.previewPath)[1].lower()
+        self.previewHtml = ''
+        if ext in ['.rst', '.rest', '.txt']:
+            self.previewHtml = output.rst2html(self.previewText)
+        elif ext in ['.htm', '.html', '.php', '.asp']:
+            self.previewHtml = toUtf8(self.previewText)
+        else:
+            self.previewPath = None
+        self.previewSignal.emit()
+        requestPreview.clear()
+    return
+
 
 class MainWindow(QtGui.QMainWindow):
+    previewText = ''
+    previewHtml = ''
+    previewPath = None
+    previewQuit = False
+    previewSignal = QtCore.pyqtSignal()
+
     def __init__(self):
         super(MainWindow, self).__init__()
         self.app_exec = os.path.realpath(sys.argv[0])
@@ -240,6 +269,10 @@ class MainWindow(QtGui.QMainWindow):
         value = settings.value('editor/enableLexer', True).toBool()
         settings.setValue('editor/enableLexer', value)
         self.editor.enableLexer(value)
+        self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
+        self.previewSignal.connect(self.previewDisplay)
+        logging.debug('Preview worker start')
+        self.previewWorker.start()
         self.preview('', __default_filename__)
         self.setWindowTitle('%s - %s' % (__app_name__, __default_filename__))
 
@@ -253,6 +286,9 @@ class MainWindow(QtGui.QMainWindow):
         settings.setValue('windowState', self.saveState())
         settings.setValue('explorer/rootPath', self.explorer.getRootPath())
         settings.sync()
+        self.previewQuit = True
+        requestPreview.set()
+        self.previewWorker.join()
 
     def onNew(self):
         if not self.saveAndContinue():
@@ -497,23 +533,23 @@ class MainWindow(QtGui.QMainWindow):
         self.move(qr.topLeft())
 
     def preview(self, text, path):
-        ext = os.path.splitext(path)[1].lower()
-        html = ''
-        if ext in ['.rst', '.rest', '.txt']:
-            html = output.rst2html(text)
-        elif ext in ['.htm', '.html', '.php', '.asp']:
-            html = toUtf8(text)
+        self.previewText = text
+        self.previewPath = path
+        if not requestPreview.is_set():
+            requestPreview.set()
         else:
-            path = None
-        self.webview.setHtml(html, path)
-        self.codeview.setValue(html)
+            logging.debug('Preview is working...')
+        return
+
+    def previewDisplay(self):
+        self.webview.setHtml(self.previewHtml, self.previewPath)
+        self.codeview.setValue(self.previewHtml)
         dx = self.editor.getHScrollValue()
         dy = self.editor.getVScrollValue()
         editor_vmax = self.editor.getVScrollMaximum()
         webview_vmax = self.webview.getVScrollMaximum()
         if editor_vmax:
             self.webview.setScrollBarValue(dx, dy * webview_vmax / editor_vmax)
-        return
 
     def saveAndContinue(self):
         if self.editor.isModified():

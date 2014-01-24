@@ -3,6 +3,10 @@ RSTEditor
 =========
 RSTEditor is a editor for ReStructedText. It support preview with html.
 
+.. tip::
+
+   For better performance, close "preview on input".
+
 Requirement
 ===========
 Install them on all platform:
