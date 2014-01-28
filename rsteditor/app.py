@@ -581,6 +581,7 @@ class MainWindow(QtGui.QMainWindow):
 def main():
     globalvars.init()
     parser = argparse.ArgumentParser()
+    parser.add_argument('--style', choices=QtGui.QStyleFactory.keys())
     parser.add_argument('--version', action='version',
                         version='%%(prog)s %s' % __app_version__)
     parser.add_argument('-v', '--verbose', help='verbose help',
@@ -591,8 +592,10 @@ def main():
     globalvars.logging_level = logging.WARNING - (args.verbose * 10)
     logging.basicConfig(format='[%(levelname)s] %(message)s',
                         level=globalvars.logging_level)
+    logging.debug(args)
     if not os.path.exists(__home_data_path__):
         shutil.copytree(__data_path__, __home_data_path__)
+    QtGui.QApplication.setStyle(args.style)
     app = QtGui.QApplication(sys.argv)
     win = MainWindow()
     win.loadFile(rstfile)
