@@ -182,7 +182,7 @@ class Editor(QsciScintilla):
         self.setModified(False)
 
     def readFile(self, filename):
-        with open(filename) as f:
+        with open(filename, 'rU') as f:
             text = f.read()
             self.setValue(text)
             self.setFileName(filename)
