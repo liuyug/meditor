@@ -47,7 +47,7 @@ class QsciLexerRest(QsciLexerCustom):
     styles = {
         'string': 0,
         'colon': 0,
-        'space': 0,
+        'space': 4,
         'newline': 0,
         'comment': 1,
         'title': 2,
@@ -83,6 +83,7 @@ class QsciLexerRest(QsciLexerCustom):
         'in_substitution': 22,
         'in_target': 23,
         'in_reference': 24,
+        'in_unusedspace': 25,
     }
     properties = {
         0:  'fore:#000000',
@@ -110,6 +111,7 @@ class QsciLexerRest(QsciLexerCustom):
         22: 'fore:#4e9a06',
         23: 'fore:#4e9a06',
         24: 'fore:#4e9a06',
+        25: 'back:#ef2929',
     }
     token_regex = [
         # block markup
@@ -152,6 +154,7 @@ class QsciLexerRest(QsciLexerCustom):
         ('in_reference', r'''(:\w+:`\w+`)'''),
         ('in_directive', r'''^\.\. (%s)::''' % '|'.join(keywords)),
         ('in_field',     r'''^:([^:]+?):(?!`)'''),
+        ('in_unusedspace', r'''( +)\n'''),
     ]
     text_styles = {}
 
@@ -278,6 +281,8 @@ class QsciLexerRest(QsciLexerCustom):
                     m_end = self.editor().positionFromLineIndex(line, g_end)
                     self.startStyling(m_start)
                     self.setStyling(m_end - m_start, self.styles[key])
+                    logging.debug('%s: %d - %d : %s',
+                                  key, line, g_start, repr(line_text[g_start:g_end]))
         # move style position to end
         self.startStyling(end)
         return

@@ -74,6 +74,7 @@ QsciLexerRest::QsciLexerRest(QObject * parent): QsciLexerCustom(parent)
     properties.insert(22, "fore:#4e9a06");
     properties.insert(23, "fore:#4e9a06");
     properties.insert(24, "fore:#4e9a06");
+    properties.insert(25, "back:#ef2929");
     descs.insert("string", 0);
     descs.insert("colon", 0);
     descs.insert("space", 0);
@@ -112,6 +113,7 @@ QsciLexerRest::QsciLexerRest(QObject * parent): QsciLexerCustom(parent)
     descs.insert("in_substitution", 22);
     descs.insert("in_target", 23);
     descs.insert("in_reference", 24);
+    descs.insert("in_unusedspace", 25);
     regex_keys.append("comment");
     regex_keys.append("title");
     regex_keys.append("section");
@@ -150,6 +152,7 @@ QsciLexerRest::QsciLexerRest(QObject * parent): QsciLexerCustom(parent)
     regex_keys.append("in_reference");
     regex_keys.append("in_directive");
     regex_keys.append("in_field");
+    regex_keys.append("in_unusedspace");
     regexs.insert("comment",     QRegExp("^\\.\\. (?!_|\\[)(?![^\\n]+::)[^\\n]+(?:\\n{0,2} {3,}[^\\n]+)*\\n"));
     regexs.insert("title",       QRegExp("^([=`'\"~^_*+#-]{2,})\\n[^\\n]+\\n\\1\\n"));
     regexs.insert("section",     QRegExp("^[^\\n]+\\n[=`'\"~^_*+#-]{2,}\\n"));
@@ -188,6 +191,7 @@ QsciLexerRest::QsciLexerRest(QObject * parent): QsciLexerCustom(parent)
     inline_regexs.insert("in_reference",    QRegExp("(:\\w+:`[^`]+`)"));
     inline_regexs.insert("in_directive",    QRegExp("^(\\.\\. (?:" + keywords.join("|") + ")::)"));
     inline_regexs.insert("in_field",        QRegExp("^:([^:]+):(?!`)"));
+    inline_regexs.insert("in_unusedspace",  QRegExp("( +)\\n"));
     setDefaultColor(QColor("#000000"));
     setDefaultPaper(QColor("#ffffff"));
     setDefaultFont(QFont("Monospace", 12));
