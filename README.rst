@@ -1,6 +1,8 @@
 =========
 RSTEditor
 =========
+|version| |download|
+
 RSTEditor is a editor for ReStructedText. It support preview with html.
 
 .. tip::
@@ -40,3 +42,11 @@ template::
 Screen Shot
 ===========
 .. image:: screenshot.png
+
+.. |version| image:: https://img.shields.io/pypi/v/rsteditor.png
+   :target: https://pypi.python.org/pypi/rsteditor
+   :alt: Version
+
+.. |download| image:: https://img.shields.io/pypi/dm/rsteditor.png
+   :target: https://pypi.python.org/pypi/rsteditor
+   :alt: Downloads
