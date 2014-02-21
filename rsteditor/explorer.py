@@ -184,8 +184,7 @@ class Explorer(QtGui.QTreeWidget):
             return False
         ret = QtGui.QMessageBox.question(self,
                                          self.tr('Delete'),
-                                         self.tr('Do you want to delete "%s"?' %
-                                                 filename),
+                                         self.tr('Do you want to delete "%1"?').arg(filename),
                                          QtGui.QMessageBox.Yes,
                                          QtGui.QMessageBox.No)
         if ret == QtGui.QMessageBox.Yes:
@@ -212,8 +211,8 @@ class Explorer(QtGui.QTreeWidget):
             if os.path.exists(path):
                 QtGui.QMessageBox.warning(self,
                                           self.tr('File exists'),
-                                          self.tr('File "%s" has existed!' %
-                                                  filename))
+                                          self.tr('File "%1" has existed!').arg(filename)
+                                          )
             else:
                 os.mkdir(path)
                 return filename
@@ -234,8 +233,8 @@ class Explorer(QtGui.QTreeWidget):
             if os.path.exists(newpath):
                 QtGui.QMessageBox.warning(self,
                                           self.tr('File exists'),
-                                          self.tr('File "%s" has existed!' %
-                                                  newname))
+                                          self.tr('File "%1" has existed!').arg(newname)
+                                          )
             else:
                 os.rename(path, newpath)
                 if os.path.isfile(newpath):

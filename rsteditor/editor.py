@@ -225,7 +225,7 @@ class Editor(QsciScintilla):
             QtGui.QMessageBox.information(
                 self,
                 self.tr('Find'),
-                self.tr('Not found "%s"' % self.find_text),
+                self.tr('Not found "%1"').arg(self.find_text),
             )
         return
 
@@ -244,7 +244,7 @@ class Editor(QsciScintilla):
             QtGui.QMessageBox.information(
                 self,
                 self.tr('Find'),
-                self.tr('Not found "%s"' % self.find_text),
+                self.tr('Not found "%1"').arg(self.find_text),
             )
         return
 
@@ -264,7 +264,7 @@ class Editor(QsciScintilla):
             QtGui.QMessageBox.information(
                 self,
                 self.tr('Find'),
-                self.tr('Not found "%s"' % self.find_text),
+                self.tr('Not found "%1"').arg(self.find_text),
             )
         return
 

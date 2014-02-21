@@ -466,11 +466,8 @@ class MainWindow(QtGui.QMainWindow):
         return
 
     def onAbout(self):
-        title = toUtf8(self.tr('About %s')) % __app_name__
-        text = toUtf8(self.tr(
-            "%s %s\n\n"
-            "The editor for ReStructedText."
-        )) % (__app_name__, __app_version__)
+        title = self.tr('About %1').arg(__app_name__)
+        text = self.tr("%1 %2\n\nThe editor for ReStructedText.").arg(__app_name__).arg(__app_version__)
         QtGui.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
