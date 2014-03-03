@@ -121,6 +121,12 @@ class MainWindow(QtGui.QMainWindow):
         self.findprevAction = QtGui.QAction(self.tr('Find previous'), self)
         self.findprevAction.setShortcut('Shift+F3')
         self.findprevAction.triggered.connect(partial(self.onEdit, 'findprev'))
+        enableLexerAction = QtGui.QAction(self.tr('Enable Lexer'),
+                self, checkable=True)
+        value = settings.value('editor/enableLexer', True).toBool()
+        settings.setValue('editor/enableLexer', value)
+        enableLexerAction.setChecked(value)
+        enableLexerAction.triggered.connect(partial(self.onPreview, 'enablelexer'))
         ## view
         self.explorerAction = QtGui.QAction(self.tr('File explorer'),
                                             self,
@@ -203,6 +209,8 @@ class MainWindow(QtGui.QMainWindow):
         menu.addAction(self.findAction)
         menu.addAction(self.findnextAction)
         menu.addAction(self.findprevAction)
+        menu.addSeparator()
+        menu.addAction(enableLexerAction)
         menu.aboutToShow.connect(self.onEditMenuShow)
         menu = menubar.addMenu(self.tr('&View'))
         menu.addAction(self.explorerAction)
@@ -266,8 +274,7 @@ class MainWindow(QtGui.QMainWindow):
         self.explorer.setRootPath(path)
         self.setFont(QtGui.QFont('Monospace', 12))
         self.editor.emptyFile()
-        value = settings.value('editor/enableLexer', True).toBool()
-        settings.setValue('editor/enableLexer', value)
+        value = enableLexerAction.isChecked()
         self.editor.enableLexer(value)
         self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
         self.previewSignal.connect(self.previewDisplay)
@@ -455,6 +462,9 @@ class MainWindow(QtGui.QMainWindow):
             self.settings.setValue('preview/oninput', checked)
         elif label == 'previewsync':
             self.settings.setValue('preview/sync', checked)
+        elif label == 'enablelexer':
+            self.settings.setValue('editor/enableLexer', checked)
+            self.editor.enableLexer(checked)
         return
 
     def onHelp(self):
