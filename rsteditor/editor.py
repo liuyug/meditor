@@ -167,6 +167,7 @@ class Editor(QsciScintilla):
 
     def enableLexer(self, enable=True):
         self.enable_lexer = enable
+        self.setStyle(self.filename)
 
     def getValue(self):
         """ get all text """
