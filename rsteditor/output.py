@@ -8,13 +8,14 @@ except:
 
 
 def rst2html(rst_text):
+    output = None
     try:
         overrides = {'input_encoding': 'utf-8',
                 'output_encoding': 'utf-8'}
         output = publish_string(rst_text,
                 writer_name='html',
                 settings_overrides=overrides)
-        return output
     except Exception as err:
-        logging.error(err)
-    return ''
+        logging.error(unicode(err))
+        output = unicode(err)
+    return output

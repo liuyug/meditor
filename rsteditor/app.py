@@ -69,6 +69,8 @@ class MainWindow(QtGui.QMainWindow):
             __app_name__.lower(),
             'config'
         )
+        # No support fromTheme function in Qt4.6
+        # self.setWindowIcon(QtGui.QIcon.fromTheme("accessories-text-editor"))
         # status bar
         self.statusBar().showMessage(self.tr('Ready'))
         # action
