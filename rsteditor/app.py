@@ -123,12 +123,21 @@ class MainWindow(QtGui.QMainWindow):
         self.findprevAction = QtGui.QAction(self.tr('Find previous'), self)
         self.findprevAction.setShortcut('Shift+F3')
         self.findprevAction.triggered.connect(partial(self.onEdit, 'findprev'))
+
+        self.indentAction = QtGui.QAction(self.tr('Indent'), self)
+        self.indentAction.setShortcut('TAB')
+        self.indentAction.triggered.connect(partial(self.onEdit, 'indent'))
+        self.unindentAction = QtGui.QAction(self.tr('Unindent'), self)
+        self.unindentAction.setShortcut('Shift+TAB')
+        self.unindentAction.triggered.connect(partial(self.onEdit, 'unindent'))
+
         enableLexerAction = QtGui.QAction(self.tr('Enable Lexer'),
                 self, checkable=True)
         value = settings.value('editor/enableLexer', True).toBool()
         settings.setValue('editor/enableLexer', value)
         enableLexerAction.setChecked(value)
-        enableLexerAction.triggered.connect(partial(self.onPreview, 'enablelexer'))
+        enableLexerAction.triggered.connect(
+            partial(self.onPreview, 'enablelexer'))
         ## view
         self.explorerAction = QtGui.QAction(self.tr('File explorer'),
                                             self,
@@ -211,6 +220,9 @@ class MainWindow(QtGui.QMainWindow):
         menu.addAction(self.findAction)
         menu.addAction(self.findnextAction)
         menu.addAction(self.findprevAction)
+        menu.addSeparator()
+        menu.addAction(self.indentAction)
+        menu.addAction(self.unindentAction)
         menu.addSeparator()
         menu.addAction(enableLexerAction)
         menu.aboutToShow.connect(self.onEditMenuShow)
@@ -383,6 +395,8 @@ class MainWindow(QtGui.QMainWindow):
             self.findAction.setEnabled(True)
             self.findnextAction.setEnabled(True)
             self.findprevAction.setEnabled(True)
+            self.indentAction.setEnabled(widget.hasSelectedText())
+            self.unindentAction.setEnabled(widget.hasSelectedText())
         elif isinstance(widget, webview.WebView):
             self.undoAction.setEnabled(False)
             self.redoAction.setEnabled(False)
@@ -430,6 +444,10 @@ class MainWindow(QtGui.QMainWindow):
                 widget.findNext()
             elif label == 'findprev':
                 widget.findPrevious()
+            elif label == 'indent':
+                widget.indentLines(True)
+            elif label == 'unindent':
+                widget.indentLines(False)
         elif isinstance(widget, webview.WebView):
             if label == 'copy':
                 widget.triggerPageAction(widget.page().Copy)

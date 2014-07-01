@@ -182,6 +182,18 @@ class Editor(QsciScintilla):
         self.setCursorPosition(0, 0)
         self.setModified(False)
 
+    def indentLines(self, inc):
+        if not self.hasSelectedText():
+            return
+        lineFrom, indexFrom, lineTo, indexTo = self.getSelection()
+        if inc:
+            action = self.indent
+        else:
+            action = self.unindent
+
+        for line in range(lineFrom, lineTo + 1):
+            action(line)
+
     def readFile(self, filename):
         with open(filename, 'rU') as f:
             text = f.read()
@@ -285,7 +297,8 @@ class Editor(QsciScintilla):
             elif ext in ['.rst', '.rest']:
                 lexer = QsciLexerRest(self)
                 lexer.setDebugLevel(globalvars.logging_level)
-                rst_prop_file = os.path.join(__home_data_path__, 'rst.properties')
+                rst_prop_file = os.path.join(__home_data_path__,
+                                             'rst.properties')
                 if os.path.exists(rst_prop_file):
                     logging.debug('Loading %s', rst_prop_file)
                     lexer.readConfig(rst_prop_file)
