@@ -87,6 +87,8 @@ class Editor(QsciScintilla):
     find_text = None
     find_forward = True
     lexer = None
+    tabWidth = 4
+    edgeColumn = 78
 
     def __init__(self, *args, **kwargs):
         super(Editor, self).__init__(*args, **kwargs)
@@ -95,10 +97,10 @@ class Editor(QsciScintilla):
         self.setMarginWidth(1, 5)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
-        self.setTabWidth(4)
+        self.setTabWidth(self.tabWidth)
         self.setIndentationGuides(True)
         self.setEdgeMode(QsciScintilla.EdgeLine)
-        self.setEdgeColumn(78)
+        self.setEdgeColumn(self.edgeColumn)
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setUtf8(True)
         self.findDialog = FindDialog(self)
@@ -184,6 +186,8 @@ class Editor(QsciScintilla):
 
     def indentLines(self, inc):
         if not self.hasSelectedText():
+            if inc:
+                self.insert(" " * self.tabWidth)
             return
         lineFrom, indexFrom, lineTo, indexTo = self.getSelection()
         if inc:
