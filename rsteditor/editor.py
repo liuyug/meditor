@@ -187,7 +187,9 @@ class Editor(QsciScintilla):
     def indentLines(self, inc):
         if not self.hasSelectedText():
             if inc:
+                line, index = self.getCursorPosition()
                 self.insert(" " * self.tabWidth)
+                self.setCursorPosition(line, index + self.tabWidth)
             return
         lineFrom, indexFrom, lineTo, indexTo = self.getSelection()
         if inc:
