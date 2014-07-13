@@ -52,3 +52,6 @@ class WebView(QtWebKit.QWebView):
     def scroll(self, dx, dy):
         self.page().mainFrame().setScrollBarValue(QtCore.Qt.Horizontal, dx)
         self.page().mainFrame().setScrollBarValue(QtCore.Qt.Vertical, dy)
+
+    def printPreview(self, printer):
+        self.print_(printer)

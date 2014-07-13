@@ -89,6 +89,11 @@ class MainWindow(QtGui.QMainWindow):
         saveAction.triggered.connect(self.onSave)
         saveAsAction = QtGui.QAction(self.tr('Save as...'), self)
         saveAsAction.triggered.connect(self.onSaveAs)
+        printAction = QtGui.QAction(self.tr('&Print'), self)
+        printAction.setShortcut('Ctrl+P')
+        printAction.triggered.connect(self.onPrint)
+        printPreviewAction = QtGui.QAction(self.tr('Print Pre&view'), self)
+        printPreviewAction.triggered.connect(self.onPrintPreview)
         exitAction = QtGui.QAction(self.tr('&Exit'), self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.close)
@@ -204,6 +209,9 @@ class MainWindow(QtGui.QMainWindow):
         menu.addSeparator()
         menu.addAction(saveAction)
         menu.addAction(saveAsAction)
+        menu.addSeparator()
+        menu.addAction(printPreviewAction)
+        menu.addAction(printAction)
         menu.addSeparator()
         menu.addAction(exitAction)
         menu = menubar.addMenu(self.tr('&Edit'))
@@ -375,6 +383,18 @@ class MainWindow(QtGui.QMainWindow):
                 self.preview(text, filename)
             self.explorer.setRootPath(os.path.dirname(filename), True)
         return
+
+    def onPrintPreview(self):
+        printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
+        preview = QtGui.QPrintPreviewDialog(printer, self.webview)
+        preview.paintRequested.connect(self.webview.printPreview)
+        preview.exec_()
+
+    def onPrint(self):
+        printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
+        printDialog = QtGui.QPrintDialog(printer, self.webview)
+        if printDialog.exec_() == QtGui.QDialog.Accepted:
+            self.webview.print_(printer)
 
     def onEditMenuShow(self):
         widget = self.focusWidget()
