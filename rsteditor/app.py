@@ -290,7 +290,8 @@ class MainWindow(QtGui.QMainWindow):
         self.editor.emptyFile()
         value = enableLexerAction.isChecked()
         self.editor.enableLexer(value)
-        self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
+        self.previewWorker = threading.Thread(target=previewWorker,
+                                              args=(self,))
         self.previewSignal.connect(self.previewDisplay)
         logging.debug('Preview worker start')
         self.previewWorker.start()
@@ -359,7 +360,11 @@ class MainWindow(QtGui.QMainWindow):
     def onSaveAs(self):
         filename = QtGui.QFileDialog.getSaveFileName(
             self,
-            self.tr('Save file as ...')
+            self.tr('Save file as ...'),
+            self.explorer.getRootPath(),
+            "All support files (*.rst *.rest *.txt);;"
+            "RST files (*.rst *.rest);;"
+            "Text files (*.txt)",
         )
         if filename:
             filename = toUtf8(filename)
