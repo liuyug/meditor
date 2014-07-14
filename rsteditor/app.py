@@ -45,7 +45,7 @@ def previewWorker(self):
         ext = os.path.splitext(self.previewPath)[1].lower()
         self.previewHtml = ''
         if ext in ['.rst', '.rest', '.txt']:
-            self.previewHtml = output.rst2html(self.previewText)
+            self.previewHtml = output.rst2htmlcode(self.previewText)
         elif ext in ['.htm', '.html', '.php', '.asp']:
             self.previewHtml = toUtf8(self.previewText)
         else:
@@ -89,6 +89,10 @@ class MainWindow(QtGui.QMainWindow):
         saveAction.triggered.connect(self.onSave)
         saveAsAction = QtGui.QAction(self.tr('Save as...'), self)
         saveAsAction.triggered.connect(self.onSaveAs)
+        exportHTMLAction = QtGui.QAction(self.tr('Export as HTML...'), self)
+        exportHTMLAction.triggered.connect(partial(self.onExport, 'html'))
+        exportODTAction = QtGui.QAction(self.tr('Export as ODT...'), self)
+        exportODTAction.triggered.connect(partial(self.onExport, 'odt'))
         printAction = QtGui.QAction(self.tr('&Print'), self)
         printAction.setShortcut('Ctrl+P')
         printAction.triggered.connect(self.onPrint)
@@ -209,6 +213,9 @@ class MainWindow(QtGui.QMainWindow):
         menu.addSeparator()
         menu.addAction(saveAction)
         menu.addAction(saveAsAction)
+        menu.addSeparator()
+        menu.addAction(exportHTMLAction)
+        menu.addAction(exportODTAction)
         menu.addSeparator()
         menu.addAction(printPreviewAction)
         menu.addAction(printAction)
@@ -383,6 +390,36 @@ class MainWindow(QtGui.QMainWindow):
                 self.preview(text, filename)
             self.explorer.setRootPath(os.path.dirname(filename), True)
         return
+
+    def onExport(self, label):
+        if not self.saveAndContinue():
+            return
+        if label == 'html':
+            filename = QtGui.QFileDialog.getSaveFileName(
+                self,
+                self.tr('export HTML as ...'),
+                self.explorer.getRootPath(),
+                "HTML files (*.html *.htm)",
+            )
+            if filename:
+                filename = toUtf8(filename)
+                ext = os.path.splitext(filename)[1].lower()
+                if ext not in ['.html', '.htm']:
+                    filename += '.html'
+                output.rst2html(self.editor.getFileName(), filename)
+        elif label == 'odt':
+            filename = QtGui.QFileDialog.getSaveFileName(
+                self,
+                self.tr('export ODT as ...'),
+                self.explorer.getRootPath(),
+                "ODT files (*.odt)",
+            )
+            if filename:
+                filename = toUtf8(filename)
+                ext = os.path.splitext(filename)[1].lower()
+                if ext not in ['.odt']:
+                    filename += '.odt'
+                output.rst2odt(self.editor.getFileName(), filename)
 
     def onPrintPreview(self):
         printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
