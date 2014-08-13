@@ -325,10 +325,13 @@ class MainWindow(QtGui.QMainWindow):
         requestPreview.set()
         self.previewWorker.join()
 
-    def onNew(self):
+    def onNew(self, path):
         if not self.saveAndContinue():
             return
-        filename = __default_filename__
+        if path:
+            filename = path
+        else:
+            filename = __default_filename__
         self.setWindowTitle('%s - %s' % (__app_name__, filename))
         ext = os.path.splitext(filename)[1].lower()
         text = ''
