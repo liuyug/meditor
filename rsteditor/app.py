@@ -34,6 +34,9 @@ ALLOWED_LOADS = ['.rst', '.rest',
 
 requestPreview = threading.Event()
 
+# for debug
+# LOG_FILENAME = '/tmp/rsteditor.log'
+# logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
 
 def previewWorker(self):
     while True:
@@ -360,7 +363,6 @@ class MainWindow(QtGui.QMainWindow):
                                                      self.tr('Open a file'))
         if filename:
             filename = toUtf8(filename)
-            self.setWindowTitle('%s - %s' % (__app_name__, filename))
             self.loadFile(filename)
         return
 
@@ -562,7 +564,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def onAbout(self):
         title = self.tr('About %1').arg(__app_name__)
-        text = self.tr("%1 %2\n\nThe editor for ReStructedText.").arg(__app_name__).arg(__app_version__)
+        text = self.tr("%1 %2\n\nThe editor for ReStructedText."
+                       ).arg(__app_name__).arg(__app_version__)
         QtGui.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
@@ -667,7 +670,28 @@ class MainWindow(QtGui.QMainWindow):
         if not path:
             self.preview('', __default_filename__)
             return
-        self.explorer.loadFile(path)
+        self.explorer.setRootPath(os.path.dirname(path))
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in ALLOWED_LOADS:
+            return
+        text = ''
+        if os.path.exists(path):
+            logging.debug('Loading file: %s', path)
+            if self.editor.readFile(path):
+                text = toUtf8(self.editor.getValue())
+        else:
+            logging.debug('Creating file: %s', path)
+            skeleton = os.path.join(__home_data_path__,
+                                    'template',
+                                    'skeleton%s' % ext)
+            if os.path.exists(skeleton):
+                with open(skeleton, 'r') as f:
+                    text = f.read()
+            self.editor.setValue(text)
+            self.editor.setFileName(path)
+        self.setWindowTitle('%s - %s' % (__app_name__, path))
+        self.editor.setFocus()
+        self.preview(text, path)
 
 
 def main():
@@ -680,11 +704,11 @@ def main():
                         action='count', default=0)
     parser.add_argument('rstfile', nargs='?', help='rest file')
     args = parser.parse_args()
-    rstfile = os.path.realpath(args.rstfile) if args.rstfile else None
     globalvars.logging_level = logging.WARNING - (args.verbose * 10)
     logging.basicConfig(format='[%(levelname)s] %(message)s',
                         level=globalvars.logging_level)
     logging.debug(args)
+    rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
     if not os.path.exists(__home_data_path__):
         shutil.copytree(__data_path__, __home_data_path__)
     QtGui.QApplication.setStyle(args.style)

@@ -2,7 +2,7 @@ import sys
 import os.path
 
 __app_name__ = 'RSTEditor'
-__app_version__ = '0.1.6.2'
+__app_version__ = '0.1.6.3'
 __default_filename__ = 'unknown.rst'
 
 

@@ -15,7 +15,7 @@ class Explorer(QtGui.QTreeWidget):
     pathLoaded = QtCore.pyqtSignal('QString')
     fileDeleted = QtCore.pyqtSignal('QString')
     fileRenamed = QtCore.pyqtSignal('QString', 'QString')
-    fileNew = QtCore.pyqtSignal('String')
+    fileNew = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super(Explorer, self).__init__(*args, **kwargs)
@@ -90,7 +90,7 @@ class Explorer(QtGui.QTreeWidget):
         self.setRootPath(path)
 
     def onNewFile(self):
-        self.fileNew.emit('')
+        self.fileNew.emit()
 
     def onNewDirectory(self):
         newpath = self.newDirectory()
@@ -149,6 +149,7 @@ class Explorer(QtGui.QTreeWidget):
         self.root_item = self.addRoot(self.getDisplayName(self.root_path))
         dirs = sorted(os.listdir(self.root_path))
         for d in dirs:
+            d = toUtf8(d)
             if d.startswith('.'):
                 continue
             self.appendItem(self.root_item, d)
@@ -177,10 +178,6 @@ class Explorer(QtGui.QTreeWidget):
                 logging.debug('Loading file: %s', filename)
                 self.setRootPath(os.path.dirname(filename))
                 self.fileLoaded.emit(filename)
-            else:
-                logging.debug('Creating file: %s', filename)
-                self.setRootPath(os.path.dirname(filename))
-                self.fileNew.emit(filename)
         return
 
     def deletePath(self, filename):
