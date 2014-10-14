@@ -19,6 +19,13 @@ Install them on all platform:
 + argparse
 + sip
 
+For ubuntu::
+
+    apt-get install python-qt4-dev
+    apt-get install python-sip-dev
+    apt-get install python-qscintilla2
+    apt-get install python-docutils
+
 Feature
 =======
 + Syntax Highlight for ReStructedText
