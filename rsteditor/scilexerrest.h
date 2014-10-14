@@ -24,7 +24,7 @@ class QsciLexerRest: public QsciLexerCustom
         void readConfig(QString & prop_file);
     private:
         int debug;
-        QStringList keywords;
+        QStringList keys;
         QMap <QString, int> descs;
         QList<QString> regex_keys;
         QMap <QString, QRegExp> regexs;

@@ -96,8 +96,9 @@ setup(name=__app_name__.lower(),
                         "rsteditor/scilexerrest.cpp"
                     ],
                     include_dirs=[
-                        '/usr/include/QtCore',
-                        '/usr/include/QtGui',
+                        '/usr/include/qt4',
+                        '/usr/include/qt4/QtCore',
+                        '/usr/include/qt4/QtGui',
                         'rsteditor',
                     ],
                     #library_dirs=[''],
