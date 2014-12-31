@@ -666,29 +666,38 @@ class MainWindow(QtGui.QMainWindow):
         return True
 
     def loadFile(self, path):
-        """ widget load file from command line """
+        """
+        widget load file from command line
+        path:
+            None, filename will be unknown.rst
+            file exist, load file
+            not exist, create new file
+        """
         if not path:
-            self.preview('', __default_filename__)
-            return
-        self.explorer.setRootPath(os.path.dirname(path))
-        ext = os.path.splitext(path)[1].lower()
-        if ext not in ALLOWED_LOADS:
-            return
-        text = ''
-        if os.path.exists(path):
-            logging.debug('Loading file: %s', path)
-            if self.editor.readFile(path):
-                text = toUtf8(self.editor.getValue())
+            path = __default_filename__
+            text = ''
+            self.explorer.setRootPath(os.path.dirname(path))
         else:
-            logging.debug('Creating file: %s', path)
-            skeleton = os.path.join(__home_data_path__,
-                                    'template',
-                                    'skeleton%s' % ext)
-            if os.path.exists(skeleton):
-                with open(skeleton, 'r') as f:
-                    text = f.read()
-            self.editor.setValue(text)
-            self.editor.setFileName(path)
+            self.explorer.setRootPath(os.path.dirname(path))
+            ext = os.path.splitext(path)[1].lower()
+            if ext not in ALLOWED_LOADS:
+                return
+            if os.path.exists(path):
+                logging.debug('Loading file: %s', path)
+                if self.editor.readFile(path):
+                    text = toUtf8(self.editor.getValue())
+            else:
+                logging.debug('Creating file: %s', path)
+                skeleton = os.path.join(__home_data_path__,
+                                        'template',
+                                        'skeleton%s' % ext)
+                if os.path.exists(skeleton):
+                    with open(skeleton, 'r') as f:
+                        text = f.read()
+                else:
+                    text = ''
+        self.editor.setValue(text)
+        self.editor.setFileName(path)
         self.setWindowTitle('%s - %s' % (__app_name__, path))
         self.editor.setFocus()
         self.preview(text, path)
