@@ -564,8 +564,11 @@ class MainWindow(QtGui.QMainWindow):
 
     def onAbout(self):
         title = self.tr('About %1').arg(__app_name__)
-        text = self.tr("%1 %2\n\nThe editor for ReStructedText."
+        texts = []
+        text = self.tr("%1 %2\n\nThe editor for ReStructedText.\n\n"
                        ).arg(__app_name__).arg(__app_version__)
+        text += self.tr('Platform: %1\n').arg(sys.platform)
+        text += self.tr('Configuration path: %1\n').arg(__home_data_path__)
         QtGui.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
