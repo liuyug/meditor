@@ -717,6 +717,8 @@ def main():
     logging.basicConfig(format='[%(levelname)s] %(message)s',
                         level=globalvars.logging_level)
     logging.debug(args)
+    logging.debug('app  data path: ' + __data_path__)
+    logging.debug('home data path: ' + __home_data_path__)
     rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
     if not os.path.exists(__home_data_path__):
         shutil.copytree(__data_path__, __home_data_path__)
