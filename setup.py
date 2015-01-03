@@ -79,7 +79,9 @@ class post_install_data(install_data.install_data):
                 os.path.dirname(os.path.realpath(__file__)),
                 'dist','docutils', 'writers')
             shutil.rmtree(dist_path)
-            shutil.copytree(docutils_path, dist_path)
+            shutil.copytree(docutils_path,
+                            dist_path,
+                            ignore=shutil.ignore_patterns('*.py'))
         else:
             print('running update-desktop-database')
             call('update-desktop-database')
