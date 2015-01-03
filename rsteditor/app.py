@@ -555,7 +555,7 @@ class MainWindow(QtGui.QMainWindow):
         return
 
     def onHelp(self):
-        help_path = os.path.join(__data_path__, 'docs', 'demo.rst')
+        help_path = os.path.join(__home_data_path__, 'docs', 'demo.rst')
         if sys.platform == 'win32' and self.app_exec.endswith('.py'):
             subprocess.Popen(['python', self.app_exec, help_path])
         else:
