@@ -7,9 +7,7 @@ import glob
 
 from subprocess import call
 from distutils.core import setup, Extension
-from distutils.command import install_scripts, install_data
-from PyQt4 import pyqtconfig
-import sipdistutils
+from distutils.command import install_scripts, install_data, build_ext
 
 try:
     import py2exe
@@ -19,14 +17,29 @@ except:
 from rsteditor import __app_name__
 from rsteditor import __app_version__
 
+if sys.platform == 'win32':
+    build_ext_class = build_ext.build_ext
+else:
+    import sipdistutils
+    build_ext_class = sipdistutils.build_ext
 
-class my_build_ext(sipdistutils.build_ext):
+class my_build_ext(build_ext_class):
+    def run(self):
+        if sys.platform == 'win32':
+            print('Use Python-version REST lexer in windows.')
+        else:
+            build_ext_class.run(self)
+
     def _sip_compile(self, sip_bin, source, sbf):
-        cfg = pyqtconfig.Configuration()
-        self.spawn([sip_bin, "-I", cfg.pyqt_sip_dir] +
-                   cfg.pyqt_sip_flags.split(' ') +
-                   ["-c", self.build_temp, "-b", sbf, source]
-                   )
+        if sys.platform == 'win32':
+            build_ext_class._sip_compile(self, sip_bin, source, sbf)
+        else:
+            from PyQt4 import pyqtconfig
+            cfg = pyqtconfig.Configuration()
+            self.spawn([sip_bin, "-I", cfg.pyqt_sip_dir] +
+                    cfg.pyqt_sip_flags.split(' ') +
+                    ["-c", self.build_temp, "-b", sbf, source]
+                    )
 
 
 class post_install_scripts(install_scripts.install_scripts):
@@ -56,8 +69,18 @@ class post_install_data(install_data.install_data):
     """ update desktop """
     def run(self):
         install_data.install_data.run(self)
-        print('running update-desktop-database')
-        call('update-desktop-database')
+        if sys.platform == 'win32':
+            import docutils
+            import shutil
+            docutils_path = os.path.dirname(docutils.__file__)
+            dist_path = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                'dist','docutils')
+            shutil.rmtree(dist_path)
+            shutil.copytree(docutils_path, dist_path)
+        else:
+            print('running update-desktop-database')
+            call('update-desktop-database')
 
 
 with open('README.rst') as f:
@@ -114,7 +137,6 @@ setup(name=__app_name__.lower(),
       windows=['rsteditor.py'],
       options={'py2exe': {
           'skip_archive': True,
-          'dll_excludes': ['msvcp90.dll'],
           'includes': [
               'pygments',
               'ConfigParser',
@@ -122,6 +144,5 @@ setup(name=__app_name__.lower(),
               'PyQt4.QtNetwork',
               'sip',
           ],
-          'excludes': [],
       }}
       )
