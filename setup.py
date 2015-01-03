@@ -72,10 +72,12 @@ class post_install_data(install_data.install_data):
         if sys.platform == 'win32':
             import docutils
             import shutil
-            docutils_path = os.path.dirname(docutils.__file__)
+            docutils_path = os.path.join(
+                os.path.dirname(docutils.__file__),
+                'writers')
             dist_path = os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                'dist','docutils')
+                'dist','docutils', 'writers')
             shutil.rmtree(dist_path)
             shutil.copytree(docutils_path, dist_path)
         else:
@@ -140,9 +142,9 @@ setup(name=__app_name__.lower(),
           'includes': [
               'pygments',
               'ConfigParser',
-              'docutils',
               'PyQt4.QtNetwork',
               'sip',
           ],
+          'packages': ['docutils'],
       }}
       )
