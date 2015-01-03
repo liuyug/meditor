@@ -719,6 +719,8 @@ def main():
     globalvars.logging_level = logging.WARNING - (args.verbose * 10)
     logging.basicConfig(format='[%(levelname)s] %(message)s',
                         level=globalvars.logging_level)
+    if sys.platform == 'win32':
+        sys.stderr = sys.stdout
     logging.debug(args)
     logging.debug('app  data path: ' + __data_path__)
     logging.debug('home data path: ' + __home_data_path__)
