@@ -101,7 +101,6 @@ class MainWindow(QtGui.QMainWindow):
         exportODTAction = QtGui.QAction(self.tr('Export as ODT...'), self)
         exportODTAction.triggered.connect(partial(self.onExport, 'odt'))
         printAction = QtGui.QAction(self.tr('&Print'), self)
-        printAction.setShortcut('Ctrl+P')
         printAction.triggered.connect(self.onPrint)
         printPreviewAction = QtGui.QAction(self.tr('Print Pre&view'), self)
         printPreviewAction.triggered.connect(self.onPrintPreview)
