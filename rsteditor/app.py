@@ -68,6 +68,10 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.app_exec = os.path.realpath(sys.argv[0])
+        if sys.platform == 'win32':
+            if os.path.splitext(self.app_exec)[1] != '.exe':
+                self.app_exec += '.exe'
+        logging.debug('app name: %s' % self.app_exec)
         self.settings = settings = QtCore.QSettings(
             __app_name__.lower(),
             'config'
