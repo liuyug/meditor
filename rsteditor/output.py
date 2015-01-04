@@ -12,14 +12,35 @@ except:
 from rsteditor import __home_data_path__
 
 
+def get_rhythm_css():
+    stylesheet = {}
+    rhythm_css_dir = os.path.join(__home_data_path__,
+                                  'template',
+                                  'rhythm.css')
+    if os.path.exists(rhythm_css_dir):
+        stylesheet = {
+            'stylesheet_path': '%s,%s' % (os.path.join(rhythm_css_dir,
+                                                       'dist',
+                                                       'css', 'rhythm.css'),
+                                          os.path.join(rhythm_css_dir,
+                                                       'syntax',
+                                                       'molokai.css')),
+            'syntax-highlight': 'short',
+        }
+    return stylesheet
+
 def rst2htmlcode(rst_text):
     output = None
     try:
-        overrides = {'input_encoding': 'utf-8',
-                'output_encoding': 'utf-8'}
-        output = publish_string(rst_text,
-                writer_name='html',
-                settings_overrides=overrides)
+        overrides = {
+            'input_encoding': 'utf-8',
+            'output_encoding': 'utf-8'
+        }
+        overrides.update(get_rhythm_css())
+        output = publish_string(
+            rst_text,
+            writer_name='html',
+            settings_overrides=overrides,)
     except Exception as err:
         logging.error(unicode(err))
         output = unicode(err)
@@ -28,8 +49,11 @@ def rst2htmlcode(rst_text):
 def rst2html(rst_file, filename):
     output = None
     try:
-        overrides = {'input_encoding': 'utf-8',
-                'output_encoding': 'utf-8'}
+        overrides = {
+            'input_encoding': 'utf-8',
+            'output_encoding': 'utf-8'
+        }
+        overrides.update(get_rhythm_css())
         output = publish_cmdline(
             writer_name='html',
             settings_overrides=overrides,
