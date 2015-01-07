@@ -35,10 +35,37 @@ Feature
 + File system explorer
 + Customized widnow layout
 + ReStructedText Template to reduce extra work
++ Customized HTML css
 
-Py2exe
+HTML theme
+===========
+#. Download rhythm.css_
+
+#. Unzip it to configuration directory.
+
+   + It is "C:\\Users\\Administrator\\.config\\rsteditor\\themes\\" in Window 7.
+   + It is "$HOME/.config/rsteditor/themes" in Linux.
+
+#. Create theme file, "theme.json" under "rhythm.css" direcotry.
+
+::
+
+    {
+        "stylesheet_path":"dist/css/rhythm.css,syntax/molokai.css",
+        "syntax-highlight": "short"
+    }
+
+.. _rhythm.css: https://github.com/Rykka/rhythm.css/archive/master.zip
+
+Install
 =======
-To make a Py2exe package, you need copy docutils and pygments files into ``dist`` directory manually.
+in Linux::
+
+    pip install rsteditor-qt
+
+or install it in user directory::
+
+    pip install rsteditor-qt --user
 
 Template
 ========

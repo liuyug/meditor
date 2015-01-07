@@ -2,7 +2,7 @@ import sys
 import os.path
 
 __app_name__ = 'RSTEditor'
-__app_version__ = '0.1.6.4'
+__app_version__ = '0.1.7.0'
 __default_filename__ = 'unknown.rst'
 
 __data_path__ = os.path.join(sys.prefix, 'share', __app_name__.lower())

@@ -48,7 +48,8 @@ def previewWorker(self):
         ext = os.path.splitext(self.previewPath)[1].lower()
         self.previewHtml = ''
         if ext in ['.rst', '.rest', '.txt']:
-            self.previewHtml = output.rst2htmlcode(self.previewText)
+            self.previewHtml = output.rst2htmlcode(self.previewText,
+                                                   theme=self.theme)
         elif ext in ['.htm', '.html', '.php', '.asp']:
             self.previewHtml = toUtf8(self.previewText)
         else:
@@ -59,6 +60,7 @@ def previewWorker(self):
 
 
 class MainWindow(QtGui.QMainWindow):
+    theme = 'docutils'
     previewText = ''
     previewHtml = ''
     previewPath = None
@@ -204,6 +206,35 @@ class MainWindow(QtGui.QMainWindow):
         value = settings.value('preview/sync', True).toBool()
         settings.setValue('preview/sync', value)
         previewsyncAction.setChecked(value)
+        # theme
+        docutils_cssAction = QtGui.QAction('docutils theme',
+                                           self,
+                                           checkable=True)
+        docutils_cssAction.triggered.connect(partial(self.onThemeChanged,
+                                                   'docutils'))
+        themeGroup = QtGui.QActionGroup(self)
+        themeGroup.setExclusive(True)
+        themeGroup.addAction(docutils_cssAction)
+        themes = os.listdir(os.path.join(__home_data_path__, 'themes'))
+        for theme in themes:
+            if os.path.exists(os.path.join(__home_data_path__,
+                                           'themes',
+                                           theme,
+                                           'theme.json')):
+                act = QtGui.QAction('%s theme' % theme,
+                                    self,
+                                    checkable=True)
+                act.triggered.connect(partial(self.onThemeChanged, theme))
+                themeGroup.addAction(act)
+        value = toUtf8(settings.value('theme', 'docutils').toString())
+        settings.setValue('theme', value)
+        self.theme = value
+        docutils_cssAction.setChecked(True)
+        theme_name = '%s theme' % toUtf8(value)
+        for act in themeGroup.actions():
+            theme = toUtf8(act.text())
+            if theme_name == theme:
+                act.setChecked(True)
         ## help
         helpAction = QtGui.QAction(self.tr('&Help'), self)
         helpAction.triggered.connect(self.onHelp)
@@ -259,6 +290,10 @@ class MainWindow(QtGui.QMainWindow):
         menu.addAction(previewsaveAction)
         menu.addAction(previewinputAction)
         menu.addAction(previewsyncAction)
+        menu.addSeparator()
+        menu.addAction(docutils_cssAction)
+        for act in themeGroup.actions():
+            menu.addAction(act)
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
         menu.addSeparator()
@@ -415,7 +450,9 @@ class MainWindow(QtGui.QMainWindow):
                 ext = os.path.splitext(filename)[1].lower()
                 if ext not in ['.html', '.htm']:
                     filename += '.html'
-                output.rst2html(self.editor.getFileName(), filename)
+                output.rst2html(self.editor.getFileName(),
+                                filename,
+                                theme=self.theme)
         elif label == 'odt':
             filename = QtGui.QFileDialog.getSaveFileName(
                 self,
@@ -545,8 +582,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def onPreview(self, label, checked):
         if label == 'preview':
-            text = toUtf8(self.editor.getValue())
-            self.preview(text, self.editor.getFileName())
+            self.previewCurrentText()
         elif label == 'previewonsave':
             self.settings.setValue('preview/onsave', checked)
         elif label == 'previewoninput':
@@ -556,6 +592,12 @@ class MainWindow(QtGui.QMainWindow):
         elif label == 'enablelexer':
             self.settings.setValue('editor/enableLexer', checked)
             self.editor.enableLexer(checked)
+        return
+
+    def onThemeChanged(self, label, checked):
+        self.theme = label
+        self.settings.setValue('theme', self.theme)
+        self.previewCurrentText()
         return
 
     def onHelp(self):
@@ -640,6 +682,10 @@ class MainWindow(QtGui.QMainWindow):
         else:
             logging.debug('Preview is working...')
         return
+
+    def previewCurrentText(self):
+        text = toUtf8(self.editor.getValue())
+        self.preview(text, self.editor.getFileName())
 
     def previewDisplay(self):
         self.webview.setHtml(self.previewHtml, self.previewPath)
