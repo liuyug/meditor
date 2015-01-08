@@ -1,8 +1,10 @@
 
 import os
 import os.path
+import sys
 import shutil
 import logging
+from functools import partial
 
 from PyQt4 import QtGui
 from PyQt4 import QtCore
@@ -38,6 +40,14 @@ class Explorer(QtGui.QTreeWidget):
         self.deleteAction.triggered.connect(self.onDelete)
         refreshAction = QtGui.QAction(self.tr('Refresh'), self)
         refreshAction.triggered.connect(self.onRefresh)
+        drivers_path = self.getDrivesPath()
+        self.driveGroup = QtGui.QActionGroup(self)
+        for drive_path in drivers_path:
+            act = QtGui.QAction(drive_path,
+                                self,
+                                checkable=True)
+            act.triggered.connect(partial(self.onDriveChanged, drive_path))
+            self.driveGroup.addAction(act)
         self.popupMenu = QtGui.QMenu(self)
         self.popupMenu.addAction(newAction)
         self.popupMenu.addAction(newdirectoryAction)
@@ -46,6 +56,9 @@ class Explorer(QtGui.QTreeWidget):
         self.popupMenu.addAction(self.deleteAction)
         self.popupMenu.addSeparator()
         self.popupMenu.addAction(refreshAction)
+        self.popupMenu.addSeparator()
+        for act in self.driveGroup.actions():
+            self.popupMenu.addAction(act)
 
     def resizeEvent(self, event):
         if self.root_item:
@@ -117,6 +130,9 @@ class Explorer(QtGui.QTreeWidget):
     def onRefresh(self):
         self.setRootPath(self.root_path, True)
 
+    def onDriveChanged(self, drive, checked):
+        self.setRootPath(drive)
+
     def addRoot(self, name):
         root = QtGui.QTreeWidgetItem(self)
         root.setText(0, self.getDisplayName(name))
@@ -143,13 +159,16 @@ class Explorer(QtGui.QTreeWidget):
             path = os.path.dirname(path)
         if not refresh and path == self.root_path:
             return
+        for act in self.driveGroup.actions():
+            drive = toUtf8(act.text())
+            if drive[:2] == path[:2]:
+                act.setChecked(True)
         self.clear()
         self.root_path = path
         os.chdir(path)
         self.root_item = self.addRoot(self.getDisplayName(self.root_path))
         dirs = sorted(os.listdir(self.root_path))
         for d in dirs:
-            d = toUtf8(d)
             if d.startswith('.'):
                 continue
             self.appendItem(self.root_item, d)
@@ -243,3 +262,13 @@ class Explorer(QtGui.QTreeWidget):
                     self.fileRenamed.emit(path, newpath)
                 return newname
         return
+
+    def getDrivesPath(self):
+        if sys.platform != 'win32':
+            return []
+        drivers = []
+        for drive in toUtf8('ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
+            path = '%s:\\' % drive
+            if os.path.exists(path):
+                drivers.append(path)
+        return drivers
