@@ -39,23 +39,31 @@ Feature
 
 HTML theme
 ===========
-#. Download rhythm.css_
+#. Download theme, such as rhythm.css_, `timhughes theme`_
 
 #. Unzip it to configuration directory.
 
    + It is "C:\\Users\\Administrator\\.config\\rsteditor\\themes\\" in Window 7.
    + It is "$HOME/.config/rsteditor/themes" in Linux.
 
-#. Create theme file, "theme.json" under "rhythm.css" direcotry.
+#. Create theme file, "theme.json" under theme direcotry.
 
-::
+theme.json under rhythm.css::
 
     {
         "stylesheet_path":"dist/css/rhythm.css,syntax/molokai.css",
         "syntax-highlight": "short"
     }
 
+theme.json under timhughes theme::
+
+    {
+        "stylesheet_path":"reset.css,goldfish.css,goldfish-pygments-long.css,goldfish-pygments-long-python.css",
+        "syntax-highlight": "long"
+    }
+
 .. _rhythm.css: https://github.com/Rykka/rhythm.css/archive/master.zip
+.. _`timhughes theme`: https://bitbucket.org/timhughes/restructuredtext-theme/get/0de88230f44a.zip
 
 Install
 =======
