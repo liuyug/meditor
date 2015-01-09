@@ -48,6 +48,12 @@ HTML theme
 
 #. Create theme file, "theme.json" under theme direcotry.
 
+Support parameter:
+
++ stylesheet_path
++ syntax-highlight
++ template
+
 theme.json under rhythm.css::
 
     {

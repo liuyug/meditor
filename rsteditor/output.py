@@ -1,3 +1,4 @@
+import sys
 import os.path
 import logging
 import json
@@ -13,30 +14,10 @@ except:
 from rsteditor import __home_data_path__
 
 
-def get_rhythm_css():
-    stylesheet = {}
-    rhythm_css_dir = os.path.join(__home_data_path__,
-                                  'template',
-                                  'rhythm.css')
-    rhythm_css_urls = [
-        ('https://github.com/Rykka/rhythm.css/raw/master/syntax/molokai.css',
-         os.path.join(rhythm_css_dir, 'molokai.css')),
-        ('https://github.com/Rykka/rhythm.css/raw/master/math/math.css',
-         os.path.join(rhythm_css_dir, 'math.css')),
-        ('https://github.com/Rykka/rhythm.css/raw/master/dist/css/rhythm.css',
-         os.path.join(rhythm_css_dir, 'rhythm.css')),
-    ]
-    if not os.path.exists(rhythm_css_dir):
-        for url, path in rhythm_css_urls:
-            downloadFile(url, path)
-    stylesheet = {
-        'stylesheet_path': '%s,%s' % (os.path.join(rhythm_css_dir,
-                                                    'rhythm.css'),
-                                        os.path.join(rhythm_css_dir,
-                                                    'molokai.css')),
-        'syntax-highlight': 'short',
-    }
-    return stylesheet
+default_overrides = {
+    'input_encoding': 'utf-8',
+    'output_encoding': 'utf-8',
+}
 
 def get_theme_settings(theme):
     if theme == 'docutils':
@@ -62,17 +43,24 @@ def get_theme_settings(theme):
             new_css_paths.append(new_css_path)
             logging.debug('css path: %s' % new_css_path)
         stylesheet['stylesheet_path']=','.join(new_css_paths)
+    if 'template' in stylesheet:
+        old_path = stylesheet['template']
+        new_path = os.path.realpath(
+            os.path.join(__home_data_path__,
+                         'themes',
+                         theme,
+                         old_path))
+        stylesheet['template'] = new_path
     return stylesheet
 
 def rst2htmlcode(rst_text, theme='docutils', settings={}):
     output = None
     try:
-        overrides = {
-            'input_encoding': 'utf-8',
-            'output_encoding': 'utf-8'
-        }
+        overrides = {}
+        overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme))
+        logging.debug(overrides)
         output = publish_string(
             rst_text,
             writer_name='html',
@@ -85,12 +73,11 @@ def rst2htmlcode(rst_text, theme='docutils', settings={}):
 def rst2html(rst_file, filename, theme='docutils', settings={}):
     output = None
     try:
-        overrides = {
-            'input_encoding': 'utf-8',
-            'output_encoding': 'utf-8'
-        }
+        overrides = {}
+        overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme))
+        logging.debug(overrides)
         output = publish_cmdline(
             writer_name='html',
             settings_overrides=overrides,
@@ -104,21 +91,23 @@ def rst2html(rst_file, filename, theme='docutils', settings={}):
         output = unicode(err)
     return output
 
-def rst2odt(rst_file, filename):
+def rst2odt(rst_file, filename, theme='docutils', settings={}):
     output = None
     try:
+        overrides = {}
+        overrides.update(default_overrides)
+        overrides.update(settings)
+        overrides.update(get_theme_settings(theme))
+        logging.debug(overrides)
         writer = Writer()
         reader = Reader()
-        styles_odt = os.path.join(__home_data_path__,
-                                  'template',
-                                  'styles.odt')
         output = publish_cmdline_to_binary(
             reader=reader,
             writer=writer,
+            settings_overrides=overrides,
             argv=[
                 rst_file,
                 filename,
-                '--stylesheet=%s' % styles_odt,
             ]
         )
     except Exception as err:

@@ -253,7 +253,7 @@ class MainWindow(QtGui.QMainWindow):
         menu.addAction(saveAsAction)
         menu.addSeparator()
         menu.addAction(exportHTMLAction)
-        menu.addAction(exportODTAction)
+        # menu.addAction(exportODTAction)
         menu.addSeparator()
         menu.addAction(printPreviewAction)
         menu.addAction(printAction)

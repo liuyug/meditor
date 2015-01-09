@@ -75,7 +75,7 @@ class post_install_data(install_data.install_data):
                 'writers')
             dist_path = os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                'dist','docutils', 'writers')
+                'dist', 'docutils', 'writers')
             shutil.rmtree(dist_path)
             shutil.copytree(docutils_path,
                             dist_path,
@@ -141,11 +141,13 @@ setup(name=__app_name__.lower(),
       options={'py2exe': {
           'skip_archive': True,
           'includes': [
-              'pygments',
               'ConfigParser',
               'PyQt4.QtNetwork',
               'sip',
           ],
-          'packages': ['docutils'],
+          'packages': [
+              'docutils',
+              'pygments'
+          ],
       }}
       )
