@@ -330,4 +330,3 @@ class CodeViewer(Editor):
         self.setReadOnly(False)
         super(CodeViewer, self).setValue(text)
         self.setReadOnly(True)
-        self.setStyle('unknown.html')

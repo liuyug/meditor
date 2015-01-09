@@ -690,6 +690,7 @@ class MainWindow(QtGui.QMainWindow):
     def previewDisplay(self):
         self.webview.setHtml(self.previewHtml, self.previewPath)
         self.codeview.setValue(self.previewHtml)
+        self.codeview.setFileName(self.previewPath + '.html')
         dx = self.editor.getHScrollValue()
         dy = self.editor.getVScrollValue()
         editor_vmax = self.editor.getVScrollMaximum()
