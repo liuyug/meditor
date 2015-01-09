@@ -9,7 +9,7 @@ try:
     from rsteditor.scilexerrest import QsciLexerRest
 except Exception:
     print('[WARNING] Do not find c++ lexer, use python lexer')
-    from rsteditor.scilexerrestructedtext import QsciLexerRest
+    from rsteditor.scilexerrest2 import QsciLexerRest
 from rsteditor.util import toUtf8
 from rsteditor import __home_data_path__
 from rsteditor import globalvars
