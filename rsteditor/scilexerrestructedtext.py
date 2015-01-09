@@ -8,7 +8,7 @@ from rsteditor.util import toUtf8
 
 
 class QsciLexerRest(QsciLexerCustom):
-    keywords = [
+    keyword_list = [
         'attention',
         'caution',
         'danger',
@@ -154,7 +154,7 @@ class QsciLexerRest(QsciLexerCustom):
         ('in_substitution', r'''(\|\w.*?\w\|)'''),
         ('in_target',    r'''(_`\w.*?\w`)'''),
         ('in_reference', r'''(:\w+:`\w+`)'''),
-        ('in_directive', r'''^\.\. (%s)::''' % '|'.join(keywords)),
+        ('in_directive', r'''^\.\. (%s)::''' % '|'.join(keyword_list)),
         ('in_field',     r'''^:([^:]+?):(?!`)'''),
         ('in_unusedspace', r'''( +)\n'''),
     ]
