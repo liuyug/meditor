@@ -153,6 +153,13 @@ class Explorer(QtGui.QTreeWidget):
 
     def setRootPath(self, path, refresh=False):
         """ set exporer root path """
+        def dircmp(x, y):
+            x1 = 1 if os.path.isdir(os.path.join(self.root_path, x)) else 0
+            y1 = 1 if os.path.isdir(os.path.join(self.root_path, y)) else 0
+            if x1 == y1:
+                return cmp(x.lower(), y.lower())
+            return y1 - x1
+
         if not os.path.exists(path):
             return
         if not os.path.isdir(path):
@@ -167,7 +174,7 @@ class Explorer(QtGui.QTreeWidget):
         self.root_path = path
         os.chdir(path)
         self.root_item = self.addRoot(self.getDisplayName(self.root_path))
-        dirs = sorted(os.listdir(self.root_path))
+        dirs = sorted(os.listdir(self.root_path), cmp=dircmp)
         for d in dirs:
             if d.startswith('.'):
                 continue
