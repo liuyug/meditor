@@ -8,7 +8,7 @@ from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
 try:
     from rsteditor.scilexerrest import QsciLexerRest
 except Exception:
-    print('[WARNING] Do not find c++ lexer, use python lexer')
+    print('[WARNING] Do not find c++ lexer, use PYTHON rst lexer')
     from rsteditor.scilexerrest2 import QsciLexerRest
 from rsteditor.util import toUtf8
 from rsteditor import __home_data_path__
