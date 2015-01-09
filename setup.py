@@ -17,29 +17,27 @@ except:
 from rsteditor import __app_name__
 from rsteditor import __app_version__
 
-if sys.platform == 'win32':
-    build_ext_class = build_ext.build_ext
-else:
+try:
+    from PyQt4 import pyqtconfig
     import sipdistutils
     build_ext_class = sipdistutils.build_ext
+except:
+    build_ext_class = build_ext.build_ext
 
 class my_build_ext(build_ext_class):
     def run(self):
-        if sys.platform == 'win32':
-            print('Use Python-version REST lexer in windows.')
-        else:
+        try:
             build_ext_class.run(self)
+        except Exception as err:
+            print('Compile PyQt extension error: %s.' % err)
+            print('Use PYTHON rst lexer.')
 
     def _sip_compile(self, sip_bin, source, sbf):
-        if sys.platform == 'win32':
-            build_ext_class._sip_compile(self, sip_bin, source, sbf)
-        else:
-            from PyQt4 import pyqtconfig
-            cfg = pyqtconfig.Configuration()
-            self.spawn([sip_bin, "-I", cfg.pyqt_sip_dir] +
-                    cfg.pyqt_sip_flags.split(' ') +
-                    ["-c", self.build_temp, "-b", sbf, source]
-                    )
+        cfg = pyqtconfig.Configuration()
+        self.spawn([sip_bin, "-I", cfg.pyqt_sip_dir] +
+                cfg.pyqt_sip_flags.split(' ') +
+                ["-c", self.build_temp, "-b", sbf, source]
+                )
 
 
 class post_install_scripts(install_scripts.install_scripts):
