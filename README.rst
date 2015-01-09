@@ -3,7 +3,7 @@ RSTEditor
 =========
 |version| |download|
 
-RSTEditor is a editor for ReStructedText. It support preview with html.
+RSTEditor is a editor for reStructuredText It support preview with html.
 
 .. tip::
 
@@ -28,13 +28,13 @@ For ubuntu::
 
 Feature
 =======
-+ Syntax Highlight for ReStructedText
++ Syntax Highlight for reStructuredText
 + HTML Preview
 + Customized rst properties
 + Synchronize scroll with preview window
 + File system explorer
 + Customized widnow layout
-+ ReStructedText Template to reduce extra work
++ reStructuredText Template to reduce extra work
 + Customized HTML css
 
 HTML theme

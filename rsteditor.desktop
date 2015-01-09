@@ -2,7 +2,7 @@
 [Desktop Entry]
 Version=1.0
 Name=RSTEditor
-Comment=ReStructedText Editor
+Comment=reStructuredText Editor
 Exec=rsteditor
 MimeType=text/plain;
 Icon=accessories-text-editor
