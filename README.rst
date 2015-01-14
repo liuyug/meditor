@@ -81,6 +81,12 @@ or install it in user directory::
 
     pip install rsteditor-qt --user
 
+in Window:
+
+Please download win32_ installer file.
+
+.. _win32: https://sourceforge.net/projects/rsteditor/files/latest/download?source=files
+
 Template
 ========
 template::
