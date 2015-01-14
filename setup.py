@@ -68,18 +68,24 @@ class post_install_data(install_data.install_data):
     def run(self):
         install_data.install_data.run(self)
         if sys.platform == 'win32':
+            dist_path = os.path.join(
+                os.path.realpath(os.path.dirname(__file__)),
+                'dist')
             import docutils
             import shutil
-            docutils_path = os.path.join(
-                os.path.dirname(docutils.__file__),
-                'writers')
-            dist_path = os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                'dist', 'docutils', 'writers')
-            shutil.rmtree(dist_path)
-            shutil.copytree(docutils_path,
-                            dist_path,
+            docutils_path = os.path.dirname(docutils.__file__)
+            shutil.rmtree(os.path.join(dist_path, 'docutils', 'writers'))
+            shutil.copytree(os.path.join(docutils_path, 'writers'),
+                            os.path.join(dist_path, 'docutils', 'writers'),
                             ignore=shutil.ignore_patterns('*.py'))
+            import PyQt4
+            pyqt_path = os.path.join(os.path.dirname(PyQt4.__file__))
+            if os.path.exists(os.path.join(dist_path, 'imageformats')):
+                shutil.rmtree(os.path.join(dist_path, 'imageformats'))
+            shutil.copytree(
+                os.path.join(pyqt_path, 'plugins', 'imageformats'),
+                os.path.join(dist_path, 'imageformats')
+            )
         else:
             print('running update-desktop-database')
             call('update-desktop-database')
@@ -108,6 +114,7 @@ setup(name=__app_name__.lower(),
               'rst.properties',
           ]),
           ('share/applications', ['rsteditor.desktop']),
+          ('share/pixmaps', glob.glob('pixmaps/*.*')),
           ('share/%s/template' % __app_name__.lower(), glob.glob('template/*.*')),
           ('share/%s/themes' % __app_name__.lower(), glob.glob('themes/*.*')),
           ('share/%s/docs' % __app_name__.lower(), glob.glob('docs/*.rst')),

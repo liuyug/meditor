@@ -16,6 +16,7 @@ from rsteditor import __app_name__
 from rsteditor import __app_version__
 from rsteditor import __default_filename__
 from rsteditor import __data_path__
+from rsteditor import __icon_path__
 from rsteditor import __home_data_path__
 from rsteditor import editor
 from rsteditor import webview
@@ -80,7 +81,9 @@ class MainWindow(QtGui.QMainWindow):
             'config'
         )
         # No support fromTheme function in Qt4.6
-        # self.setWindowIcon(QtGui.QIcon.fromTheme("accessories-text-editor"))
+        icon_path = os.path.join(__icon_path__, 'rsteditor-text-editor.ico')
+        logging.debug('icon path: %s' % __icon_path__)
+        self.setWindowIcon(QtGui.QIcon(icon_path))
         # status bar
         self.statusBar().showMessage(self.tr('Ready'))
         # action

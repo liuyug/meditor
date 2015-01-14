@@ -5,6 +5,7 @@ include docs
 include template
 include *.properties
 include *.png
+include *.ico
 include *.desktop
 include rsteditor/*.h
 include rsteditor/*.cpp

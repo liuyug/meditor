@@ -5,9 +5,15 @@ __app_name__ = 'RSTEditor'
 __app_version__ = '0.1.7.1'
 __default_filename__ = 'unknown.rst'
 
+__icon_path__ = os.path.join(sys.prefix, 'share', 'pixmaps')
+if sys.platform == 'win32':
+    __icon_path__ = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                 'share',
+                                 'pixmaps')
+
 __data_path__ = os.path.join(sys.prefix, 'share', __app_name__.lower())
 if sys.platform == 'win32':
-    __data_path__ = os.path.join(os.path.dirname(__file__),
+    __data_path__ = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                  'share',
                                  __app_name__.lower())
 else:

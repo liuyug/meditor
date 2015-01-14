@@ -98,3 +98,10 @@ Screen Shot
 .. |download| image:: https://img.shields.io/pypi/dm/rsteditor.png
    :target: https://pypi.python.org/pypi/rsteditor
    :alt: Downloads
+
+Other
+======
+Iconset: `NuoveXT 2`_ Icons by Saki
+
+
+.. _`NuoveXT 2`: http://www.iconarchive.com/show/nuoveXT-2-icons-by-saki.2.html
