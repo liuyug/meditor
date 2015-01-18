@@ -9,6 +9,10 @@ from subprocess import call
 from distutils.core import setup, Extension
 from distutils.command import install_scripts, install_data, build_ext
 
+import PyQt4
+
+pyqt_path = os.path.dirname(PyQt4.__file__)
+
 try:
     import py2exe
 except:
@@ -18,7 +22,6 @@ from rsteditor import __app_name__
 from rsteditor import __app_version__
 
 try:
-    from PyQt4 import pyqtconfig
     import sipdistutils
     build_ext_class = sipdistutils.build_ext
 except:
@@ -33,11 +36,24 @@ class my_build_ext(build_ext_class):
             print('Use PYTHON rst lexer.')
 
     def _sip_compile(self, sip_bin, source, sbf):
-        cfg = pyqtconfig.Configuration()
-        self.spawn([sip_bin, "-I", cfg.pyqt_sip_dir] +
-                cfg.pyqt_sip_flags.split(' ') +
-                ["-c", self.build_temp, "-b", sbf, source]
-                )
+        sip_dir = ''
+        sip_flags = ''
+        try:
+            from PyQt4 import pyqtconfig
+            cfg = pyqtconfig.Configuration()
+            sip_dir = cfg.pyqt_sip_dir
+            sip_flags = cfg.pyqt_sip_flags
+        except:
+            from PyQt4.QtCore import PYQT_CONFIGURATION
+            sip_dir = os.path.join(pyqt_path, 'sip', 'PyQt4')
+            sip_flags = PYQT_CONFIGURATION.get('sip_flags', '')
+        sip_dirs = []
+        sip_dirs += ['-I', sip_dir]
+        self.spawn([sip_bin] +
+                   sip_dirs +
+                   sip_flags.split(' ') +
+                   ["-c", self.build_temp, "-b", sbf, source]
+                   )
 
 
 class post_install_scripts(install_scripts.install_scripts):
@@ -78,8 +94,6 @@ class post_install_data(install_data.install_data):
             shutil.copytree(os.path.join(docutils_path, 'writers'),
                             os.path.join(dist_path, 'docutils', 'writers'),
                             ignore=shutil.ignore_patterns('*.py'))
-            import PyQt4
-            pyqt_path = os.path.join(os.path.dirname(PyQt4.__file__))
             if os.path.exists(os.path.join(dist_path, 'imageformats')):
                 shutil.rmtree(os.path.join(dist_path, 'imageformats'))
             shutil.copytree(
@@ -132,6 +146,9 @@ setup(name=__app_name__.lower(),
                         '/usr/include/qt4',
                         '/usr/include/qt4/QtCore',
                         '/usr/include/qt4/QtGui',
+                        os.path.join(pyqt_path, 'include'),
+                        os.path.join(pyqt_path, 'include', 'QtCore'),
+                        os.path.join(pyqt_path, 'include', 'QtGui'),
                         'rsteditor',
                     ],
                     #library_dirs=[''],
