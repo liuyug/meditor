@@ -11,6 +11,7 @@ import threading
 from functools import partial
 
 from PyQt4 import QtGui, QtCore
+from pygments.formatters import get_formatter_by_name
 
 from rsteditor import __app_name__
 from rsteditor import __app_version__
@@ -18,6 +19,7 @@ from rsteditor import __default_filename__
 from rsteditor import __data_path__
 from rsteditor import __icon_path__
 from rsteditor import __home_data_path__
+from rsteditor import pygments_styles
 from rsteditor import editor
 from rsteditor import webview
 from rsteditor import explorer
@@ -50,7 +52,8 @@ def previewWorker(self):
         self.previewHtml = ''
         if ext in ['.rst', '.rest', '.txt']:
             self.previewHtml = output.rst2htmlcode(self.previewText,
-                                                   theme=self.theme)
+                                                   theme=self.theme,
+                                                   pygments=self.pygments)
         elif ext in ['.htm', '.html', '.php', '.asp']:
             self.previewHtml = toUtf8(self.previewText)
         else:
@@ -62,6 +65,7 @@ def previewWorker(self):
 
 class MainWindow(QtGui.QMainWindow):
     theme = 'docutils'
+    pygments = 'docutils'
     previewText = ''
     previewHtml = ''
     previewPath = None
@@ -238,6 +242,33 @@ class MainWindow(QtGui.QMainWindow):
             theme = toUtf8(act.text())
             if theme_name == theme:
                 act.setChecked(True)
+                break
+        # code style
+        docutils_codeStyleAction = QtGui.QAction('docutilsSyle',
+                                           self,
+                                           checkable=True)
+        docutils_codeStyleAction.triggered.connect(partial(self.onCodeStyleChanged,
+                                                   'docutils'))
+        codeStyleGroup = QtGui.QActionGroup(self)
+        codeStyleGroup.setExclusive(True)
+        codeStyleGroup.addAction(docutils_codeStyleAction)
+        for k, v in pygments_styles.items():
+                act = QtGui.QAction(v,
+                                    self,
+                                    checkable=True)
+                act.triggered.connect(partial(self.onCodeStyleChanged, k))
+                codeStyleGroup.addAction(act)
+        value = toUtf8(settings.value('pygments', 'docutils').toString())
+        settings.setValue('pygments', value)
+        self.pygments = value
+        if self.pygments == 'docutils':
+            docutils_codeStyleAction.setChecked(True)
+        else:
+            for act in codeStyleGroup.actions():
+                pygments_desc = toUtf8(act.text())
+                if pygments_desc == pygments_styles[value]:
+                    act.setChecked(True)
+                    break
         ## help
         helpAction = QtGui.QAction(self.tr('&Help'), self)
         helpAction.triggered.connect(self.onHelp)
@@ -296,6 +327,10 @@ class MainWindow(QtGui.QMainWindow):
         menu.addSeparator()
         menu.addAction(docutils_cssAction)
         for act in themeGroup.actions():
+            menu.addAction(act)
+        menu = menubar.addMenu(self.tr('P&ygments'))
+        menu.addAction(docutils_codeStyleAction)
+        for act in codeStyleGroup.actions():
             menu.addAction(act)
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
@@ -603,6 +638,19 @@ class MainWindow(QtGui.QMainWindow):
         self.previewCurrentText()
         return
 
+    def onCodeStyleChanged(self, label, checked):
+        self.pygments = label
+        self.settings.setValue('pygments', self.pygments)
+        pygments_style_path = os.path.join(__home_data_path__,
+                                           'themes',
+                                           'pygments.css')
+        with open(pygments_style_path, 'wb') as f:
+            if self.pygments != 'docutils':
+                formatter = get_formatter_by_name('html', style=self.pygments)
+                f.write(formatter.get_style_defs('pre.code'))
+        self.previewCurrentText()
+        return
+
     def onHelp(self):
         help_path = os.path.join(__home_data_path__, 'docs', 'demo.rst')
         if sys.platform == 'win32' and self.app_exec.endswith('.py'):
@@ -771,7 +819,11 @@ def main():
     parser.add_argument('rstfile', nargs='?', help='rest file')
     args = parser.parse_args()
     globalvars.logging_level = logging.WARNING - (args.verbose * 10)
-    logging.basicConfig(format='[%(levelname)s] %(message)s',
+    if globalvars.logging_level <= logging.DEBUG:
+        formatter = '[%(levelname)s] [%(funcName)s %(lineno)d] %(message)s'
+    else:
+        formatter = '[%(levelname)s] %(message)s'
+    logging.basicConfig(format=formatter,
                         level=globalvars.logging_level)
     if sys.platform == 'win32':
         sys.stderr = sys.stdout

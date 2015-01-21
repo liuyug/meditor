@@ -2,7 +2,7 @@ import sys
 import os.path
 
 __app_name__ = 'RSTEditor'
-__app_version__ = '0.1.7.1'
+__app_version__ = '0.1.7.2'
 __default_filename__ = 'unknown.rst'
 
 __icon_path__ = os.path.join(sys.prefix, 'share', 'pixmaps')
@@ -25,3 +25,10 @@ else:
 __home_data_path__ = os.path.join(os.path.expanduser('~'),
                                   '.config',
                                   __app_name__.lower())
+pygments_styles = {}
+try:
+    from pygments import styles
+    for k, v in styles.STYLE_MAP.items():
+        pygments_styles[k] = v.split('::')[1]
+except:
+    pass

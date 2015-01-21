@@ -51,7 +51,7 @@ HTML theme
 Support parameter:
 
 + stylesheet_path
-+ syntax-highlight
++ syntax_highlight
 + template
 
 theme.json under rhythm.css::
