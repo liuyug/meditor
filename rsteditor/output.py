@@ -21,13 +21,15 @@ default_overrides = {
 }
 
 def get_theme_settings(theme, pygments):
+    html4css1_path = os.path.realpath(os.path.dirname(html4css1.__file__))
     stylesheet = {}
+    stylesheet['stylesheet_dirs'] = [html4css1_path]
+    stylesheet['template'] = os.path.join(html4css1_path, 'template.txt')
     pygments_path = os.path.join(__home_data_path__, 'themes', 'pygments.css')
     if os.path.exists(pygments_path):
         stylesheet['stylesheet_path'] = pygments_path
         stylesheet['syntax_highlight'] = 'short'
     if theme == 'docutils':
-        html4css1_path = os.path.dirname(html4css1.__file__)
         css_paths = []
         css_paths.append(os.path.join(html4css1_path, 'html4css1.css'))
         css_paths += stylesheet['stylesheet_path'].split(',')
@@ -57,6 +59,7 @@ def get_theme_settings(theme, pygments):
             logging.debug('css path: %s' % new_css_path)
         if 'stylesheet_path' in stylesheet:
             new_css_paths += stylesheet['stylesheet_path'].split(',')
+        stylesheet['stylesheet_dirs'].insert(0, os.path.dirname(new_css_paths[0]))
         stylesheet['stylesheet_path']=','.join(new_css_paths)
     if 'template' in styles:
         old_path = styles['template']
