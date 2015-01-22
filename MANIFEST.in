@@ -1,6 +1,7 @@
 include *.rst
 include *.in
 include *.py
+include *.sh
 include docs
 include template
 include *.properties
