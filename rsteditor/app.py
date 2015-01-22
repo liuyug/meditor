@@ -214,6 +214,7 @@ class MainWindow(QtGui.QMainWindow):
         settings.setValue('preview/sync', value)
         previewsyncAction.setChecked(value)
         # theme
+        # docutils theme
         docutils_cssAction = QtGui.QAction('docutils theme',
                                            self,
                                            checkable=True)
@@ -324,14 +325,16 @@ class MainWindow(QtGui.QMainWindow):
         menu.addAction(previewsaveAction)
         menu.addAction(previewinputAction)
         menu.addAction(previewsyncAction)
-        menu.addSeparator()
-        menu.addAction(docutils_cssAction)
+        menu = menubar.addMenu(self.tr('&Theme'))
+        submenu = QtGui.QMenu(self.tr('&Docutils'), menu);
         for act in themeGroup.actions():
-            menu.addAction(act)
-        menu = menubar.addMenu(self.tr('P&ygments'))
-        menu.addAction(docutils_codeStyleAction)
+            submenu.addAction(act)
+        menu.addMenu(submenu)
+        menu.addSeparator()
+        submenu = QtGui.QMenu(self.tr('&Pygments'), menu);
         for act in codeStyleGroup.actions():
-            menu.addAction(act)
+            submenu.addAction(act)
+        menu.addMenu(submenu)
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
         menu.addSeparator()
