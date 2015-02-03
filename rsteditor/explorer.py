@@ -171,7 +171,7 @@ class Explorer(QtGui.QTreeWidget):
             if drive[:2] == path[:2]:
                 act.setChecked(True)
         self.clear()
-        self.root_path = path
+        self.root_path = os.path.realpath(path)
         os.chdir(path)
         self.root_item = self.addRoot(self.getDisplayName(self.root_path))
         dirs = sorted(os.listdir(self.root_path), cmp=dircmp)
