@@ -4,6 +4,7 @@ import os.path
 import sys
 import shutil
 import logging
+from unicodedata import east_asian_width
 from functools import partial
 
 from PyQt5 import QtCore, QtWidgets
@@ -186,10 +187,14 @@ class Explorer(QtWidgets.QTreeWidget):
         client_width = self.width() - 32
         char_width = self.fontMetrics().width(' ')
         disp_char_num = int(client_width / char_width) - 1
-        if (len(name) - 3) > disp_char_num:
-            display_name = '<<<%s' % name[-disp_char_num + 3:]
+        full_char = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ'
+        w = sum(east_asian_width(x) == 'W' or x in full_char for x in name)
+        char_length = len(name) + w
+        if (char_length - 3) > disp_char_num:
+            display_name = '<<<%s' % name[-disp_char_num + 4:]
         else:
             display_name = name
+        print(char_length, disp_char_num, name, display_name)
         return display_name
 
     def getRootPath(self):
@@ -211,10 +216,10 @@ class Explorer(QtWidgets.QTreeWidget):
         if not os.path.exists(path):
             return False
         ret = QtWidgets.QMessageBox.question(self,
-                                         self.tr('Delete'),
-                                         self.tr('Do you want to delete "%1"?').arg(filename),
-                                         QtWidgets.QMessageBox.Yes,
-                                         QtWidgets.QMessageBox.No)
+                                             self.tr('Delete'),
+                                             self.tr('Do you want to delete "%1"?').arg(filename),
+                                             QtWidgets.QMessageBox.Yes,
+                                             QtWidgets.QMessageBox.No)
         if ret == QtWidgets.QMessageBox.Yes:
             try:
                 if os.path.isdir(path):
@@ -230,17 +235,17 @@ class Explorer(QtWidgets.QTreeWidget):
         return False
 
     def newDirectory(self):
-        text, ok = QtWdigets.QInputDialog.getText(self,
-                                              self.tr('New directory'),
-                                              self.tr('Please input name:'))
+        text, ok = QtWidgets.QInputDialog.getText(self,
+                                                  self.tr('New directory'),
+                                                  self.tr('Please input name:'))
         if ok:
             filename = toUtf8(text)
             path = os.path.join(self.root_path, filename)
             if os.path.exists(path):
                 QtWidgets.QMessageBox.warning(self,
-                                          self.tr('File exists'),
-                                          self.tr('File "%1" has existed!').arg(filename)
-                                          )
+                                              self.tr('File exists'),
+                                              self.tr('File "%1" has existed!').arg(filename)
+                                              )
             else:
                 os.mkdir(path)
                 return filename
@@ -251,18 +256,18 @@ class Explorer(QtWidgets.QTreeWidget):
         if not os.path.exists(path):
             return False
         text, ok = QtWidgets.QInputDialog.getText(self,
-                                              self.tr('Rename'),
-                                              self.tr('Please input new name:'),
-                                              QtWidgets.QLineEdit.Normal,
-                                              filename)
+                                                  self.tr('Rename'),
+                                                  self.tr('Please input new name:'),
+                                                  QtWidgets.QLineEdit.Normal,
+                                                  filename)
         if ok:
             newname = toUtf8(text)
             newpath = os.path.join(self.root_path, newname)
             if os.path.exists(newpath):
                 QtWidgets.QMessageBox.warning(self,
-                                          self.tr('File exists'),
-                                          self.tr('File "%1" has existed!').arg(newname)
-                                          )
+                                              self.tr('File exists'),
+                                              self.tr('File "%1" has existed!').arg(newname)
+                                              )
             else:
                 os.rename(path, newpath)
                 if os.path.isfile(newpath):
