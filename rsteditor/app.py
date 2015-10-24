@@ -452,6 +452,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onSave(self):
         filename = self.editor.getFileName()
+        if isinstance(filename, tuple):
+            filename = filename[0]
         if filename == __default_filename__:
             self.onSaveAs()
         else:
@@ -470,6 +472,8 @@ class MainWindow(QtWidgets.QMainWindow):
             "RST files (*.rst *.rest);;"
             "Text files (*.txt)",
         )
+        if isinstance(filename, tuple):
+            filename = filename[0]
         if filename:
             filename = toUtf8(filename)
             self.editor.writeFile(filename)
@@ -490,6 +494,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.explorer.getRootPath(),
                 "HTML files (*.html *.htm)",
             )
+            if isinstance(filename, tuple):
+                filename = filename[0]
             if filename:
                 filename = toUtf8(filename)
                 ext = os.path.splitext(filename)[1].lower()
