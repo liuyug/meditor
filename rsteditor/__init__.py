@@ -2,7 +2,7 @@ import sys
 import os.path
 
 __app_name__ = 'RSTEditor'
-__app_version__ = '0.1.7.3'
+__app_version__ = '0.2.0.0'
 __default_filename__ = 'unknown.rst'
 
 __icon_path__ = os.path.join(sys.prefix, 'share', 'pixmaps')
