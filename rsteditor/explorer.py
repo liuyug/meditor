@@ -194,7 +194,6 @@ class Explorer(QtWidgets.QTreeWidget):
             display_name = '<<<%s' % name[-disp_char_num + 4:]
         else:
             display_name = name
-        print(char_length, disp_char_num, name, display_name)
         return display_name
 
     def getRootPath(self):
