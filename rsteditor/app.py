@@ -10,7 +10,7 @@ import argparse
 import threading
 from functools import partial
 
-from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from pygments.formatters import get_formatter_by_name
 
 from rsteditor import __app_name__
@@ -513,14 +513,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 output.rst2odt(self.editor.getFileName(), filename)
 
     def onPrintPreview(self):
-        printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
-        preview = QtGui.QPrintPreviewDialog(printer, self.webview)
+        printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
+        preview = QtPrintSupport.QPrintPreviewDialog(printer, self.webview)
         preview.paintRequested.connect(self.webview.printPreview)
         preview.exec_()
 
     def onPrint(self):
-        printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
-        printDialog = QtWidgets.QPrintDialog(printer, self.webview)
+        printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
+        printDialog = QtPrintSupport.QPrintDialog(printer, self.webview)
         if printDialog.exec_() == QtWidgets.QDialog.Accepted:
             self.webview.print_(printer)
 
