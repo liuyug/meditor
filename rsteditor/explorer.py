@@ -6,13 +6,12 @@ import shutil
 import logging
 from functools import partial
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtCore, QtWidgets
 
 from rsteditor.util import toUtf8
 
 
-class Explorer(QtGui.QTreeWidget):
+class Explorer(QtWidgets.QTreeWidget):
     fileLoaded = QtCore.pyqtSignal('QString')
     pathLoaded = QtCore.pyqtSignal('QString')
     fileDeleted = QtCore.pyqtSignal('QString')
@@ -24,31 +23,31 @@ class Explorer(QtGui.QTreeWidget):
         self.header().close()
         self.root_path = None
         self.root_item = None
-        self.qstyle = QtGui.QStyleFactory.create('cleanlooks')
+        self.qstyle = QtWidgets.QStyleFactory.create('windows')
         self.setRootIsDecorated(False)
         self.setItemsExpandable(False)
         self.itemActivated.connect(self.onItemActivated)
         self.pathLoaded.connect(self.onPathLoaded)
         # popup menu
-        newAction = QtGui.QAction(self.tr('&New'), self)
+        newAction = QtWidgets.QAction(self.tr('&New'), self)
         newAction.triggered.connect(self.onNewFile)
-        newdirectoryAction = QtGui.QAction(self.tr('New &directory'), self)
+        newdirectoryAction = QtWidgets.QAction(self.tr('New &directory'), self)
         newdirectoryAction.triggered.connect(self.onNewDirectory)
-        self.renameAction = QtGui.QAction(self.tr('&Rename...'), self)
+        self.renameAction = QtWidgets.QAction(self.tr('&Rename...'), self)
         self.renameAction.triggered.connect(self.onRename)
-        self.deleteAction = QtGui.QAction(self.tr('Delete'), self)
+        self.deleteAction = QtWidgets.QAction(self.tr('Delete'), self)
         self.deleteAction.triggered.connect(self.onDelete)
-        refreshAction = QtGui.QAction(self.tr('Refresh'), self)
+        refreshAction = QtWidgets.QAction(self.tr('Refresh'), self)
         refreshAction.triggered.connect(self.onRefresh)
         drivers_path = self.getDrivesPath()
-        self.driveGroup = QtGui.QActionGroup(self)
+        self.driveGroup = QtWidgets.QActionGroup(self)
         for drive_path in drivers_path:
-            act = QtGui.QAction(drive_path,
+            act = QtWidgets.QAction(drive_path,
                                 self,
                                 checkable=True)
             act.triggered.connect(partial(self.onDriveChanged, drive_path))
             self.driveGroup.addAction(act)
-        self.popupMenu = QtGui.QMenu(self)
+        self.popupMenu = QtWidgets.QMenu(self)
         self.popupMenu.addAction(newAction)
         self.popupMenu.addAction(newdirectoryAction)
         self.popupMenu.addSeparator()
@@ -134,21 +133,21 @@ class Explorer(QtGui.QTreeWidget):
         self.setRootPath(drive)
 
     def addRoot(self, name):
-        root = QtGui.QTreeWidgetItem(self)
+        root = QtWidgets.QTreeWidgetItem(self)
         root.setText(0, self.getDisplayName(name))
-        root.setIcon(0, self.qstyle.standardIcon(QtGui.QStyle.SP_DirOpenIcon))
+        root.setIcon(0, self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirOpenIcon))
         return root
 
     def appendItem(self, rootitem, name):
         if not rootitem:
             raise Exception('Add root item firstly!')
-        child = QtGui.QTreeWidgetItem(rootitem)
+        child = QtWidgets.QTreeWidgetItem(rootitem)
         child.setText(0, name)
         path = os.path.join(self.root_path, name)
         if os.path.isdir(path):
-            child.setIcon(0, self.qstyle.standardIcon(QtGui.QStyle.SP_DirIcon))
+            child.setIcon(0, self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirIcon))
         else:
-            child.setIcon(0, self.qstyle.standardIcon(QtGui.QStyle.SP_FileIcon))
+            child.setIcon(0, self.qstyle.standardIcon(QtWidgets.QStyle.SP_FileIcon))
         return child
 
     def setRootPath(self, path, refresh=False):
@@ -174,7 +173,7 @@ class Explorer(QtGui.QTreeWidget):
         self.root_path = os.path.realpath(path)
         os.chdir(path)
         self.root_item = self.addRoot(self.getDisplayName(self.root_path))
-        dirs = sorted(os.listdir(self.root_path), cmp=dircmp)
+        dirs = sorted(os.listdir(self.root_path), key=lambda x: x.lower())
         for d in dirs:
             if d.startswith('.'):
                 continue
@@ -185,7 +184,7 @@ class Explorer(QtGui.QTreeWidget):
         """ directory display name """
         client_width = self.width() - 32
         char_width = self.fontMetrics().width(' ')
-        disp_char_num = client_width / char_width - 1
+        disp_char_num = int(client_width / char_width) - 1
         if (len(name) - 3) > disp_char_num:
             display_name = '<<<%s' % name[-disp_char_num + 3:]
         else:
@@ -210,12 +209,12 @@ class Explorer(QtGui.QTreeWidget):
         path = os.path.join(self.root_path, filename)
         if not os.path.exists(path):
             return False
-        ret = QtGui.QMessageBox.question(self,
+        ret = QtWidgets.QMessageBox.question(self,
                                          self.tr('Delete'),
                                          self.tr('Do you want to delete "%1"?').arg(filename),
-                                         QtGui.QMessageBox.Yes,
-                                         QtGui.QMessageBox.No)
-        if ret == QtGui.QMessageBox.Yes:
+                                         QtWidgets.QMessageBox.Yes,
+                                         QtWidgets.QMessageBox.No)
+        if ret == QtWidgets.QMessageBox.Yes:
             try:
                 if os.path.isdir(path):
                     shutil.rmtree(path)
@@ -224,20 +223,20 @@ class Explorer(QtGui.QTreeWidget):
                     self.fileDeleted.emit(path)
                 return True
             except OSError as err:
-                QtGui.QMessageBox.critical(self,
+                QtWidgets.QMessageBox.critical(self,
                                            self.tr('Error'),
                                            err)
         return False
 
     def newDirectory(self):
-        text, ok = QtGui.QInputDialog.getText(self,
+        text, ok = QtWdigets.QInputDialog.getText(self,
                                               self.tr('New directory'),
                                               self.tr('Please input name:'))
         if ok:
             filename = toUtf8(text)
             path = os.path.join(self.root_path, filename)
             if os.path.exists(path):
-                QtGui.QMessageBox.warning(self,
+                QtWidgets.QMessageBox.warning(self,
                                           self.tr('File exists'),
                                           self.tr('File "%1" has existed!').arg(filename)
                                           )
@@ -250,16 +249,16 @@ class Explorer(QtGui.QTreeWidget):
         path = os.path.join(self.root_path, filename)
         if not os.path.exists(path):
             return False
-        text, ok = QtGui.QInputDialog.getText(self,
+        text, ok = QtWidgets.QInputDialog.getText(self,
                                               self.tr('Rename'),
                                               self.tr('Please input new name:'),
-                                              QtGui.QLineEdit.Normal,
+                                              QtWidgets.QLineEdit.Normal,
                                               filename)
         if ok:
             newname = toUtf8(text)
             newpath = os.path.join(self.root_path, newname)
             if os.path.exists(newpath):
-                QtGui.QMessageBox.warning(self,
+                QtWidgets.QMessageBox.warning(self,
                                           self.tr('File exists'),
                                           self.tr('File "%1" has existed!').arg(newname)
                                           )

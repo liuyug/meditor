@@ -2,9 +2,9 @@
 import os.path
 import logging
 
-from PyQt4 import QtGui, QtCore
-from PyQt4.Qsci import QsciScintilla
-from PyQt4.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
+from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5.Qsci import QsciScintilla
+from PyQt5.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
 try:
     from rsteditor.scilexerrest import QsciLexerRest
 except Exception:
@@ -15,44 +15,44 @@ from rsteditor import __home_data_path__
 from rsteditor import globalvars
 
 
-class FindDialog(QtGui.QDialog):
+class FindDialog(QtWidgets.QDialog):
     findNext = QtCore.pyqtSignal(str, int)
     findPrevious = QtCore.pyqtSignal(str, int)
 
     def __init__(self, *args, **kwargs):
         super(FindDialog, self).__init__(*args, **kwargs)
-        label = QtGui.QLabel(self.tr('&Search for:'))
-        self.lineEdit = QtGui.QLineEdit()
+        label = QtWidgets.QLabel(self.tr('&Search for:'))
+        self.lineEdit = QtWidgets.QLineEdit()
         label.setBuddy(self.lineEdit)
 
-        self.wholewordCheckBox = QtGui.QCheckBox(self.tr('Match &whole word'))
-        self.caseCheckBox = QtGui.QCheckBox(self.tr('&Match case'))
+        self.wholewordCheckBox = QtWidgets.QCheckBox(self.tr('Match &whole word'))
+        self.caseCheckBox = QtWidgets.QCheckBox(self.tr('&Match case'))
 
-        self.findButton = QtGui.QPushButton(self.tr("&Find"))
+        self.findButton = QtWidgets.QPushButton(self.tr("&Find"))
         self.findButton.setDefault(True)
         self.findButton.setEnabled(False)
 
-        closeButton = QtGui.QPushButton(self.tr('&Close'))
+        closeButton = QtWidgets.QPushButton(self.tr('&Close'))
 
         self.lineEdit.textChanged.connect(self.enableFindButton)
         self.findButton.clicked.connect(self.findClicked)
         closeButton.clicked.connect(self.close)
 
-        topLeftLayout = QtGui.QHBoxLayout()
+        topLeftLayout = QtWidgets.QHBoxLayout()
         topLeftLayout.addWidget(label)
         topLeftLayout.addWidget(self.lineEdit)
 
-        leftLayout = QtGui.QVBoxLayout()
+        leftLayout = QtWidgets.QVBoxLayout()
         leftLayout.addLayout(topLeftLayout)
         leftLayout.addWidget(self.caseCheckBox)
         leftLayout.addWidget(self.wholewordCheckBox)
 
-        rightLayout = QtGui.QVBoxLayout()
+        rightLayout = QtWidgets.QVBoxLayout()
         rightLayout.addWidget(self.findButton)
         rightLayout.addWidget(closeButton)
         rightLayout.addStretch()
 
-        mainLayout = QtGui.QHBoxLayout()
+        mainLayout = QtWidgets.QHBoxLayout()
         mainLayout.addLayout(leftLayout)
         mainLayout.addLayout(rightLayout)
         self.setLayout(mainLayout)
@@ -201,7 +201,7 @@ class Editor(QsciScintilla):
             action(line)
 
     def readFile(self, filename):
-        with open(filename, 'rU') as f:
+        with open(filename, 'rU', encoding='utf8') as f:
             text = f.read()
             self.setValue(text)
             self.setFileName(filename)
@@ -241,7 +241,7 @@ class Editor(QsciScintilla):
             True,   # forward
         )
         if not bfind:
-            QtGui.QMessageBox.information(
+            QtWidgets.QMessageBox.information(
                 self,
                 self.tr('Find'),
                 self.tr('Not found "%1"').arg(self.find_text),
@@ -260,7 +260,7 @@ class Editor(QsciScintilla):
             line, index
         )
         if not bfind:
-            QtGui.QMessageBox.information(
+            QtWidgets.QMessageBox.information(
                 self,
                 self.tr('Find'),
                 self.tr('Not found "%1"').arg(self.find_text),
@@ -280,7 +280,7 @@ class Editor(QsciScintilla):
             line, index
         )
         if not bfind:
-            QtGui.QMessageBox.information(
+            QtWidgets.QMessageBox.information(
                 self,
                 self.tr('Find'),
                 self.tr('Not found "%1"').arg(self.find_text),
