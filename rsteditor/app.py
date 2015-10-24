@@ -423,7 +423,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 'template',
                                 'skeleton%s' % ext)
         if os.path.exists(skeleton):
-            with open(skeleton, 'r') as f:
+            with open(skeleton, 'r', encoding='utf-8') as f:
                 text = f.read()
         self.editor.setValue(text)
         self.editor.setFileName(filename)
