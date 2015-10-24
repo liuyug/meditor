@@ -216,7 +216,7 @@ class Explorer(QtWidgets.QTreeWidget):
             return False
         ret = QtWidgets.QMessageBox.question(self,
                                              self.tr('Delete'),
-                                             self.tr('Do you want to delete "%1"?').arg(filename),
+                                             self.tr('Do you want to delete "%s"?') % (filename),
                                              QtWidgets.QMessageBox.Yes,
                                              QtWidgets.QMessageBox.No)
         if ret == QtWidgets.QMessageBox.Yes:
@@ -243,7 +243,7 @@ class Explorer(QtWidgets.QTreeWidget):
             if os.path.exists(path):
                 QtWidgets.QMessageBox.warning(self,
                                               self.tr('File exists'),
-                                              self.tr('File "%1" has existed!').arg(filename)
+                                              self.tr('File "%s" has existed!') % (filename)
                                               )
             else:
                 os.mkdir(path)
@@ -265,7 +265,7 @@ class Explorer(QtWidgets.QTreeWidget):
             if os.path.exists(newpath):
                 QtWidgets.QMessageBox.warning(self,
                                               self.tr('File exists'),
-                                              self.tr('File "%1" has existed!').arg(newname)
+                                              self.tr('File "%s" has existed!') % (newname)
                                               )
             else:
                 os.rename(path, newpath)

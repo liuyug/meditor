@@ -673,11 +673,11 @@ class MainWindow(QtWidgets.QMainWindow):
         return
 
     def onAbout(self):
-        title = self.tr('About %1').arg(__app_name__)
-        text = self.tr("%1 %2\n\nThe editor for reStructuredText\n\n"
-                       ).arg(__app_name__).arg(__app_version__)
-        text += self.tr('Platform: %1\n').arg(sys.platform)
-        text += self.tr('Configuration path: %1\n').arg(__home_data_path__)
+        title = self.tr('About %s') % (__app_name__)
+        text = self.tr("%s %s\n\nThe editor for reStructuredText\n\n"
+                       ) % (__app_name__, __app_version__)
+        text += self.tr('Platform: %s\n') % (sys.platform)
+        text += self.tr('Configuration path: %s\n') % (__home_data_path__)
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
