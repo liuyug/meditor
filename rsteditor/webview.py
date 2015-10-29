@@ -1,5 +1,5 @@
 
-from PyQt5 import QtGui, QtCore, QtWidgets, QtWebKitWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets, QtWebKitWidgets, QtNetwork, QtWebKit
 
 from rsteditor import util
 

@@ -87,6 +87,12 @@ Please download win32_ installer file.
 
 .. _win32: https://sourceforge.net/projects/rsteditor/files/latest/download?source=files
 
+.. tip::
+
+    check current compiler::
+
+        python setup.py build_ext --help-compiler
+
 Template
 ========
 template::

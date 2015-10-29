@@ -1,7 +1,7 @@
 %Module scilexerrest
 
 %Import QtCore/QtCoremod.sip
-%Import Qsci/qscimod4.sip
+%Import Qsci/qscimod5.sip
 
 class QsciLexerRest: QsciLexerCustom
 {

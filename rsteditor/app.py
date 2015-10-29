@@ -38,7 +38,7 @@ ALLOWED_LOADS = ['.rst', '.rest',
 requestPreview = threading.Event()
 
 # for debug
-# LOG_FILENAME = '/tmp/rsteditor.log'
+# LOG_FILENAME = 'rsteditor.log'
 # logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
 
 
@@ -842,11 +842,15 @@ def main():
     logging.debug(args)
     logging.debug('app  data path: ' + __data_path__)
     logging.debug('home data path: ' + __home_data_path__)
+    qt_path = os.path.join(os.path.dirname(QtCore.__file__))
+    QtWidgets.QApplication.addLibraryPath(qt_path)
+    QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'plugins'))
     rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
     if not os.path.exists(__home_data_path__):
         shutil.copytree(__data_path__, __home_data_path__)
     QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)
+    logging.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow()
     win.loadFile(rstfile)
     win.show()
