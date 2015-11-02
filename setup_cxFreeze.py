@@ -1,23 +1,29 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
-# python setup_cxFreeze.py build -c mingw32
+# tip:
+#   pyqt 5.5.1 is compiled with msvc 2010
+#   to build extention it need to install qt-5.5.1 with msvc2010
+# python setup_cxFreeze.py build
 
 import os
 import sys
-import glob
 
 from subprocess import call
 from cx_Freeze import setup, Executable
 from distutils.core import Extension
 from distutils.command import install_scripts, install_data
 
-import PyQt5
 import sipdistutils
+import docutils
+import PyQt5
 
 
 build_ext_base = sipdistutils.build_ext
+# qt_path = 'C:\\Qt\\Qt5.5.1.msvc2010\\5.5\\msvc2010'
+qt_path = 'C:\\Qt\\Qt5.5.1.mingw\\5.5\\mingw492_32'
 pyqt_path = os.path.dirname(PyQt5.__file__)
-qt_path = 'C:\\Qt\\Qt5.5.1\\5.5\\mingw492_32'
+docutils_path = os.path.dirname(docutils.__file__)
+
 
 from rsteditor import __app_name__
 from rsteditor import __app_version__
@@ -25,13 +31,20 @@ from rsteditor import __app_version__
 options = {}
 build_exe_options = {
     'packages': [
+        'docutils',
+        'pygments',
     ],
     'includes': [
-        'rsteditor',
+    ],
+    'excludes': [
+        'unittest',
     ],
     'include_files': [
-        (os.path.join('build', 'lib.win32-3.4', 'rsteditor', 'scilexerrest.pyd'),
-         os.path.join('rsteditor', 'scilexerrest.pyd')),
+        [os.path.join(docutils_path, 'writers'), os.path.join('docutils', 'writers')],
+    ],
+    'zip_includes': [
+        [os.path.join('build', 'lib.win32-3.4', 'rsteditor', 'scilexerrest.pyd'),
+         os.path.join('rsteditor', 'scilexerrest.pyd')],
     ],
 }
 base = None
@@ -58,9 +71,11 @@ class my_build_ext(build_ext_base):
         build_ext_base.finalize_options(self)
         from PyQt5.QtCore import PYQT_CONFIGURATION
         sip_flags = PYQT_CONFIGURATION.get('sip_flags', '')
-        pyqt_sip = os.path.join(pyqt_path, 'sip', 'PyQt5')
         self.sip_opts += sip_flags.split(' ')
-        self.sip_opts += ['-I%s' % pyqt_sip]
+        # pyqt_sip = os.path.join(pyqt_path, 'sip', 'PyQt5')
+        # self.sip_opts += ['-I%s' % pyqt_sip]
+        default_sip = os.path.join(self._sip_sipfiles_dir(), 'PyQt5')
+        self.sip_opts += ['-I%s' % default_sip]
 
 
 class post_install_scripts(install_scripts.install_scripts):
@@ -105,12 +120,6 @@ class post_install_data(install_data.install_data):
             shutil.copytree(os.path.join(docutils_path, 'writers'),
                             rst_writer_path,
                             ignore=shutil.ignore_patterns('*.py'))
-            if os.path.exists(os.path.join(dist_path, 'imageformats')):
-                shutil.rmtree(os.path.join(dist_path, 'imageformats'))
-            shutil.copytree(
-                os.path.join(pyqt_path, 'plugins', 'imageformats'),
-                os.path.join(dist_path, 'imageformats')
-            )
         else:
             print('running update-desktop-database')
             call('update-desktop-database')
@@ -157,11 +166,6 @@ setup(
                 "rsteditor/scilexerrest.cpp"
             ],
             include_dirs=[
-                '/usr/include/qt5',
-                '/usr/include/qt5/QtCore',
-                '/usr/include/qt5/QtGui',
-                '/usr/include/qt5/QtWidgets',
-                os.path.join(pyqt_path, 'include'),
                 os.path.join(qt_path, 'include'),
                 os.path.join(qt_path, 'include', 'QtCore'),
                 os.path.join(qt_path, 'include', 'QtGui'),
@@ -171,7 +175,12 @@ setup(
             library_dirs=[
                 os.path.join(qt_path, 'lib'),
             ],
-            libraries=['qscintilla2', 'Qt5Core', 'Qt5Gui', 'Qt5Widgets'],
+            libraries=[
+                'qscilexerrest',
+                'qscintilla2',
+                'Qt5PrintSupport', 'Qt5Widgets', 'Qt5Gui', 'Qt5Core',
+            ],
+            # libraries=['qscintilla2', 'Qt5Core', 'Qt5Gui', 'Qt5Widgets'],
         ),
     ],
     options=options,

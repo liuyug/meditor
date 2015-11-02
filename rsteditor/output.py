@@ -1,4 +1,3 @@
-import sys
 import os.path
 import logging
 import json
@@ -20,6 +19,7 @@ default_overrides = {
     'output_encoding': 'utf-8',
 }
 
+
 def get_theme_settings(theme, pygments):
     html4css1_path = os.path.realpath(os.path.dirname(html4css1.__file__))
     stylesheet = {}
@@ -33,13 +33,13 @@ def get_theme_settings(theme, pygments):
         css_paths = []
         css_paths.append(os.path.join(html4css1_path, 'html4css1.css'))
         css_paths += stylesheet['stylesheet_path'].split(',')
-        stylesheet['stylesheet_path']=','.join(css_paths)
+        stylesheet['stylesheet_path'] = ','.join(css_paths)
         return stylesheet
     theme_cfg = os.path.join(__home_data_path__, 'themes', theme, 'theme.json')
     try:
         styles = json.load(open(theme_cfg))
     except Exception as err:
-        logging.error(unicode(err))
+        logging.error(err)
         styles = {}
     # stylesheet_path : css file path
     # syntax_highlight: short
@@ -60,7 +60,7 @@ def get_theme_settings(theme, pygments):
         if 'stylesheet_path' in stylesheet:
             new_css_paths += stylesheet['stylesheet_path'].split(',')
         stylesheet['stylesheet_dirs'].insert(0, os.path.dirname(new_css_paths[0]))
-        stylesheet['stylesheet_path']=','.join(new_css_paths)
+        stylesheet['stylesheet_path'] = ','.join(new_css_paths)
     if 'template' in styles:
         old_path = styles['template']
         new_path = os.path.realpath(
@@ -70,6 +70,7 @@ def get_theme_settings(theme, pygments):
                          old_path))
         stylesheet['template'] = new_path
     return stylesheet
+
 
 def rst2htmlcode(rst_text, theme='docutils', pygments='docutils', settings={}):
     output = None
@@ -84,9 +85,10 @@ def rst2htmlcode(rst_text, theme='docutils', pygments='docutils', settings={}):
             writer_name='html',
             settings_overrides=overrides,)
     except Exception as err:
-        logging.error(unicode(err))
-        output = unicode(err)
+        logging.error(err)
+        output = err
     return output
+
 
 def rst2html(rst_file, filename, theme='docutils', pygments='docutils', settings={}):
     output = None
@@ -105,9 +107,10 @@ def rst2html(rst_file, filename, theme='docutils', pygments='docutils', settings
             ]
         )
     except Exception as err:
-        logging.error(unicode(err))
-        output = unicode(err)
+        logging.error(err)
+        output = err
     return output
+
 
 def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings={}):
     output = None
@@ -129,6 +132,6 @@ def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings=
             ]
         )
     except Exception as err:
-        logging.error(unicode(err))
-        output = unicode(err)
+        logging.error(err)
+        output = err
     return output

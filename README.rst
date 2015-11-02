@@ -93,6 +93,10 @@ Please download win32_ installer file.
 
         python setup.py build_ext --help-compiler
 
+.. note::
+
+    Windows Python is built in Microsoft Visual C++; using other compilers may or may not work (though Borland seems to).
+
 Template
 ========
 template::

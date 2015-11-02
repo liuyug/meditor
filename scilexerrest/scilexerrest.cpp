@@ -1,6 +1,4 @@
 
-#include <Python.h>
-
 #include <QtCore>
 #include <QtGui>
 #include <QtAlgorithms>

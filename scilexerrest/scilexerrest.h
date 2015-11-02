@@ -1,6 +1,6 @@
 #ifndef QSCILEXERREST_H
 #define QSCILEXERREST_H
-#include <QtGui>
+
 #include <Qsci/qscilexercustom.h>
 
 struct STYLEDTEXT{
@@ -10,6 +10,7 @@ struct STYLEDTEXT{
 
 class QsciLexerRest: public QsciLexerCustom
 {
+    Q_OBJECT
     public:
         QsciLexerRest(QObject * parent=0);
         virtual ~QsciLexerRest();
