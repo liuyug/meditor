@@ -87,6 +87,19 @@ Please download win32_ installer file.
 
 .. _win32: https://sourceforge.net/projects/rsteditor/files/latest/download?source=files
 
+for develop
+~~~~~~~~~~~~
+install with below order:
+
+#. download qt and install
+#. download QScintilla source, compile and install
+#. download sip source, compile and install
+#. download pyqt source, compile and install
+
+   pyqt with binary version compiled by msvc
+
+#. compile QScintilla for pyqt and install
+
 .. tip::
 
     check current compiler::
@@ -95,7 +108,15 @@ Please download win32_ installer file.
 
 .. note::
 
-    Windows Python is built in Microsoft Visual C++; using other compilers may or may not work (though Borland seems to).
+    Windows Python is built in Microsoft Visual C++; using other compilers may
+    or may not work (though Borland seems to).
+
+.. note::
+
+    from qsciglobal.h
+    // Under Windows, define QSCINTILLA_MAKE_DLL to create a Scintilla DLL, or
+    // define QSCINTILLA_DLL to link against a Scintilla DLL, or define neither
+    // to either build or link against a static Scintilla library.
 
 Template
 ========

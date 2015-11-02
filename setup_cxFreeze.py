@@ -14,13 +14,19 @@ from distutils.core import Extension
 from distutils.command import install_scripts, install_data
 
 import sipdistutils
+import sipconfig
 import docutils
 import PyQt5
 
 
 build_ext_base = sipdistutils.build_ext
-# qt_path = 'C:\\Qt\\Qt5.5.1.msvc2010\\5.5\\msvc2010'
-qt_path = 'C:\\Qt\\Qt5.5.1.mingw\\5.5\\mingw492_32'
+sip_cfg = sipconfig.Configuration()
+if sip_cfg.platform == 'win32-msvc2010':
+    qt_path = 'C:\\Qt\\Qt5.5.1.msvc2010\\5.5\\msvc2010'
+elif sip_cfg.platform == 'win32-g++':
+    qt_path = 'C:\\Qt\\Qt5.5.1.mingw\\5.5\\mingw492_32'
+else:
+    qt_path = '/usr/include'
 pyqt_path = os.path.dirname(PyQt5.__file__)
 docutils_path = os.path.dirname(docutils.__file__)
 
@@ -39,13 +45,13 @@ build_exe_options = {
     'excludes': [
         'unittest',
     ],
-    'include_files': [
-        [os.path.join(docutils_path, 'writers'), os.path.join('docutils', 'writers')],
-    ],
-    'zip_includes': [
-        [os.path.join('build', 'lib.win32-3.4', 'rsteditor', 'scilexerrest.pyd'),
-         os.path.join('rsteditor', 'scilexerrest.pyd')],
-    ],
+    # 'include_files': [
+    #     [os.path.join(docutils_path, 'writers'), os.path.join('docutils', 'writers')],
+    # ],
+    # 'zip_includes': [
+    #     [os.path.join('build', 'lib.win32-3.4', 'rsteditor', 'scilexerrest.pyd'),
+    #      os.path.join('rsteditor', 'scilexerrest.pyd')],
+    # ],
 }
 base = None
 
@@ -162,25 +168,26 @@ setup(
         Extension(
             "rsteditor.scilexerrest",
             [
-                "rsteditor/scilexerrest.sip",
-                "rsteditor/scilexerrest.cpp"
+                "scilexerrest/scilexerrest.sip",
+                "scilexerrest/scilexerrest.cpp"
             ],
             include_dirs=[
+                'scilexerrest',
                 os.path.join(qt_path, 'include'),
                 os.path.join(qt_path, 'include', 'QtCore'),
                 os.path.join(qt_path, 'include', 'QtGui'),
                 os.path.join(qt_path, 'include', 'QtWidgets'),
-                'rsteditor',
+            ],
+            define_macros=[
+                ('QSCINTILLA_DLL', None),   # only for window msvc
             ],
             library_dirs=[
                 os.path.join(qt_path, 'lib'),
             ],
             libraries=[
-                'qscilexerrest',
                 'qscintilla2',
                 'Qt5PrintSupport', 'Qt5Widgets', 'Qt5Gui', 'Qt5Core',
             ],
-            # libraries=['qscintilla2', 'Qt5Core', 'Qt5Gui', 'Qt5Widgets'],
         ),
     ],
     options=options,

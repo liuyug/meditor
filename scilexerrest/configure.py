@@ -13,17 +13,28 @@ build_file = 'scilexerrest.sbf'
 # Get the SIP configuration information.
 config = sipconfig.Configuration()
 
+if config.platform == 'win32-g++':
+    qt_path = 'C:\\Qt\\Qt5.5.1.mingw\\5.5\\mingw492_32'
+elif config.platform == 'win32-msvc2010':
+    qt_path = 'C:\\Qt\\Qt5.5.1.msvc2010\\5.5\\msvc2010'
+else:
+    raise 'Unknown platform: %s' % config.platform
+print('QT_DIR: %s' % qt_path)
+
 # Run SIP to generate the code.
 if not os.path.exists(build_dir):
     os.makedirs(build_dir)
-os.system(' '.join([
+sip_cmd = ' '.join([
     config.sip_bin,
     PYQT_CONFIGURATION.get('sip_flags', ''),
     '-I', os.path.join(config.default_sip_dir, 'PyQt5'),
     '-c', build_dir,
     '-b', os.path.join(build_dir, build_file),
     'scilexerrest.sip',
-]))
+])
+
+print(sip_cmd)
+os.system(sip_cmd)
 
 # Create the Makefile.
 makefile = sipconfig.SIPModuleMakefile(
@@ -34,14 +45,6 @@ makefile = sipconfig.SIPModuleMakefile(
 # Add the library we are wrapping.  The name doesn't include any platform
 # specific prefixes or extensions (e.g. the 'lib' prefix on UNIX, or the
 # '.dll' extension on Windows).
-
-if config.platform == 'win32-g++':
-    qt_path = 'C:\\Qt\\Qt5.5.1.mingw\\5.5\\mingw492_32'
-elif config.platform == 'win32-msvc2010':
-    qt_path = 'C:\\Qt\\Qt5.5.1.msvc2010\\5.5\\msvc2010'
-else:
-    raise 'Unknown platform: %s' % config.platform
-print('QT_DIR: %s' % qt_path)
 
 makefile.extra_include_dirs = [
     '../',

@@ -10,7 +10,8 @@ struct STYLEDTEXT{
 
 class QsciLexerRest: public QsciLexerCustom
 {
-    Q_OBJECT
+    // python setup.py don't support qt moc
+    // Q_OBJECT
     public:
         QsciLexerRest(QObject * parent=0);
         virtual ~QsciLexerRest();

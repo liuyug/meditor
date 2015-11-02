@@ -5,7 +5,9 @@ HEADERS = scilexerrest.h
 
 QT += widgets printsupport
 
-CONFIG += static qscintilla2
+CONFIG += static release qscintilla2
+
+DEFINES += QSCINTILLA_DLL
 
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 
