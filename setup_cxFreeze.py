@@ -103,7 +103,6 @@ base = None
 options = {}
 if sys.platform == "win32":
     base = "Win32GUI"
-    base = None
     options['build_exe'] = build_exe_options
 
 execute_scripts = [
