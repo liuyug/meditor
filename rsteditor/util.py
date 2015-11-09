@@ -1,16 +1,12 @@
 
-import urllib2
-import urllib
-import gzip
-
-from PyQt4 import QtCore
-
 
 def toUtf8(text):
-    if text is None:
-        return b''
-    if isinstance(text, QtCore.QString):
-        return unicode(text.toUtf8(), encoding='utf-8')
-    if not isinstance(text, unicode):
-        return text.decode('utf-8', 'ignore')
+    if isinstance(text, bytes):
+        return text.decode(encoding='utf-8')
+    return text
+
+
+def toBytes(text):
+    if isinstance(text, str):
+        return text.encode(encoding='utf-8')
     return text

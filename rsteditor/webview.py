@@ -1,11 +1,10 @@
 
-from PyQt4 import QtGui, QtCore
-from PyQt4 import QtWebKit
+from PyQt5 import QtGui, QtCore, QtWidgets, QtWebKitWidgets, QtNetwork, QtWebKit
 
 from rsteditor import util
 
 
-class WebView(QtWebKit.QWebView):
+class WebView(QtWebKitWidgets.QWebView):
     def __init__(self, *args, **kwargs):
         super(WebView, self).__init__(*args, **kwargs)
         settings = self.settings()
@@ -15,7 +14,7 @@ class WebView(QtWebKit.QWebView):
         self.wait = False
         self.setHtml('')
         self.loadFinished.connect(self.onLoadFinished)
-        self.popupMenu = QtGui.QMenu(self)
+        self.popupMenu = QtWidgets.QMenu(self)
         self.popupMenu.addAction(self.pageAction(self.page().Copy))
         self.popupMenu.addAction(self.pageAction(self.page().SelectAll))
 

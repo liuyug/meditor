@@ -9,23 +9,6 @@ RSTEditor is a editor for reStructuredText It support preview with html.
 
    For better performance, close "preview on input".
 
-Requirement
-===========
-Install them on all platform:
-
-+ docutils
-+ Pygments
-+ pyqt4
-+ argparse
-+ sip
-
-For ubuntu::
-
-    apt-get install python-qt4-dev
-    apt-get install python-sip-dev
-    apt-get install python-qscintilla2
-    apt-get install python-docutils
-
 Feature
 =======
 + Syntax Highlight for reStructuredText
@@ -36,40 +19,6 @@ Feature
 + Customized widnow layout
 + reStructuredText Template to reduce extra work
 + Customized HTML css
-
-HTML theme
-===========
-#. Download theme, such as rhythm.css_, `timhughes theme`_
-
-#. Unzip it to configuration directory.
-
-   + It is "C:\\Users\\Administrator\\.config\\rsteditor\\themes\\" in Window 7.
-   + It is "$HOME/.config/rsteditor/themes" in Linux.
-
-#. Create theme file, "theme.json" under theme direcotry.
-
-Support parameter:
-
-+ stylesheet_path
-+ syntax_highlight
-+ template
-
-theme.json under rhythm.css::
-
-    {
-        "stylesheet_path":"dist/css/rhythm.css,syntax/molokai.css",
-        "syntax-highlight": "short"
-    }
-
-theme.json under timhughes theme::
-
-    {
-        "stylesheet_path":"reset.css,goldfish.css,goldfish-pygments-long.css,goldfish-pygments-long-python.css",
-        "syntax-highlight": "long"
-    }
-
-.. _rhythm.css: https://github.com/Rykka/rhythm.css/archive/master.zip
-.. _`timhughes theme`: https://bitbucket.org/timhughes/restructuredtext-theme/get/0de88230f44a.zip
 
 Install
 =======
@@ -87,11 +36,11 @@ Please download win32_ installer file.
 
 .. _win32: https://sourceforge.net/projects/rsteditor/files/latest/download?source=files
 
-Template
-========
-template::
+HTML theme
+===========
+get theme::
 
-    skeleton.rst
+    sh themes.sh
 
 Screen Shot
 ===========
@@ -105,9 +54,49 @@ Screen Shot
    :target: https://pypi.python.org/pypi/rsteditor
    :alt: Downloads
 
+Requirement
+===========
+Install them on all platform:
+
++ docutils
++ Pygments
++ pyqt4
++ argparse
++ sip
+
+for develop
+~~~~~~~~~~~~
+install with below order:
+
+#. download qt and install
+#. download QScintilla source, compile and install
+#. download sip source, compile and install
+#. download pyqt source, compile and install
+
+   pyqt with binary version compiled by msvc
+
+#. compile QScintilla for pyqt and install
+
+.. tip::
+
+    check current compiler::
+
+        python setup.py build_ext --help-compiler
+
+.. note::
+
+    Windows Python is built in Microsoft Visual C++; using other compilers may
+    or may not work (though Borland seems to).
+
+.. note::
+
+    from qsciglobal.h
+    // Under Windows, define QSCINTILLA_MAKE_DLL to create a Scintilla DLL, or
+    // define QSCINTILLA_DLL to link against a Scintilla DLL, or define neither
+    // to either build or link against a static Scintilla library.
+
 Other
 ======
 Iconset: `NuoveXT 2`_ Icons by Saki
-
 
 .. _`NuoveXT 2`: http://www.iconarchive.com/show/nuoveXT-2-icons-by-saki.2.html

@@ -1,6 +1,6 @@
 #ifndef QSCILEXERREST_H
 #define QSCILEXERREST_H
-#include <QtGui>
+
 #include <Qsci/qscilexercustom.h>
 
 struct STYLEDTEXT{
@@ -10,6 +10,8 @@ struct STYLEDTEXT{
 
 class QsciLexerRest: public QsciLexerCustom
 {
+    // python setup.py don't support qt moc
+    // Q_OBJECT
     public:
         QsciLexerRest(QObject * parent=0);
         virtual ~QsciLexerRest();

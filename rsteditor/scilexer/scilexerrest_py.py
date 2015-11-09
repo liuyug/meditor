@@ -1,8 +1,8 @@
 import re
 import logging
 
-from PyQt4 import QtGui, QtCore
-from PyQt4.Qsci import QsciLexerCustom
+from PyQt5 import QtGui, QtCore
+from PyQt5.Qsci import QsciLexerCustom
 
 from rsteditor.util import toUtf8
 
@@ -335,11 +335,15 @@ class QsciLexerRest(QsciLexerCustom):
         prop_settings = QtCore.QSettings(rst_prop_file, QtCore.QSettings.IniFormat)
         for num in range(0, len(self.properties)):
             value = toUtf8(prop_settings.value(
-                'style.%s.%s' % (self.language(), num)
-            ).toStringList().join(','))
+                'style.%s.%s' % (self.language(), num),
+                type=str,
+            ))
             if not value:
                 continue
-            prop_list = value.split(',')
+            if isinstance(value, str):
+                prop_list = value.split(',')
+            else:
+                prop_list = value
             fgcolor = self.defaultColor(num)
             bgcolor = self.defaultPaper(num)
             font = self.defaultFont(num)

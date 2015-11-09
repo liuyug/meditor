@@ -1,14 +1,20 @@
 include *.rst
+include *.html
 include *.in
 include *.py
-include *.sh
-include docs
-include template
 include *.properties
 include *.png
 include *.ico
 include *.desktop
-include rsteditor/*.h
-include rsteditor/*.cpp
-include rsteditor/*.sip
-
+include *.h
+include *.cpp
+include *.sip
+include *.pro
+include *.sh
+include *.nsi
+include *.cmd
+include docs
+include template
+include pixmaps
+include template
+exclude __pycache__
