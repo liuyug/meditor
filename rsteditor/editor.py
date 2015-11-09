@@ -5,11 +5,12 @@ import logging
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.Qsci import QsciScintilla
 from PyQt5.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
+
 try:
-    from rsteditor.scilexerrest import QsciLexerRest
+    from rsteditor.scilexer.scilexerrest import QsciLexerRest
 except Exception:
     print('[WARNING] Do not find c++ lexer, use PYTHON rst lexer')
-    from rsteditor.scilexerrest2 import QsciLexerRest
+    from rsteditor.scilexer.scilexerrest_py import QsciLexerRest
 from rsteditor.util import toUtf8
 from rsteditor import __home_data_path__
 from rsteditor import globalvars

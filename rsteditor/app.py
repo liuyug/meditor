@@ -24,10 +24,11 @@ from rsteditor import editor
 from rsteditor import webview
 from rsteditor import explorer
 from rsteditor import output
-from rsteditor.util import toUtf8
+from rsteditor.util import toUtf8, toBytes
 from rsteditor import globalvars
 
 ALLOWED_LOADS = ['.rst', '.rest',
+                 '.md', '.markdown',
                  '.html', '.htm',
                  '.txt',
                  '.c', '.cpp', '.h',
@@ -80,14 +81,14 @@ class MainWindow(QtWidgets.QMainWindow):
             ext = os.path.splitext(self.app_exec)[1]
             if ext not in ['.py', '.exe']:
                 self.app_exec += '.exe'
-        logging.debug('app name: %s' % self.app_exec)
+        logging.info('app name: %s' % self.app_exec)
         self.settings = settings = QtCore.QSettings(
             __app_name__.lower(),
             'config'
         )
         # No support fromTheme function in Qt4.6
         icon_path = os.path.join(__icon_path__, 'rsteditor-text-editor.ico')
-        logging.debug('icon path: %s' % __icon_path__)
+        logging.info('icon path: %s' % __icon_path__)
         self.setWindowIcon(QtGui.QIcon(icon_path))
         # status bar
         self.statusBar().showMessage(self.tr('Ready'))
@@ -660,7 +661,7 @@ class MainWindow(QtWidgets.QMainWindow):
         with open(pygments_style_path, 'wb') as f:
             if self.pygments != 'docutils':
                 formatter = get_formatter_by_name('html', style=self.pygments)
-                f.write(formatter.get_style_defs('pre.code'))
+                f.write(toBytes(formatter.get_style_defs('pre.code')))
         self.previewCurrentText()
         return
 
@@ -678,6 +679,7 @@ class MainWindow(QtWidgets.QMainWindow):
                        ) % (__app_name__, __app_version__)
         text += self.tr('Platform: %s\n') % (sys.platform)
         text += self.tr('Configuration path: %s\n') % (__home_data_path__)
+        text += self.tr('Scilexer: %s\n') % self.editor.lexer.__module__
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
@@ -840,14 +842,20 @@ def main():
     if sys.platform == 'win32':
         sys.stderr = sys.stdout
     logging.debug(args)
-    logging.debug('app  data path: ' + __data_path__)
-    logging.debug('home data path: ' + __home_data_path__)
+    logging.info('app  data path: ' + __data_path__)
+    logging.info('home data path: ' + __home_data_path__)
     qt_path = os.path.join(os.path.dirname(QtCore.__file__))
     QtWidgets.QApplication.addLibraryPath(qt_path)
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'plugins'))
     rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
     if not os.path.exists(__home_data_path__):
-        shutil.copytree(__data_path__, __home_data_path__)
+        data_files = ['docs', 'template', 'themes', 'rst.properties', 'README.rst']
+        for f in data_files:
+            src = os.path.join(__data_path__, f)
+            if os.path.isdir(src):
+                shutil.copytree(src, os.path.join(__home_data_path__, f))
+            else:
+                shutil.copy(src, os.path.join(__home_data_path__, f))
     QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)
     logging.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
