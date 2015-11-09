@@ -8,6 +8,7 @@ import shutil
 import logging
 import argparse
 import threading
+from io import StringIO
 from functools import partial
 
 from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
@@ -39,8 +40,7 @@ ALLOWED_LOADS = ['.rst', '.rest',
 requestPreview = threading.Event()
 
 # for debug
-# LOG_FILENAME = 'rsteditor.log'
-# logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
+LOG_FILENAME = os.path.join(__home_data_path__, 'rsteditor.log')
 
 
 def previewWorker(self):
@@ -837,11 +837,18 @@ def main():
         formatter = '[%(levelname)s] [%(funcName)s %(lineno)d] %(message)s'
     else:
         formatter = '[%(levelname)s] %(message)s'
-    logging.basicConfig(format=formatter,
-                        level=globalvars.logging_level)
+    os.remove(LOG_FILENAME)
+    logging.basicConfig(
+        filename=LOG_FILENAME,
+        format=formatter,
+        level=globalvars.logging_level
+    )
     if sys.platform == 'win32':
+        if not sys.stdout:
+            sys.stdout = StringIO()
         sys.stderr = sys.stdout
     logging.debug(args)
+    logging.info('Log: %s' % LOG_FILENAME)
     logging.info('app  data path: ' + __data_path__)
     logging.info('home data path: ' + __home_data_path__)
     qt_path = os.path.join(os.path.dirname(QtCore.__file__))

@@ -82,7 +82,8 @@ def rst2htmlcode(rst_text, theme='docutils', pygments='docutils', settings={}):
         output = publish_string(
             rst_text,
             writer_name='html',
-            settings_overrides=overrides,)
+            settings_overrides=overrides,
+        )
     except Exception as err:
         logging.error(err)
         output = err
