@@ -409,6 +409,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewQuit = True
         requestPreview.set()
         self.previewWorker.join()
+        logging.info('=== rsteditor end ===')
 
     def onNew(self, path=None):
         if not self.saveAndContinue():
@@ -837,16 +838,19 @@ def main():
         formatter = '[%(levelname)s] [%(funcName)s %(lineno)d] %(message)s'
     else:
         formatter = '[%(levelname)s] %(message)s'
-    os.remove(LOG_FILENAME)
-    logging.basicConfig(
-        filename=LOG_FILENAME,
-        format=formatter,
-        level=globalvars.logging_level
-    )
-    if sys.platform == 'win32':
-        if not sys.stdout:
-            sys.stdout = StringIO()
-        sys.stderr = sys.stdout
+    if sys.stdout:
+        logging.basicConfig(
+            format=formatter,
+            level=globalvars.logging_level
+        )
+    else:
+        sys.stderr = sys.stdout = StringIO()
+        logging.basicConfig(
+            filename=LOG_FILENAME,
+            format=formatter,
+            level=globalvars.logging_level
+        )
+    logging.info('=== rsteditor begin ===')
     logging.debug(args)
     logging.info('Log: %s' % LOG_FILENAME)
     logging.info('app  data path: ' + __data_path__)
