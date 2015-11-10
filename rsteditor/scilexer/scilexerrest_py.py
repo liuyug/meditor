@@ -6,6 +6,8 @@ from PyQt5.Qsci import QsciLexerCustom
 
 from rsteditor.util import toUtf8
 
+logger = logging.getLogger(__name__)
+
 
 class QsciLexerRest(QsciLexerCustom):
     keyword_list = [
@@ -242,11 +244,11 @@ class QsciLexerRest(QsciLexerCustom):
             m_end = self.editor().positionFromLineIndex(line + line_fix,
                                                         index_end)
             if m_end < m_start:
-                logging.error('%s: %d - %d : %s', key, offset, mo.end(), repr(text[offset:mo.end()]))
-                logging.error('%d - %d, %d:%d - %d:%d', m_start, m_end, line, index, line + line_fix, index_end)
+                logger.error('%s: %d - %d : %s', key, offset, mo.end(), repr(text[offset:mo.end()]))
+                logger.error('%d - %d, %d:%d - %d:%d', m_start, m_end, line, index, line + line_fix, index_end)
             else:
-                logging.debug('%s: %d - %d : %s', key, offset, mo.end(), repr(text[offset:mo.end()]))
-                logging.debug('%d - %d, %d:%d - %d:%d', m_start, m_end, line, index, line + line_fix, index_end)
+                logger.debug('%s: %d - %d : %s', key, offset, mo.end(), repr(text[offset:mo.end()]))
+                logger.debug('%d - %d, %d:%d - %d:%d', m_start, m_end, line, index, line + line_fix, index_end)
                 tstyles[m_start] = (m_end - m_start, self.styles[key])
             line += line_fix
             index = index_end
@@ -283,7 +285,7 @@ class QsciLexerRest(QsciLexerCustom):
                     m_end = self.editor().positionFromLineIndex(line, g_end)
                     self.startStyling(m_start)
                     self.setStyling(m_end - m_start, self.styles[key])
-                    logging.debug('%s: %d - %d : %s',
+                    logger.debug('%s: %d - %d : %s',
                                   key, line, g_start, repr(line_text[g_start:g_end]))
         # move style position to end
         self.startStyling(end)

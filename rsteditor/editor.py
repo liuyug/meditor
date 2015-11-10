@@ -15,6 +15,8 @@ from rsteditor.util import toUtf8
 from rsteditor import __home_data_path__
 from rsteditor import globalvars
 
+logger = logging.getLogger(__name__)
+
 
 class FindDialog(QtWidgets.QDialog):
     findNext = QtCore.pyqtSignal(str, int)
@@ -307,10 +309,10 @@ class Editor(QsciScintilla):
                 rst_prop_file = os.path.join(__home_data_path__,
                                              'rst.properties')
                 if os.path.exists(rst_prop_file):
-                    logging.debug('Loading %s', rst_prop_file)
+                    logger.debug('Loading %s', rst_prop_file)
                     lexer.readConfig(rst_prop_file)
                 else:
-                    logging.info('Not found %s', rst_prop_file)
+                    logger.info('Not found %s', rst_prop_file)
         self.lexer = lexer
         if lexer:
             self.setLexer(lexer)

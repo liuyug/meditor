@@ -42,14 +42,17 @@ requestPreview = threading.Event()
 # for debug
 LOG_FILENAME = os.path.join(__home_data_path__, 'rsteditor.log')
 
+# for logger
+logger = logging.getLogger(__name__)
+
 
 def previewWorker(self):
     while True:
         requestPreview.wait()
         if self.previewQuit:
-            logging.debug('Preview exit')
+            logger.debug('Preview exit')
             break
-        logging.debug('Preview %s', self.previewPath)
+        logger.debug('Preview %s', self.previewPath)
         ext = os.path.splitext(self.previewPath)[1].lower()
         self.previewHtml = ''
         if ext in ['.rst', '.rest', '.txt']:
@@ -81,14 +84,14 @@ class MainWindow(QtWidgets.QMainWindow):
             ext = os.path.splitext(self.app_exec)[1]
             if ext not in ['.py', '.exe']:
                 self.app_exec += '.exe'
-        logging.info('app name: %s' % self.app_exec)
+        logger.info('app name: %s' % self.app_exec)
         self.settings = settings = QtCore.QSettings(
             __app_name__.lower(),
             'config'
         )
         # No support fromTheme function in Qt4.6
         icon_path = os.path.join(__icon_path__, 'rsteditor-text-editor.ico')
-        logging.info('icon path: %s' % __icon_path__)
+        logger.info('icon path: %s' % __icon_path__)
         self.setWindowIcon(QtGui.QIcon(icon_path))
         # status bar
         self.statusBar().showMessage(self.tr('Ready'))
@@ -393,7 +396,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewWorker = threading.Thread(target=previewWorker,
                                               args=(self,))
         self.previewSignal.connect(self.previewDisplay)
-        logging.debug('Preview worker start')
+        logger.debug('Preview worker start')
         self.previewWorker.start()
 
     def closeEvent(self, event):
@@ -409,7 +412,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewQuit = True
         requestPreview.set()
         self.previewWorker.join()
-        logging.info('=== rsteditor end ===')
+        logger.info('=== rsteditor end ===')
 
     def onNew(self, path=None):
         if not self.saveAndContinue():
@@ -746,7 +749,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.previewPath = path
             requestPreview.set()
         else:
-            logging.debug('Preview is working...')
+            logger.debug('Preview is working...')
         return
 
     def previewCurrentText(self):
@@ -803,11 +806,11 @@ class MainWindow(QtWidgets.QMainWindow):
             if ext not in ALLOWED_LOADS:
                 return
             if os.path.exists(path):
-                logging.debug('Loading file: %s', path)
+                logger.debug('Loading file: %s', path)
                 if self.editor.readFile(path):
                     text = toUtf8(self.editor.getValue())
             else:
-                logging.debug('Creating file: %s', path)
+                logger.debug('Creating file: %s', path)
                 skeleton = os.path.join(__home_data_path__,
                                         'template',
                                         'skeleton%s' % ext)
@@ -835,7 +838,7 @@ def main():
     args = parser.parse_args()
     globalvars.logging_level = logging.WARNING - (args.verbose * 10)
     if globalvars.logging_level <= logging.DEBUG:
-        formatter = '[%(levelname)s] [%(funcName)s %(lineno)d] %(message)s'
+        formatter = '[%(levelname)s] [%(name)s %(lineno)d] %(message)s'
     else:
         formatter = '[%(levelname)s] %(message)s'
     if sys.stdout:
@@ -850,11 +853,11 @@ def main():
             format=formatter,
             level=globalvars.logging_level
         )
-    logging.info('=== rsteditor begin ===')
-    logging.debug(args)
-    logging.info('Log: %s' % LOG_FILENAME)
-    logging.info('app  data path: ' + __data_path__)
-    logging.info('home data path: ' + __home_data_path__)
+    logger.info('=== rsteditor begin ===')
+    logger.debug(args)
+    logger.info('Log: %s' % LOG_FILENAME)
+    logger.info('app  data path: ' + __data_path__)
+    logger.info('home data path: ' + __home_data_path__)
     qt_path = os.path.join(os.path.dirname(QtCore.__file__))
     QtWidgets.QApplication.addLibraryPath(qt_path)
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'plugins'))
@@ -869,7 +872,7 @@ def main():
                 shutil.copy(src, os.path.join(__home_data_path__, f))
     QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)
-    logging.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
+    logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow()
     win.loadFile(rstfile)
     win.show()

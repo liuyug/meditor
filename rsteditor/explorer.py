@@ -11,6 +11,8 @@ from PyQt5 import QtCore, QtWidgets
 
 from rsteditor.util import toUtf8
 
+logger = logging.getLogger(__name__)
+
 
 class Explorer(QtWidgets.QTreeWidget):
     fileLoaded = QtCore.pyqtSignal('QString')
@@ -205,7 +207,7 @@ class Explorer(QtWidgets.QTreeWidget):
         """
         if filename:
             if os.path.exists(filename):
-                logging.debug('Loading file: %s', filename)
+                logger.debug('Loading file: %s', filename)
                 self.setRootPath(os.path.dirname(filename))
                 self.fileLoaded.emit(filename)
         return

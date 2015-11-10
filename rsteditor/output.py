@@ -13,6 +13,7 @@ except:
 
 from rsteditor import __data_path__, __home_data_path__
 
+logger = logging.getLogger(__name__)
 
 default_overrides = {
     'input_encoding': 'utf-8',
@@ -48,7 +49,7 @@ def get_theme_settings(theme, pygments):
     try:
         styles = json.load(open(os.path.join(theme_dir, 'theme.json')))
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         styles = {}
     # stylesheet_path : css file path
     # syntax_highlight: short
@@ -78,14 +79,14 @@ def rst2htmlcode(rst_text, theme='docutils', pygments='docutils', settings={}):
         overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme, pygments))
-        logging.debug(overrides)
+        logger.debug(overrides)
         output = publish_string(
             rst_text,
             writer_name='html',
             settings_overrides=overrides,
         )
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         output = err
     return output
 
@@ -97,7 +98,7 @@ def rst2html(rst_file, filename, theme='docutils', pygments='docutils', settings
         overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme, pygments))
-        logging.debug(overrides)
+        logger.debug(overrides)
         output = publish_cmdline(
             writer_name='html',
             settings_overrides=overrides,
@@ -107,7 +108,7 @@ def rst2html(rst_file, filename, theme='docutils', pygments='docutils', settings
             ]
         )
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         output = err
     return output
 
@@ -119,7 +120,7 @@ def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings=
         overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme, pygments))
-        logging.debug(overrides)
+        logger.debug(overrides)
         writer = Writer()
         reader = Reader()
         output = publish_cmdline_to_binary(
@@ -132,6 +133,6 @@ def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings=
             ]
         )
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         output = err
     return output
