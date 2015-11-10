@@ -5,7 +5,6 @@ set TARGET_DIR="%BUILD_DIR%\exe.win32-3.4"
 
 set PYTHON="c:\python34\python"
 set ZIP7="c:\Program Files\7-Zip\7z.exe"
-set ZIP7_SFX="c:\Program Files\7-Zip\7z.sfx"
 set MAKENSIS="c:\Program Files (x86)\NSIS\Bin\makensis.exe"
 
 rmdir /s /q %TARGET_DIR%
