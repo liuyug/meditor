@@ -2,6 +2,7 @@
 
 rsteditor_version_file='rsteditor/__init__.py'
 nsis_file='inst_script.nsi'
+desktop_file='rsteditor.desktop'
 
 usage()
 {
@@ -25,6 +26,11 @@ update_nsis_version()
     sed  -i -r "s/^(!define PRODUCT_VER).*$/\1 \"$new_version\"/" $nsis_file
 }
 
+update_desktop_version()
+{
+    sed  -i -r "s/^(Version).*$/\1=$new_version/" $desktop_file
+}
+
 update_git_tag()
 {
     git tag $new_version
@@ -34,6 +40,7 @@ update_version()
 {
     update_rsteditor_version
     update_nsis_version
+    update_desktop_version
     update_git_tag
 }
 
