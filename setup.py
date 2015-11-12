@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding:utf-8 -*-
 
 import os
@@ -7,75 +7,53 @@ import glob
 
 from subprocess import call
 from distutils.core import setup, Extension
-from distutils.command import install_scripts, install_data, build_ext
+from distutils.command import install_scripts, install_data
 
-import PyQt4
-
-pyqt_path = os.path.dirname(PyQt4.__file__)
-
-try:
-    import py2exe
-except:
-    pass
+import sipdistutils
+import PyQt5
+import pkgconfig
 
 from rsteditor import __app_name__
 from rsteditor import __app_version__
 
-try:
-    import sipdistutils
-    build_ext_class = sipdistutils.build_ext
-except:
-    build_ext_class = build_ext.build_ext
+build_ext_base = sipdistutils.build_ext
 
-class my_build_ext(build_ext_class):
+pkgs = pkgconfig.parse('Qt5Widgets Qt5Gui Qt5Core')
+pkgs['include_dirs'].add('rsteditor/scilexer')
+pkgs['libraries'].add('qt5scintilla2')
+pkg_cfg = {}
+for k, v in pkgs.items():
+    pkg_cfg[k] = [x for x in v]
+
+
+class my_build_ext(build_ext_base):
     def run(self):
         try:
-            build_ext_class.run(self)
+            build_ext_base.run(self)
         except Exception as err:
             print('Compile PyQt extension error: %s.' % err)
             print('Use PYTHON rst lexer.')
 
-    def _sip_compile(self, sip_bin, source, sbf):
-        sip_dir = ''
-        sip_flags = ''
-        try:
-            from PyQt4 import pyqtconfig
-            cfg = pyqtconfig.Configuration()
-            sip_dir = cfg.pyqt_sip_dir
-            sip_flags = cfg.pyqt_sip_flags
-        except:
-            from PyQt4.QtCore import PYQT_CONFIGURATION
-            sip_dir = os.path.join(pyqt_path, 'sip', 'PyQt4')
-            sip_flags = PYQT_CONFIGURATION.get('sip_flags', '')
-        sip_dirs = []
-        sip_dirs += ['-I', sip_dir]
-        self.spawn([sip_bin] +
-                   sip_dirs +
-                   sip_flags.split(' ') +
-                   ["-c", self.build_temp, "-b", sbf, source]
-                   )
+    def finalize_options(self):
+        build_ext_base.finalize_options(self)
+        from PyQt5.QtCore import PYQT_CONFIGURATION
+        sip_flags = PYQT_CONFIGURATION.get('sip_flags', '')
+        self.sip_opts += sip_flags.split(' ')
+        default_sip = os.path.join(self._sip_sipfiles_dir(), 'PyQt5')
+        self.sip_opts += ['-I%s' % default_sip]
 
 
 class post_install_scripts(install_scripts.install_scripts):
     """ remove script ext """
     def run(self):
         install_scripts.install_scripts.run(self)
-        if sys.platform == 'win32':
-            for script in self.get_outputs():
-                if script.endswith(".py"):
-                    new_name = '%s_gui.py' % script[:-3]
-                    if os.path.exists(new_name):
-                        os.remove(new_name)
-                    print('renaming %s -> %s' % (script, new_name))
-                    os.rename(script, new_name)
-        else:
-            for script in self.get_outputs():
-                if script.endswith(".py"):
-                    new_name = script[:-3]
-                    if os.path.exists(new_name):
-                        os.remove(new_name)
-                    print('renaming %s -> %s' % (script, new_name))
-                    os.rename(script, new_name)
+        for script in self.get_outputs():
+            if script.endswith(".py"):
+                new_name = script[:-3]
+                if os.path.exists(new_name):
+                    os.remove(new_name)
+                print('renaming %s -> %s' % (script, new_name))
+                os.rename(script, new_name)
         return
 
 
@@ -83,95 +61,55 @@ class post_install_data(install_data.install_data):
     """ update desktop """
     def run(self):
         install_data.install_data.run(self)
-        if sys.platform == 'win32':
-            dist_path = os.path.join(
-                os.path.realpath(os.path.dirname(__file__)),
-                'dist')
-            import docutils
-            import shutil
-            docutils_path = os.path.dirname(docutils.__file__)
-            shutil.rmtree(os.path.join(dist_path, 'docutils', 'writers'))
-            shutil.copytree(os.path.join(docutils_path, 'writers'),
-                            os.path.join(dist_path, 'docutils', 'writers'),
-                            ignore=shutil.ignore_patterns('*.py'))
-            if os.path.exists(os.path.join(dist_path, 'imageformats')):
-                shutil.rmtree(os.path.join(dist_path, 'imageformats'))
-            shutil.copytree(
-                os.path.join(pyqt_path, 'plugins', 'imageformats'),
-                os.path.join(dist_path, 'imageformats')
-            )
-        else:
-            print('running update-desktop-database')
-            call('update-desktop-database')
+        print('running update-desktop-database')
+        call('update-desktop-database')
 
 
 with open('README.rst') as f:
     long_description = f.read()
 
-setup(name=__app_name__.lower(),
-      version=__app_version__,
-      author='Yugang LIU',
-      author_email='liuyug@gmail.com',
-      url='https://github.com/liuyug/rsteditor-qt.git',
-      license='GPLv3',
-      description='Editor for ReStructedText',
-      long_description=long_description,
-      platforms=['noarch'],
-      packages=[
-          'rsteditor',
-      ],
-      package_dir={'rsteditor': 'rsteditor'},
-      data_files=[
-          ('share/%s' % __app_name__.lower(), [
-              'README.rst',
-              'MANIFEST.in',
-              'rst.properties',
-          ]),
-          ('share/applications', ['rsteditor.desktop']),
-          ('share/pixmaps', glob.glob('pixmaps/*.*')),
-          ('share/%s/template' % __app_name__.lower(), glob.glob('template/*.*')),
-          ('share/%s/themes' % __app_name__.lower(), glob.glob('themes/*.*')),
-          ('share/%s/docs' % __app_name__.lower(), glob.glob('docs/*.rst')),
-          ('share/%s/docs/images' % __app_name__.lower(), glob.glob('docs/images/*')),
-      ],
-      scripts=['rsteditor.py'],
-      requires=['docutils', 'pygments', 'pyqt4', 'argparse', 'sip'],
-      ext_modules=[
-          Extension("rsteditor/scilexerrest",
-                    [
-                        "rsteditor/scilexerrest.sip",
-                        "rsteditor/scilexerrest.cpp"
-                    ],
-                    include_dirs=[
-                        '/usr/include/qt4',
-                        '/usr/include/qt4/QtCore',
-                        '/usr/include/qt4/QtGui',
-                        os.path.join(pyqt_path, 'include'),
-                        os.path.join(pyqt_path, 'include', 'QtCore'),
-                        os.path.join(pyqt_path, 'include', 'QtGui'),
-                        'rsteditor',
-                    ],
-                    #library_dirs=[''],
-                    libraries=['qscintilla2'],
-                    ),
-      ],
-      cmdclass={
-          'install_scripts': post_install_scripts,
-          'install_data': post_install_data,
-          'build_ext': my_build_ext,
-      },
-      # for py2exe
-      windows=['rsteditor.py'],
-      options={'py2exe': {
-          'skip_archive': True,
-          'includes': [
-              'ConfigParser',
-              'PyQt4.QtNetwork',
-              'sip',
-          ],
-          'packages': [
-              'docutils',
-              'pygments'
-          ],
-      }}
-      )
+setup(
+    name=__app_name__.lower(),
+    version=__app_version__,
+    author='Yugang LIU',
+    author_email='liuyug@gmail.com',
+    url='https://github.com/liuyug/rsteditor-qt.git',
+    license='GPLv3',
+    description='Editor for ReStructedText',
+    long_description=long_description,
+    platforms=['noarch'],
+    packages=[
+        'rsteditor',
+        'rsteditor.scilexer',
+    ],
+    package_dir={'rsteditor': 'rsteditor'},
+    data_files=[
+        ('share/%s' % __app_name__.lower(), [
+            'README.rst',
+            'MANIFEST.in',
+            'rst.properties',
+        ]),
+        ('share/applications', ['rsteditor.desktop']),
+        ('share/pixmaps', glob.glob('pixmaps/*.*')),
+        ('share/%s/template' % __app_name__.lower(), glob.glob('template/*.*')),
+        ('share/%s/themes' % __app_name__.lower(), glob.glob('themes/*.*')),
+        ('share/%s/docs' % __app_name__.lower(), glob.glob('docs/*.rst')),
+        ('share/%s/docs/images' % __app_name__.lower(), glob.glob('docs/images/*')),
+    ],
+    scripts=['rsteditor.py'],
+    ext_modules=[
+        Extension(
+            "rsteditor.scilexer.scilexerrest",
+            [
+                "rsteditor/scilexer/scilexerrest.sip",
+                "rsteditor/scilexer/scilexerrest.cpp"
+            ],
+            **pkg_cfg
+        ),
+    ],
+    cmdclass={
+        'install_scripts': post_install_scripts,
+        'install_data': post_install_data,
+        'build_ext': my_build_ext,
+    },
+)

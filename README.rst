@@ -60,9 +60,17 @@ Install them on all platform:
 
 + docutils
 + Pygments
-+ pyqt4
-+ argparse
++ pyqt4/pyqt5
 + sip
+
+some packages for debian/ubuntu
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::
+
+    apt-get install python3-pyqt5 python3-pyqt5.qtwebkit python3-pyqt5.qsci
+    apt-get install python3-sip python3-sip-dev pyqt5-dev pyqt5.qsci-dev
+    apt-get install qt5-default libqt5scintilla2-dev
+    apt-get install python3-pkgconfig
 
 for develop
 ~~~~~~~~~~~~
@@ -94,6 +102,7 @@ install with below order:
     // Under Windows, define QSCINTILLA_MAKE_DLL to create a Scintilla DLL, or
     // define QSCINTILLA_DLL to link against a Scintilla DLL, or define neither
     // to either build or link against a static Scintilla library.
+
 
 Other
 ======

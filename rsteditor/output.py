@@ -26,10 +26,17 @@ def get_theme_settings(theme, pygments):
     1. pygments.css has been created in app.py so parameter pygments is unused.
     2. load html4css1 css from docutils packages. if not found load from home data path
     """
-    html4css1_path = os.path.realpath(os.path.dirname(html4css1.__file__))
-    if not os.path.exists(html4css1_path):
-        html4css1_path = os.path.join(__data_path__, 'docutils', 'writers', 'html4css1')
     stylesheet = {}
+    html4css1_paths = [
+        os.path.realpath(os.path.dirname(html4css1.__file__)),
+        '/usr/share/docutils/writers/html4css1',
+        os.path.join(__data_path__, 'docutils', 'writers', 'html4css1'),
+    ]
+    html4css1_path = ''
+    for path in html4css1_paths:
+        if os.path.exists(os.path.join(path, 'html4css1.css')):
+            html4css1_path = path
+            break
     stylesheet['stylesheet_dirs'] = [html4css1_path]
     stylesheet['template'] = os.path.join(html4css1_path, 'template.txt')
     pygments_path = os.path.join(__home_data_path__, 'themes', 'pygments.css')
