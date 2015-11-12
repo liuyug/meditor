@@ -59,10 +59,10 @@ def previewWorker(self):
             self.previewHtml = output.rst2htmlcode(self.previewText,
                                                    theme=self.theme,
                                                    pygments=self.pygments)
-        elif ext in ['.htm', '.html', '.php', '.asp']:
-            self.previewHtml = toUtf8(self.previewText)
+        elif ext in ALLOWED_LOADS:
+            self.previewHtml = '<html><strong>Do not support preview.</strong></html>'
         else:
-            self.previewPath = None
+            self.previewPath = 'error'
         self.previewSignal.emit()
         requestPreview.clear()
     return

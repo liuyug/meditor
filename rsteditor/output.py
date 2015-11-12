@@ -87,7 +87,7 @@ def rst2htmlcode(rst_text, theme='docutils', pygments='docutils', settings={}):
         )
     except Exception as err:
         logger.error(err)
-        output = err
+        output = str(err)
     return output
 
 
