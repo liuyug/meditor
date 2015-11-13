@@ -59,6 +59,8 @@ def previewWorker(self):
             self.previewHtml = output.rst2htmlcode(self.previewText,
                                                    theme=self.theme,
                                                    pygments=self.pygments)
+        elif ext in ['.html', '.htm']:
+            self.previewHtml = self.previewText
         elif ext in ALLOWED_LOADS:
             self.previewHtml = '<html><strong>Do not support preview.</strong></html>'
         else:
