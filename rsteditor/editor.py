@@ -12,7 +12,7 @@ except Exception:
     print('[WARNING] Do not find c++ lexer, use PYTHON rst lexer')
     from rsteditor.scilexer.scilexerrest_py import QsciLexerRest
 from rsteditor.util import toUtf8
-from rsteditor import __home_data_path__
+from rsteditor import __home_data_path__, __data_path__
 from rsteditor import globalvars
 
 logger = logging.getLogger(__name__)
@@ -306,8 +306,13 @@ class Editor(QsciScintilla):
             elif ext in ['.rst', '.rest']:
                 lexer = QsciLexerRest(self)
                 lexer.setDebugLevel(globalvars.logging_level)
-                rst_prop_file = os.path.join(__home_data_path__,
-                                             'rst.properties')
+                rst_prop_files = [
+                    os.path.join(__home_data_path__, 'rst.properties'),
+                    os.path.join(__data_path__, 'rst.properties'),
+                ]
+                for rst_prop_file in rst_prop_files:
+                    if os.path.exists(rst_prop_file):
+                        break
                 if os.path.exists(rst_prop_file):
                     logger.debug('Loading %s', rst_prop_file)
                     lexer.readConfig(rst_prop_file)

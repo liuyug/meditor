@@ -4,7 +4,6 @@
 import os
 import sys
 import subprocess
-import shutil
 import logging
 import argparse
 import threading
@@ -230,17 +229,12 @@ class MainWindow(QtWidgets.QMainWindow):
         themeGroup = QtWidgets.QActionGroup(self)
         themeGroup.setExclusive(True)
         themeGroup.addAction(docutils_cssAction)
-        themes = os.listdir(os.path.join(__home_data_path__, 'themes'))
-        for theme in themes:
-            if os.path.exists(os.path.join(__home_data_path__,
-                                           'themes',
-                                           theme,
-                                           'theme.json')):
-                act = QtWidgets.QAction('%s theme' % theme,
-                                    self,
-                                    checkable=True)
-                act.triggered.connect(partial(self.onThemeChanged, theme))
-                themeGroup.addAction(act)
+        for theme in output.get_themes().keys():
+            act = QtWidgets.QAction('%s theme' % theme,
+                                self,
+                                checkable=True)
+            act.triggered.connect(partial(self.onThemeChanged, theme))
+            themeGroup.addAction(act)
         value = toUtf8(settings.value('theme', 'docutils', type=str))
         settings.setValue('theme', value)
         self.theme = value
@@ -426,12 +420,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle('%s - %s' % (__app_name__, filename))
         ext = os.path.splitext(filename)[1].lower()
         text = ''
-        skeleton = os.path.join(__home_data_path__,
-                                'template',
-                                'skeleton%s' % ext)
-        if os.path.exists(skeleton):
-            with open(skeleton, 'r', encoding='utf-8') as f:
-                text = f.read()
+        skeletons = [
+            os.path.join(__home_data_path__, 'template', 'skeleton%s' % ext),
+            os.path.join(__data_path__, 'template', 'skeleton%s' % ext),
+        ]
+        for skeleton in skeletons:
+            if os.path.exists(skeleton):
+                with open(skeleton, 'r', encoding='utf-8') as f:
+                    text = f.read()
+                break
         self.editor.setValue(text)
         self.editor.setFileName(filename)
         self.editor.setFocus()
@@ -672,7 +669,13 @@ class MainWindow(QtWidgets.QMainWindow):
         return
 
     def onHelp(self):
-        help_path = os.path.join(__home_data_path__, 'docs', 'demo.rst')
+        help_paths = [
+            os.path.join(__home_data_path__, 'docs', 'demo.rst'),
+            os.path.join(__data_path__, 'docs', 'demo.rst'),
+        ]
+        for help_path in help_paths:
+            if os.path.exists(help_path):
+                break
         if sys.platform == 'win32' and self.app_exec.endswith('.py'):
             subprocess.Popen(['python', self.app_exec, help_path])
         else:
@@ -864,14 +867,6 @@ def main():
     QtWidgets.QApplication.addLibraryPath(qt_path)
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'plugins'))
     rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
-    if not os.path.exists(__home_data_path__):
-        data_files = ['docs', 'template', 'themes', 'rst.properties', 'README.rst']
-        for f in data_files:
-            src = os.path.join(__data_path__, f)
-            if os.path.isdir(src):
-                shutil.copytree(src, os.path.join(__home_data_path__, f))
-            else:
-                shutil.copy(src, os.path.join(__home_data_path__, f))
     QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))

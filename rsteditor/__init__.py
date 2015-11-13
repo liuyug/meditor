@@ -32,6 +32,8 @@ elif sys.platform == 'win32':
         '.%s' % __app_name__.lower()
     )
 
+os.makedirs(__home_data_path__, exist_ok=True)
+
 pygments_styles = {}
 try:
     from pygments import styles

@@ -21,6 +21,24 @@ default_overrides = {
 }
 
 
+def get_themes():
+    """
+    result: { 'theme': theme_json, ... }
+    """
+    themes = {}
+    themes_dirs = [
+        os.path.join(__home_data_path__, 'themes'),
+        os.path.join(__data_path__, 'themes'),
+    ]
+    for themes_dir in themes_dirs:
+        if os.path.exists(themes_dir):
+            for theme in os.listdir(themes_dir):
+                theme_json = os.path.join(themes_dir, theme, 'theme.json')
+                if os.path.exists(theme_json):
+                    themes[theme] = theme_json
+    return themes
+
+
 def get_theme_settings(theme, pygments):
     """
     1. pygments.css has been created in app.py so parameter pygments is unused.
@@ -51,10 +69,11 @@ def get_theme_settings(theme, pygments):
             css_paths += stylesheet['stylesheet_path'].split(',')
         stylesheet['stylesheet_path'] = ','.join(css_paths)
         return stylesheet
-    theme_dir = os.path.join(__home_data_path__, 'themes', theme)
-    stylesheet['stylesheet_dirs'].append(theme_dir)
+    themes = get_themes()
     try:
-        styles = json.load(open(os.path.join(theme_dir, 'theme.json')))
+        theme_json = themes.get(theme)
+        stylesheet['stylesheet_dirs'].append(os.path.dirname(theme_json))
+        styles = json.load(open(theme_json))
     except Exception as err:
         logger.error(err)
         styles = {}
