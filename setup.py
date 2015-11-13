@@ -15,6 +15,7 @@ import pkgconfig
 
 from rsteditor import __app_name__
 from rsteditor import __app_version__
+from rsteditor.util import myglob
 
 build_ext_base = sipdistutils.build_ext
 
@@ -92,9 +93,12 @@ setup(
         ('share/applications', ['rsteditor.desktop']),
         ('share/pixmaps', glob.glob('pixmaps/*.*')),
         ('share/%s/template' % __app_name__.lower(), glob.glob('template/*.*')),
-        ('share/%s/themes' % __app_name__.lower(), glob.glob('themes/*.*')),
         ('share/%s/docs' % __app_name__.lower(), glob.glob('docs/*.rst')),
         ('share/%s/docs/images' % __app_name__.lower(), glob.glob('docs/images/*')),
+        ('share/%s/themes' % __app_name__.lower(), myglob(
+            'themes',
+            ['*.css', '*.json', '*.html', '*.rst'],
+        )),
     ],
     scripts=['rsteditor.py'],
     ext_modules=[
