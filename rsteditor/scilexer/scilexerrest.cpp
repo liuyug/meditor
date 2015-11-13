@@ -370,11 +370,11 @@ QFont QsciLexerRest::defaultFont(int style) const
         if(regex.indexIn(*item) != -1){
             font = QFont(regex.cap(1));
         } else if(*item == "bold"){
-            font.setBold(TRUE);
+            font.setBold(true);
         } else if(*item == "italic"){
-            font.setItalic(TRUE);
+            font.setItalic(true);
         } else if(*item == "underline"){
-            font.setUnderline(TRUE);
+            font.setUnderline(true);
         }
     }
     return font;
