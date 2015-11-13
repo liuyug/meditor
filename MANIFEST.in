@@ -1,20 +1,3 @@
-include *.rst
-include *.html
-include *.in
-include *.py
-include *.properties
-include *.png
-include *.ico
-include *.desktop
-include *.h
-include *.cpp
-include *.sip
-include *.pro
-include *.sh
-include *.nsi
-include *.cmd
-include docs
-include template
-include pixmaps
-include template
-exclude __pycache__
+recursive-include rsteditor *.h *.cpp *.pro
+include *.py *.txt *.sh *.cmd *.png *.nsi
+recursive-exclude themes *.*
