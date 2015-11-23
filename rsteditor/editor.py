@@ -64,7 +64,8 @@ class FindDialog(QtWidgets.QDialog):
         self.setFixedHeight(self.sizeHint().height())
 
     def enableFindButton(self, text):
-        self.findButton.setEnabled(not text.isEmpty())
+        enable = True if text else False
+        self.findButton.setEnabled(enable)
 
     def findClicked(self):
         self.close()
