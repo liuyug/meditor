@@ -26,6 +26,7 @@ class Explorer(QtWidgets.QTreeWidget):
         self.header().close()
         self.root_path = None
         self.root_item = None
+        self.padding_right = 32
         self.qstyle = QtWidgets.QStyleFactory.create('windows')
         self.setRootIsDecorated(False)
         self.setItemsExpandable(False)
@@ -65,7 +66,7 @@ class Explorer(QtWidgets.QTreeWidget):
     def resizeEvent(self, event):
         if self.root_item:
             self.root_item.setText(0, self.getDisplayName(self.root_path))
-            self.setColumnWidth(0, -1)
+            self.setColumnWidth(0, self.width() - self.padding_right)
         return
 
     def contextMenuEvent(self, event):
@@ -186,7 +187,7 @@ class Explorer(QtWidgets.QTreeWidget):
 
     def getDisplayName(self, name):
         """ directory display name """
-        client_width = self.width() - 32
+        client_width = self.width() - self.padding_right
         char_width = self.fontMetrics().width(' ')
         disp_char_num = int(client_width / char_width) - 1
         full_char = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ'
