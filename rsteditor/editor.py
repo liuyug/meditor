@@ -205,12 +205,17 @@ class Editor(QsciScintilla):
             action(line)
 
     def readFile(self, filename):
-        with open(filename, 'rU', encoding='utf8') as f:
-            text = f.read()
-            self.setValue(text)
-            self.setFileName(filename)
-            return True
-        return False
+        try:
+            with open(filename, 'rU', encoding='utf8') as f:
+                text = f.read()
+        except Exception as err:
+            logging.error('%s: %s' % (filename, str(err)))
+            logging.error('Load again with default encoding...')
+            with open(filename, 'rU') as f:
+                text = f.read()
+        self.setValue(text)
+        self.setFileName(filename)
+        return True
 
     def writeFile(self, filename=None):
         text = toUtf8(self.getValue())
