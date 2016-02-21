@@ -10,7 +10,7 @@
 ;--------------------------------
 ;General
 !define PRODUCT_NAME "rsteditor"
-!define PRODUCT_VER "0.2.0.4"
+!define PRODUCT_VER "0.2.0.6"
 !define SHORTCUT_NAME "rsteditor.lnk"
 !define EXEC_NAME "rsteditor.exe"
 !define EXEC_ICON "$INSTDIR\pixmaps\rsteditor-text-editor.ico"
