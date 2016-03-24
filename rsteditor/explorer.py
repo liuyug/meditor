@@ -128,7 +128,7 @@ class Explorer(QtWidgets.QTreeWidget):
             return
         filename = toUtf8(item.text(0))
         if self.deletePath(filename):
-            self.removeItemWidget(item, 0)
+            self.root_item.removeChild(item)
 
     def onRefresh(self):
         self.setRootPath(self.root_path, True)
