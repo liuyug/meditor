@@ -1,8 +1,8 @@
 #!/bin/sh
 
-mkdir -p themes
+mkdir -p rsteditor/share/rsteditor/themes
 
-cd themes
+cd rsteditor/share/rsteditor/themes
 
 # timhughes/restructuredtext-theme
 if [ -d restructuredtext-theme ]; then

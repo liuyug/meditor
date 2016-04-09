@@ -1,3 +1,12 @@
-recursive-include rsteditor *.h *.cpp *.pro
-include *.py *.txt *.sh *.cmd *.png *.nsi
-recursive-exclude themes *.*
+recursive-include rsteditor *
+recursive-exclude rsteditor *.pyc
+include autoversion.sh
+include inst_script.nsi
+include MANIFEST.in
+include README.rst
+include requirement.txt
+include rst.properties
+include rsteditor.desktop
+include screenshot.png
+include setup.py
+include themes.sh

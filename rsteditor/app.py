@@ -658,9 +658,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def onCodeStyleChanged(self, label, checked):
         self.pygments = label
         self.settings.setValue('pygments', self.pygments)
-        pygments_style_path = os.path.join(__home_data_path__,
-                                           'themes',
-                                           'pygments.css')
+        pygments_style_path = os.path.join(
+            __home_data_path__, 'themes', 'pygments.css')
         with open(pygments_style_path, 'wb') as f:
             if self.pygments != 'docutils':
                 formatter = get_formatter_by_name('html', style=self.pygments)
