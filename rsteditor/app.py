@@ -676,7 +676,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for help_path in help_paths:
             if os.path.exists(help_path):
                 break
-        if sys.platform == 'win32' and self.app_exec.endswith('.py'):
+        if self.app_exec.endswith('.py'):
             subprocess.Popen(['python', self.app_exec, help_path])
         else:
             subprocess.Popen([self.app_exec, help_path])
@@ -857,7 +857,6 @@ def main():
 
     file_handler.setFormatter(formatter)
     file_handler.setLevel(globalvars.logging_level)
-    file_handler.doRollover()
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
