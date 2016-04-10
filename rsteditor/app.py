@@ -5,6 +5,7 @@ import os
 import sys
 import subprocess
 import logging
+import logging.handlers
 import argparse
 import threading
 from io import StringIO
@@ -842,21 +843,31 @@ def main():
     args = parser.parse_args()
     globalvars.logging_level = logging.WARNING - (args.verbose * 10)
     if globalvars.logging_level <= logging.DEBUG:
-        formatter = '[%(levelname)s] [%(name)s %(lineno)d] %(message)s'
+        formatter = logging.Formatter('[%(levelname)s] [%(name)s %(lineno)d] %(message)s')
     else:
-        formatter = '[%(levelname)s] %(message)s'
-    if sys.stdout:
-        logging.basicConfig(
-            format=formatter,
-            level=globalvars.logging_level
-        )
-    else:
-        sys.stderr = sys.stdout = StringIO()
-        logging.basicConfig(
-            filename=LOG_FILENAME,
-            format=formatter,
-            level=globalvars.logging_level
-        )
+        formatter = logging.Formatter('[%(levelname)s] %(message)s')
+
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        filename=LOG_FILENAME,
+        when='D',
+        interval=1,
+        backupCount=7,
+        utc=False,
+    )
+
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(globalvars.logging_level)
+    file_handler.doRollover()
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel(globalvars.logging_level)
+
+    global logger
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
     logger.info('=== rsteditor begin ===')
     logger.debug(args)
     logger.info('Log: %s' % LOG_FILENAME)

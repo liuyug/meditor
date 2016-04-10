@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['rsteditor.py'],
-             pathex=['D:\\Projects\\dev\\rsteditor-qt'],
+             pathex=[],
              binaries=None,
              datas=[('rsteditor\share', 'share')],
              hiddenimports=[],
