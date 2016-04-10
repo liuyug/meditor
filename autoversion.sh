@@ -2,7 +2,7 @@
 
 rsteditor_version_file='rsteditor/__init__.py'
 nsis_file='inst_script.nsi'
-desktop_file='rsteditor.desktop'
+desktop_file='rsteditor/share/applications/rsteditor.desktop'
 
 usage()
 {
