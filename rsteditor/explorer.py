@@ -256,7 +256,7 @@ class Explorer(QtWidgets.QTreeWidget):
     def renamePath(self, filename):
         path = os.path.join(self.root_path, filename)
         if not os.path.exists(path):
-            return False
+            return
         text, ok = QtWidgets.QInputDialog.getText(self,
                                                   self.tr('Rename'),
                                                   self.tr('Please input new name:'),
@@ -270,11 +270,15 @@ class Explorer(QtWidgets.QTreeWidget):
                                               self.tr('File exists'),
                                               self.tr('File "%s" has existed!') % (newname)
                                               )
-            else:
+                return
+            try:
                 os.rename(path, newpath)
-                if os.path.isfile(newpath):
-                    self.fileRenamed.emit(path, newpath)
-                return newname
+            except OSError as err:
+                logger.warn(err)
+                return
+            if os.path.isfile(newpath):
+                self.fileRenamed.emit(path, newpath)
+            return newname
         return
 
     def getDrivesPath(self):

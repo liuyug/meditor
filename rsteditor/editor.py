@@ -472,6 +472,7 @@ class Editor(QsciScintilla):
                 lexer.setFont(QtGui.QFont('Monospace', 12))
             elif ext in ['.rst', '.rest']:
                 lexer = QsciLexerRest(self)
+                lexer.setFont(QtGui.QFont('Monospace', 12))
                 lexer.setDebugLevel(globalvars.logging_level)
                 rst_prop_files = [
                     os.path.join(__home_data_path__, 'rst.properties'),
