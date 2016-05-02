@@ -62,6 +62,11 @@ class Explorer(QtWidgets.QTreeWidget):
         self.popupMenu.addSeparator()
         for act in self.driveGroup.actions():
             self.popupMenu.addAction(act)
+        # drag & drop
+        self.setDragEnabled(True)
+        self.setDropIndicatorShown(True)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
     def resizeEvent(self, event):
         if self.root_item:
@@ -120,7 +125,10 @@ class Explorer(QtWidgets.QTreeWidget):
         filename = toUtf8(item.text(0))
         newname = self.renamePath(filename)
         if newname:
-            item.setText(0, newname)
+            if os.path.dirname(newname) == self.root_path:
+                item.setText(0, newname)
+            else:
+                self.root_item.removeChild(item)
 
     def onDelete(self):
         item = self.currentItem()
@@ -135,6 +143,63 @@ class Explorer(QtWidgets.QTreeWidget):
 
     def onDriveChanged(self, drive, checked):
         self.setRootPath(drive)
+
+    def dragMoveEvent(self, event):
+        if (event.source() == self and
+                self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove):
+            item = self.itemAt(event.pos())
+            if item is None:
+                item = self.root_item
+                self.scrollToItem(item)
+            if item.flags() & QtCore.Qt.ItemIsDropEnabled:
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            return super(Explorer, self).dragEnterEvent(event)
+
+    def dropEvent(self, event):
+        # InternalMove mode will ignore function dropMimeData
+        if (event.source() == self and
+                (event.dropAction == QtCore.Qt.MoveAction or
+                 self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove)):
+            item = self.itemAt(event.pos())
+            if item is None or item == self.root_item:
+                item = self.root_item
+                self.scrollToItem(item)
+                dest_dir = os.path.dirname(self.root_path)
+            else:
+                dest_dir = os.path.join(self.root_path, toUtf8(item.text(0)))
+            data = event.mimeData()
+            if data.hasFormat('application/x-qabstractitemmodeldatalist'):
+                bytearray = data.data('application/x-qabstractitemmodeldatalist')
+                for drag_item in self.decodeMimeData(bytearray):
+                    text = drag_item.get(QtCore.Qt.DisplayRole)
+                    if text:
+                        name = toUtf8(text.value())
+                        oldpath = os.path.join(self.root_path, name)
+                        newpath = os.path.join(dest_dir, name)
+                        if self.movePath(oldpath, newpath):
+                            item = self.currentItem()
+                            self.root_item.removeChild(item)
+        else:
+            return super(Explorer, self).dropEvent(event)
+
+    def decodeMimeData(self, bytearray):
+        data = []
+        item = {}
+        ds = QtCore.QDataStream(bytearray)
+        while not ds.atEnd():
+            ds.readInt32()  # row
+            ds.readInt32()  # column
+            map_items = ds.readInt32()
+            for i in range(map_items):
+                key = ds.readInt32()
+                value = QtCore.QVariant()
+                ds >> value
+                item[QtCore.Qt.ItemDataRole(key)] = value
+            data.append(item)
+        return data
 
     def addRoot(self, name):
         root = QtWidgets.QTreeWidgetItem(self)
@@ -152,6 +217,7 @@ class Explorer(QtWidgets.QTreeWidget):
             child.setIcon(0, self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirIcon))
         else:
             child.setIcon(0, self.qstyle.standardIcon(QtWidgets.QStyle.SP_FileIcon))
+            child.setFlags(child.flags() & ~QtCore.Qt.ItemIsDropEnabled)
         return child
 
     def setRootPath(self, path, refresh=False):
@@ -177,7 +243,7 @@ class Explorer(QtWidgets.QTreeWidget):
         self.clear()
         self.root_path = os.path.realpath(path)
         os.chdir(path)
-        self.root_item = self.addRoot(self.getDisplayName(self.root_path))
+        self.root_item = self.addRoot(self.root_path)
         dirs = sorted(os.listdir(self.root_path), key=pathkey)
         for d in dirs:
             if d.startswith('.'):
@@ -265,21 +331,29 @@ class Explorer(QtWidgets.QTreeWidget):
         if ok:
             newname = toUtf8(text)
             newpath = os.path.join(self.root_path, newname)
-            if os.path.exists(newpath):
-                QtWidgets.QMessageBox.warning(self,
-                                              self.tr('File exists'),
-                                              self.tr('File "%s" has existed!') % (newname)
-                                              )
-                return
-            try:
-                os.rename(path, newpath)
-            except OSError as err:
-                logger.warn(err)
-                return
-            if os.path.isfile(newpath):
-                self.fileRenamed.emit(path, newpath)
-            return newname
+            return self.movePath(path, newpath)
         return
+
+    def movePath(self, src, dest):
+        if os.path.exists(dest):
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr('File exists'),
+                self.tr('File "%s" has existed!') % (os.path.basename(dest)),
+            )
+            return
+        try:
+            os.rename(src, dest)
+        except OSError as err:
+            QtWidgets.QMessageBox.critical(
+                self,
+                self.tr('Error'),
+                err,
+            )
+            return
+        if os.path.isfile(dest):
+            self.fileRenamed.emit(src, dest)
+        return dest
 
     def getDrivesPath(self):
         if sys.platform != 'win32':
