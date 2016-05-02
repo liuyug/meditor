@@ -164,8 +164,9 @@ class Explorer(QtWidgets.QTreeWidget):
                 (event.dropAction == QtCore.Qt.MoveAction or
                  self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove)):
             item = self.itemAt(event.pos())
-            if item is None or item == self.root_item:
-                item = self.root_item
+            if item is None:
+                return
+            if item == self.root_item:
                 self.scrollToItem(item)
                 dest_dir = os.path.dirname(self.root_path)
             else:
