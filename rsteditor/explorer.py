@@ -330,7 +330,7 @@ class Explorer(QtWidgets.QTreeWidget):
                                                   filename)
         if ok:
             newname = toUtf8(text)
-            newpath = os.path.join(self.root_path, newname)
+            newpath = os.path.abspath(os.path.join(self.root_path, newname))
             return self.movePath(path, newpath)
         return
 
