@@ -41,7 +41,7 @@ update_version()
     update_rsteditor_version
     update_nsis_version
     update_desktop_version
-    update_git_tag
+    # update_git_tag
 }
 
 check_version
