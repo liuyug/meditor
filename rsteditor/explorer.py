@@ -149,9 +149,8 @@ class Explorer(QtWidgets.QTreeWidget):
                 self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove):
             item = self.itemAt(event.pos())
             if item is None:
-                item = self.root_item
-                self.scrollToItem(item)
-            if item.flags() & QtCore.Qt.ItemIsDropEnabled:
+                event.ignore()
+            elif item.flags() & QtCore.Qt.ItemIsDropEnabled:
                 event.accept()
             else:
                 event.ignore()
@@ -163,42 +162,40 @@ class Explorer(QtWidgets.QTreeWidget):
         if (event.source() == self and
                 (event.dropAction == QtCore.Qt.MoveAction or
                  self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove)):
-            item = self.itemAt(event.pos())
-            if item is None:
+            drop_item = self.itemAt(event.pos())
+            if drop_item is None:
                 return
-            if item == self.root_item:
-                self.scrollToItem(item)
+            if drop_item == self.root_item:
+                self.scrollToItem(drop_item)
                 dest_dir = os.path.dirname(self.root_path)
             else:
-                dest_dir = os.path.join(self.root_path, toUtf8(item.text(0)))
-            data = event.mimeData()
-            if data.hasFormat('application/x-qabstractitemmodeldatalist'):
-                bytearray = data.data('application/x-qabstractitemmodeldatalist')
+                dest_dir = os.path.join(self.root_path, toUtf8(drop_item.text(0)))
+            mimeData = event.mimeData()
+            if mimeData.hasFormat('application/x-qabstractitemmodeldatalist'):
+                bytearray = mimeData.data('application/x-qabstractitemmodeldatalist')
                 for drag_item in self.decodeMimeData(bytearray):
-                    text = drag_item.get(QtCore.Qt.DisplayRole)
-                    if text:
-                        name = toUtf8(text.value())
-                        oldpath = os.path.join(self.root_path, name)
-                        newpath = os.path.join(dest_dir, name)
-                        if self.movePath(oldpath, newpath):
-                            item = self.currentItem()
-                            self.root_item.removeChild(item)
+                    name = toUtf8(drag_item.text(0))
+                    oldpath = os.path.join(self.root_path, name)
+                    newpath = os.path.join(dest_dir, name)
+                    if self.movePath(oldpath, newpath):
+                        self.root_item.removeChild(drag_item)
         else:
             return super(Explorer, self).dropEvent(event)
 
     def decodeMimeData(self, bytearray):
         data = []
-        item = {}
         ds = QtCore.QDataStream(bytearray)
+        root_index = self.indexFromItem(self.root_item)
         while not ds.atEnd():
-            ds.readInt32()  # row
-            ds.readInt32()  # column
+            row = ds.readInt32()
+            column = ds.readInt32()
+            index = root_index.child(row, column)
             map_items = ds.readInt32()
             for i in range(map_items):
-                key = ds.readInt32()
+                ds.readInt32()    # QtCore.Qt.ItemDataRole(key)
                 value = QtCore.QVariant()
                 ds >> value
-                item[QtCore.Qt.ItemDataRole(key)] = value
+            item = self.itemFromIndex(index)
             data.append(item)
         return data
 
