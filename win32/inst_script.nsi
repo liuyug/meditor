@@ -14,9 +14,11 @@
 !define SHORTCUT_NAME "rsteditor.lnk"
 !define EXEC_NAME "rsteditor.exe"
 !define EXEC_ICON "$INSTDIR\share\pixmaps\rsteditor-text-editor.ico"
+;
+!define DIST_PATH '..\dist'
 
 Name "${PRODUCT_NAME}"
-OutFile "dist\${PRODUCT_NAME}-${PRODUCT_VER}.exe"
+OutFile "${DIST_PATH}\${PRODUCT_NAME}-${PRODUCT_VER}.exe"
 
 ;--------------------------------
 SetCompressor lzma
@@ -71,10 +73,7 @@ BrandingText "${PRODUCT_NAME} ${PRODUCT_VER}"
 Section "!Install"
 
   SetOutPath "$INSTDIR"
-  ; CreateDirectory $INSTDIR\dir
-  ;File /r /x *.nsi /x .svn  *.*
-  ;File /r "build\exe.win32-3.4\*.*"
-  File /r "dist\rsteditor\*.*"
+  File /r "${DIST_PATH}\rsteditor\*.*"
 
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
