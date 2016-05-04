@@ -145,6 +145,7 @@ class Explorer(QtWidgets.QTreeWidget):
         self.setRootPath(drive)
 
     def dragMoveEvent(self, event):
+        super(Explorer, self).dragMoveEvent(event)
         if (event.source() == self and
                 self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove):
             item = self.itemAt(event.pos())
@@ -154,8 +155,6 @@ class Explorer(QtWidgets.QTreeWidget):
                 event.accept()
             else:
                 event.ignore()
-        else:
-            return super(Explorer, self).dragEnterEvent(event)
 
     def dropEvent(self, event):
         # InternalMove mode will ignore function dropMimeData
@@ -166,7 +165,6 @@ class Explorer(QtWidgets.QTreeWidget):
             if drop_item is None:
                 return
             if drop_item == self.root_item:
-                self.scrollToItem(drop_item)
                 dest_dir = os.path.dirname(self.root_path)
             else:
                 dest_dir = os.path.join(self.root_path, toUtf8(drop_item.text(0)))
