@@ -220,10 +220,15 @@ class Editor(QsciScintilla):
     def inputMethodQuery(self, query):
         """ copy from TortoiseHg -> qscilib.py """
         if query == QtCore.Qt.ImMicroFocus:
-            return self.cursorRect()
+            l, i = self.getCursorPosition()
+            p = self.positionFromLineIndex(l, i)
+            x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, p)
+            y = self.SendScintilla(QsciScintilla.SCI_POINTYFROMPOSITION, 0, p)
+            w = self.SendScintilla(QsciScintilla.SCI_GETCARETWIDTH)
+            return QtCore.QRect(x, y, w, self.textHeight(l))
         return super(Editor, self).inputMethodQuery(query)
 
-    def inputMethodEvent(self, event):
+    def inputMethodEvent2(self, event):
         """ copy from TortoiseHg -> qscilib.py """
         if self.isReadOnly():
             return
@@ -256,17 +261,7 @@ class Editor(QsciScintilla):
 
         event.accept()
 
-    def cursorRect(self):
-        """ copy from TortoiseHg -> qscilib.py """
-        """Return a rectangle (in viewport coords) including the cursor"""
-        l, i = self.getCursorPosition()
-        p = self.positionFromLineIndex(l, i)
-        x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, p)
-        y = self.SendScintilla(QsciScintilla.SCI_POINTYFROMPOSITION, 0, p)
-        w = self.SendScintilla(QsciScintilla.SCI_GETCARETWIDTH)
-        return QtCore.QRect(x, y, w, self.textHeight(l))
-
-    def inputMethodEvent2(self, event):
+    def inputMethodEvent(self, event):
         """my code
         Use default input method event handler and don't show preeditstring
         """
@@ -280,7 +275,6 @@ class Editor(QsciScintilla):
         if self.input_count > 5:
             self.lineInputed.emit()
             self.input_count = 0
-        return
 
     def keyPressEvent(self, event):
         super(Editor, self).keyPressEvent(event)
