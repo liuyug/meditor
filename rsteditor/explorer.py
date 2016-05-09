@@ -21,13 +21,17 @@ class Explorer(QtWidgets.QTreeWidget):
     fileRenamed = QtCore.pyqtSignal('QString', 'QString')
     fileNew = QtCore.pyqtSignal()
 
-    def __init__(self, *args, **kwargs):
-        super(Explorer, self).__init__(*args, **kwargs)
+    def __init__(self, parent, style=None):
+        super(Explorer, self).__init__(parent)
         self.header().close()
         self.root_path = None
         self.root_item = None
         self.padding_right = 32
-        self.qstyle = QtWidgets.QStyleFactory.create('windows')
+        # QStyle, such as QtWidgets.QStyleFactory.create('windows')
+        self.qstyle = style
+        # QT BUG, must keep reference or crash
+        self.iconProvider = QtWidgets.QFileIconProvider()
+
         self.setRootIsDecorated(False)
         self.setItemsExpandable(False)
         self.itemActivated.connect(self.onItemActivated)
@@ -200,7 +204,7 @@ class Explorer(QtWidgets.QTreeWidget):
     def addRoot(self, name):
         root = QtWidgets.QTreeWidgetItem(self)
         root.setText(0, self.getDisplayName(name))
-        root.setIcon(0, self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirOpenIcon))
+        root.setIcon(0, self.getFileIcon('/'))
         return root
 
     def appendItem(self, rootitem, name):
@@ -208,11 +212,9 @@ class Explorer(QtWidgets.QTreeWidget):
             raise Exception('Add root item firstly!')
         child = QtWidgets.QTreeWidgetItem(rootitem)
         child.setText(0, name)
+        child.setIcon(0, self.getFileIcon(name))
         path = os.path.join(self.root_path, name)
-        if os.path.isdir(path):
-            child.setIcon(0, self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirIcon))
-        else:
-            child.setIcon(0, self.qstyle.standardIcon(QtWidgets.QStyle.SP_FileIcon))
+        if os.path.isfile(path):
             child.setFlags(child.flags() & ~QtCore.Qt.ItemIsDropEnabled)
         return child
 
@@ -263,6 +265,23 @@ class Explorer(QtWidgets.QTreeWidget):
 
     def getRootPath(self):
         return self.root_path
+
+    def getFileIcon(self, name, style=None):
+        if name == '/':
+            if self.qstyle:
+                icon = self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirOpenIcon)
+            else:
+                icon = self.iconProvider.icon(self.iconProvider.Folder)
+        else:
+            path = os.path.join(self.root_path, name)
+            if os.path.isdir(path):
+                if self.qstyle:
+                    icon = self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirIcon)
+                else:
+                    icon = self.iconProvider.icon(self.iconProvider.Folder)
+            else:
+                icon = self.iconProvider.icon(QtCore.QFileInfo(path))
+        return icon
 
     def loadFile(self, filename):
         """
