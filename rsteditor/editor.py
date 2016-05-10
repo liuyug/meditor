@@ -80,110 +80,6 @@ class FindDialog(QtWidgets.QDialog):
         return self.caseCheckBox.isChecked()
 
 
-class _SciImSupport(object):
-    """ copy from TortoiseHg -> qscilib.py """
-    """Patch for QsciScintilla to implement improved input method support
-
-    See http://doc.trolltech.com/4.7/qinputmethodevent.html
-
-    """
-
-    PREEDIT_INDIC_ID = QsciScintilla.INDIC_MAX
-    """indicator for highlighting preedit text"""
-
-    def __init__(self, sci):
-        self._sci = sci
-        self._preeditpos = (0, 0)  # (line, index) where preedit text starts
-        self._preeditlen = 0
-        self._preeditcursorpos = 0  # relative pos where preedit cursor exists
-        self._undoactionbegun = False
-        self._setuppreeditindic()
-
-    def removepreedit(self):
-        """Remove the previous preedit text
-
-        original pos: preedit cursor
-        final pos: target cursor
-        """
-        l, i = self._sci.getCursorPosition()
-        i -= self._preeditcursorpos
-        self._preeditcursorpos = 0
-        try:
-            self._sci.setSelection(
-                self._preeditpos[0], self._preeditpos[1],
-                self._preeditpos[0], self._preeditpos[1] + self._preeditlen)
-            self._sci.removeSelectedText()
-        finally:
-            self._sci.setCursorPosition(l, i)
-
-    def commitstr(self, start, repllen, commitstr):
-        """Remove the repl string followed by insertion of the commit string
-
-        original pos: target cursor
-        final pos: end of committed text (= start of preedit text)
-        """
-        l, i = self._sci.getCursorPosition()
-        i += start
-        self._sci.setSelection(l, i, l, i + repllen)
-        self._sci.removeSelectedText()
-        self._sci.insert(commitstr)
-        self._sci.setCursorPosition(l, i + len(commitstr))
-        if commitstr:
-            self.endundo()
-
-    def insertpreedit(self, text):
-        """Insert preedit text
-
-        original pos: start of preedit text
-        final pos: start of preedit text (unchanged)
-        """
-        if text and not self._preeditlen:
-            self.beginundo()
-        l, i = self._sci.getCursorPosition()
-        self._sci.insert(text)
-        self._updatepreeditpos(l, i, len(text))
-        if not self._preeditlen:
-            self.endundo()
-
-    def movepreeditcursor(self, pos):
-        """Move the cursor to the relative pos inside preedit text"""
-        self._preeditcursorpos = min(pos, self._preeditlen)
-        l, i = self._preeditpos
-        self._sci.setCursorPosition(l, i + self._preeditcursorpos)
-
-    def beginundo(self):
-        if self._undoactionbegun:
-            return
-        self._sci.beginUndoAction()
-        self._undoactionbegun = True
-
-    def endundo(self):
-        if not self._undoactionbegun:
-            return
-        self._sci.endUndoAction()
-        self._undoactionbegun = False
-
-    def _updatepreeditpos(self, l, i, len):
-        """Update the indicator and internal state for preedit text"""
-        self._sci.SendScintilla(QsciScintilla.SCI_SETINDICATORCURRENT,
-                                self.PREEDIT_INDIC_ID)
-        self._preeditpos = (l, i)
-        self._preeditlen = len
-        if len <= 0:  # have problem on sci
-            return
-        p = self._sci.positionFromLineIndex(*self._preeditpos)
-        q = self._sci.positionFromLineIndex(self._preeditpos[0],
-                                            self._preeditpos[1] + len)
-        self._sci.SendScintilla(QsciScintilla.SCI_INDICATORFILLRANGE,
-                                p, q - p)  # q - p != len
-
-    def _setuppreeditindic(self):
-        """Configure the style of preedit text indicator"""
-        self._sci.SendScintilla(QsciScintilla.SCI_INDICSETSTYLE,
-                                self.PREEDIT_INDIC_ID,
-                                QsciScintilla.INDIC_PLAIN)
-
-
 class Editor(QsciScintilla):
     """
     Scintilla Offical Document: http://www.scintilla.org/ScintillaDoc.html
@@ -215,61 +111,26 @@ class Editor(QsciScintilla):
         self.copy_available = False
         self.copyAvailable.connect(self.setCopyAvailable)
         self.inputMethodEventCount = 0
-        self._imsupport = _SciImSupport(self)
 
     def inputMethodQuery(self, query):
-        """ copy from TortoiseHg -> qscilib.py """
         if query == QtCore.Qt.ImMicroFocus:
-            return self.cursorRect()
-        return super(Editor, self).inputMethodQuery(query)
+            l, i = self.getCursorPosition()
+            p = self.positionFromLineIndex(l, i)
+            x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, p)
+            y = self.SendScintilla(QsciScintilla.SCI_POINTYFROMPOSITION, 0, p)
+            w = self.SendScintilla(QsciScintilla.SCI_GETCARETWIDTH)
+            return QtCore.QRect(x, y, w, self.textHeight(l))
+        else:
+            return super(Editor, self).inputMethodQuery(query)
 
     def inputMethodEvent(self, event):
-        """ copy from TortoiseHg -> qscilib.py """
+        """
+        Use default input method event handler and don't show preeditstring
+
+        See http://doc.trolltech.com/4.7/qinputmethodevent.html
+        """
         if self.isReadOnly():
             return
-
-        self.removeSelectedText()
-        self._imsupport.removepreedit()
-        self._imsupport.commitstr(event.replacementStart(),
-                                  event.replacementLength(),
-                                  event.commitString())
-        self._imsupport.insertpreedit(event.preeditString())
-        for a in event.attributes():
-            if a.type == QtGui.QInputMethodEvent.Cursor:
-                logger.debug('QInputMethodEvent.Cursor')
-                self._imsupport.movepreeditcursor(a.start)
-            elif a.type == QtGui.QInputMethodEvent.TextFormat:
-                logger.debug('QInputMethodEvent.TextFormat')
-            elif a.type == QtGui.QInputMethodEvent.Language:
-                logger.debug('QInputMethodEvent.Language')
-            elif a.type == QtGui.QInputMethodEvent.Ruby:
-                logger.debug('QInputMethodEvent.Ruby')
-            elif a.type == QtGui.QInputMethodEvent.Selection:
-                logger.debug('QInputMethodEvent.Selection')
-
-        commit_text = toUtf8(event.commitString())
-        if commit_text:
-            self.input_count += len(commit_text)
-        if self.input_count > 5:
-            self.lineInputed.emit()
-            self.input_count = 0
-
-        event.accept()
-
-    def cursorRect(self):
-        """ copy from TortoiseHg -> qscilib.py """
-        """Return a rectangle (in viewport coords) including the cursor"""
-        l, i = self.getCursorPosition()
-        p = self.positionFromLineIndex(l, i)
-        x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, p)
-        y = self.SendScintilla(QsciScintilla.SCI_POINTYFROMPOSITION, 0, p)
-        w = self.SendScintilla(QsciScintilla.SCI_GETCARETWIDTH)
-        return QtCore.QRect(x, y, w, self.textHeight(l))
-
-    def inputMethodEvent2(self, event):
-        """my code
-        Use default input method event handler and don't show preeditstring
-        """
         if event.preeditString() and not event.commitString():
             return
 
@@ -280,7 +141,6 @@ class Editor(QsciScintilla):
         if self.input_count > 5:
             self.lineInputed.emit()
             self.input_count = 0
-        return
 
     def keyPressEvent(self, event):
         super(Editor, self).keyPressEvent(event)
