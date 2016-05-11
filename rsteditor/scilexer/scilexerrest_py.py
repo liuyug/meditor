@@ -1,15 +1,14 @@
 import re
 import logging
 
-from PyQt5 import QtGui, QtCore
-from PyQt5.Qsci import QsciLexerCustom
+from PyQt5 import Qsci, QtGui, QtCore
 
 from rsteditor.util import toUtf8
 
 logger = logging.getLogger(__name__)
 
 
-class QsciLexerRest(QsciLexerCustom):
+class QsciLexerRest(Qsci.QsciLexerCustom):
     keyword_list = [
         'attention',
         'caution',
@@ -49,7 +48,7 @@ class QsciLexerRest(QsciLexerCustom):
     styles = {
         'string': 0,
         'colon': 0,
-        'space': 4,
+        'space': 0,
         'newline': 0,
         'comment': 1,
         'title': 2,
@@ -160,13 +159,15 @@ class QsciLexerRest(QsciLexerCustom):
         ('in_field',     r'''^:([^:]+?):(?!`)'''),
         ('in_unusedspace', r'''( +)\n'''),
     ]
-    text_styles = {}
 
     def __init__(self, *args, **kwargs):
         super(QsciLexerRest, self).__init__(*args, **kwargs)
         self.setDefaultColor(QtGui.QColor('#000000'))
         self.setDefaultPaper(QtGui.QColor('#ffffff'))
         self.setDefaultFont(QtGui.QFont('Monospace', 12))
+        self.rstyles = dict(zip(*(self.styles.values(), self.styles.keys())))
+        # to store global styleing
+        self.styled_text = {}
         self.block_tokens = []
         self.inline_tokens = []
         for key, regex in self.token_regex:
@@ -189,107 +190,120 @@ class QsciLexerRest(QsciLexerCustom):
         return 'rst'
 
     def description(self, style):
-        for k, v in self.styles.items():
-            if v == style:
-                return k
-        return ''
+        return self.rstyles.get(style, '')
+
+    def getStyleAt(self, pos):
+        return self.editor().SendScintilla(Qsci.QsciScintilla.SCI_GETSTYLEAT, pos)
 
     def getTextRange(self, start, end):
         if not self.editor():
             return ''
-        bs_line, index = self.editor().lineIndexFromPosition(start)
-        be_line, index = self.editor().lineIndexFromPosition(end)
+        bs_line, _ = self.editor().lineIndexFromPosition(start)
+        be_line, _ = self.editor().lineIndexFromPosition(end)
         text = []
-        for line in range(bs_line, be_line + 1):
-            text.append(toUtf8(self.editor().text(line)))
-        return ''.join(text)
-        # FIXME: segment fault ??
-        #text = self.editor().SendScintilla(QsciScintilla.SCI_GETTEXTRANGE, start, end)
+        for x in range(bs_line, be_line):
+            text.append(self.editor().text(x))
+        return toUtf8(''.join(text))
 
-    def getStyleText(self, start, end):
-        for key in sorted(self.text_styles, reverse=True):
-            if start > key and self.text_styles[key][1] != 0:
-                start = key
+    def getStylingPosition(self, start, end):
+        """
+        inline style and global style is confilicted at calling.
+        Need a list to store global style position
+        """
+        styled_keys = sorted(self.styled_text.keys())
+        if not styled_keys:
+            return (start, end)
+        new_start = 0
+        new_end = self.editor().length()
+        for x in range(len(styled_keys)):
+            pos = styled_keys[x]
+            if start < pos:
+                x = max(x - 3, 0)
+                new_start = styled_keys[x]
                 break
-            else:
-                del self.text_styles[key]
-        if not self.text_styles:
-            start = 0
-        end = self.editor().length()
-        return (start, end, self.getTextRange(start, end))
+        for y in range(len(styled_keys)):
+            pos = styled_keys[y]
+            if end < pos:
+                y = min(y + 3, len(styled_keys) - 1)
+                new_end = styled_keys[y]
+                break
+        for k in styled_keys[x:y]:
+            del self.styled_text[k]
+        logger.debug('old: %s - %s, new: %s - %s' % (start, end, new_start, new_end))
+        return (new_start, new_end)
 
-    def parseText(self, start, end):
-        tstart, tend, text = self.getStyleText(start, end)
-        # line number
-        # character position at line
-        line, index = self.editor().lineIndexFromPosition(tstart)
-        offset = index  # character position at text
-        mo = None
-        tstyles = {}
-        # for block
-        while True:
+    def do_StylingText(self, start, end):
+        """
+        To support non-latin character, function 'positionFromLineIndex'
+        will be called for difference length between latin and non-latin.
+        """
+        text = self.getTextRange(start, end)
+        logger.debug('styling text: %s', repr(text))
+        line, index = self.editor().lineIndexFromPosition(start)
+        m_start = start
+        offset = 0
+        self.startStyling(start)
+        while offset < len(text):
+            mo = None
             for key, tok in self.block_tokens:
                 mo = tok.match(text, offset)
                 if mo:
                     break
-            if mo is None:
-                break
+            assert(mo)
             m_string = text[offset:mo.end()]
             line_fix = m_string.count('\n')
+            end_line = line + line_fix
             if line_fix > 0:    # calculate length in last line
-                index_end = 0
+                end_index = 0
             else:
-                index_end = index + len(m_string)
-            m_start = self.editor().positionFromLineIndex(line, index)
-            m_end = self.editor().positionFromLineIndex(line + line_fix,
-                                                        index_end)
-            if m_end < m_start:
-                logger.error('%s: %d - %d : %s', key, offset, mo.end(), repr(text[offset:mo.end()]))
-                logger.error('%d - %d, %d:%d - %d:%d', m_start, m_end, line, index, line + line_fix, index_end)
+                end_index = index + len(m_string)
+            m_end = self.editor().positionFromLineIndex(end_line, end_index)
+            message = '%s(%s,%s): %s' % (key, m_start, m_end, repr(m_string))
+            logger.debug(message)
+            if (m_end - m_start) > 0:
+                self.setStyling(m_end - m_start, self.styles[key])
+                self.styled_text[m_start] = {
+                    'length': m_end - m_start,
+                    'style': key,
+                }
             else:
-                logger.debug('%s: %d - %d : %s', key, offset, mo.end(), repr(text[offset:mo.end()]))
-                logger.debug('%d - %d, %d:%d - %d:%d', m_start, m_end, line, index, line + line_fix, index_end)
-                tstyles[m_start] = (m_end - m_start, self.styles[key])
-            line += line_fix
-            index = index_end
+                logger.error('*** !!! length < 0 !!! ***')
+            # next position
+            m_start = m_end
+            line = end_line
+            index = end_index
             offset = mo.end()
-        return (tstart, max(tend, m_end), tstyles)
 
-    def styleText(self, start, end):
-        """
-        1. ReStructedText is context syntax struct, so I have to scan all text
-        everytimes to config style. It reduce some performance.
-        2. To support non-latin character, function 'positionFromLineIndex'
-        will be called for difference length between latin and non-latin.
-        3. Must use match global for searching section
-        """
-        if not self.editor():
-            return
-        tstart, tend, tstyles = self.parseText(start, end)
-        for key, value in tstyles.items():
-            self.startStyling(key)
-            self.setStyling(*value)
-        self.text_styles.update(tstyles)
-        # for inline
-        mo = None
-        bs_line, index = self.editor().lineIndexFromPosition(tstart)
-        be_line, index = self.editor().lineIndexFromPosition(tend)
-        for line in range(bs_line, be_line + 1):
+    def do_InlineStylingText(self, start, end):
+        bs_line, index = self.editor().lineIndexFromPosition(start)
+        be_line, index = self.editor().lineIndexFromPosition(end)
+        for line in range(bs_line, be_line):
             line_text = toUtf8(self.editor().text(line))
             for key, tok in self.inline_tokens:
                 mo_list = tok.finditer(line_text)
                 for mo in mo_list:
-                    g_start = mo.start(1)
-                    g_end = mo.end(1)
-                    m_start = self.editor().positionFromLineIndex(line, g_start)
-                    m_end = self.editor().positionFromLineIndex(line, g_end)
+                    l_start = mo.start(1)
+                    l_end = mo.end(1)
+                    m_start = self.editor().positionFromLineIndex(line, l_start)
+                    m_end = self.editor().positionFromLineIndex(line, l_end)
+                    assert(m_end - m_start)
+                    message = '%s(%s,%s): %s' % (key, line + 1, l_start, repr(line_text[l_start:l_end]))
+                    logger.debug(message)
                     self.startStyling(m_start)
                     self.setStyling(m_end - m_start, self.styles[key])
-                    logger.debug('%s: %d - %d : %s',
-                                  key, line, g_start, repr(line_text[g_start:g_end]))
-        # move style position to end
-        self.startStyling(end)
-        return
+
+    def styleText(self, start, end):
+        if not self.editor():
+            return
+        logger.debug('=' * 80)
+        s_start, s_end = self.getStylingPosition(start, end)
+        self.do_StylingText(s_start, s_end)
+        self.do_InlineStylingText(s_start, s_end)
+        # tell to end styling
+        self.startStyling(self.editor().length())
+
+    def defaultStyle(self):
+        return self.styles['string']
 
     def defaultColor(self, style):
         prop_list = self.getProperty(style)

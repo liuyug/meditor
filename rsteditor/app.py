@@ -8,7 +8,6 @@ import logging
 import logging.handlers
 import argparse
 import threading
-from io import StringIO
 from functools import partial
 
 from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
@@ -43,7 +42,7 @@ requestPreview = threading.Event()
 LOG_FILENAME = os.path.join(__home_data_path__, 'rsteditor.log')
 
 # for logger
-logger = logging.getLogger(__name__)
+logger = None
 
 
 def previewWorker(self):
@@ -841,11 +840,13 @@ def main():
                         action='count', default=0)
     parser.add_argument('rstfile', nargs='?', help='rest file')
     args = parser.parse_args()
+
     globalvars.logging_level = logging.WARNING - (args.verbose * 10)
     if globalvars.logging_level <= logging.DEBUG:
-        formatter = logging.Formatter('[%(levelname)s] [%(name)s %(lineno)d] %(message)s')
+        globalvars.logging_level = logging.DEBUG
+        formatter = logging.Formatter('[%(module)s %(lineno)d] %(message)s')
     else:
-        formatter = logging.Formatter('[%(levelname)s] %(message)s')
+        formatter = logging.Formatter('%(message)s')
 
     file_handler = logging.handlers.TimedRotatingFileHandler(
         filename=LOG_FILENAME,
@@ -862,10 +863,13 @@ def main():
     console_handler.setFormatter(formatter)
     console_handler.setLevel(globalvars.logging_level)
 
+    app_logger = logging.getLogger(__name__.partition('.')[0])
+    app_logger.setLevel(logging.DEBUG)
+    app_logger.addHandler(file_handler)
+    app_logger.addHandler(console_handler)
+
     global logger
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+    logger = logging.getLogger(__name__)
 
     logger.info('=== rsteditor begin ===')
     logger.debug(args)

@@ -106,6 +106,7 @@ class Editor(QsciScintilla):
         self.setEdgeMode(QsciScintilla.EdgeLine)
         self.setEdgeColumn(self.edgeColumn)
         self.setWrapMode(QsciScintilla.WrapCharacter)
+        self.setEolMode(QsciScintilla.EolUnix)
         self.setUtf8(True)
         self.findDialog = FindDialog(self)
         self.copy_available = False
@@ -332,7 +333,6 @@ class Editor(QsciScintilla):
                 lexer.setFont(QtGui.QFont('Monospace', 12))
             elif ext in ['.rst', '.rest']:
                 lexer = QsciLexerRest(self)
-                lexer.setFont(QtGui.QFont('Monospace', 12))
                 lexer.setDebugLevel(globalvars.logging_level)
                 rst_prop_files = [
                     os.path.join(__home_data_path__, 'rst.properties'),
