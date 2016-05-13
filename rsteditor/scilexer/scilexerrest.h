@@ -22,6 +22,7 @@ class QsciLexerRest: public QsciLexerCustom
         virtual QColor defaultColor(int style) const;
         virtual QColor defaultPaper(int style) const;
         virtual QFont defaultFont(int style) const;
+        virtual int defaultStyle() const;
         void setDebugLevel(int level);
         void readConfig(QString & prop_file);
     private:
@@ -33,9 +34,10 @@ class QsciLexerRest: public QsciLexerCustom
         QMap <QString, QRegExp> inline_regexs;
         QMap <int, QString> properties;
         QMap <int, struct STYLEDTEXT> styled_text;
-        QString rangeText(int start, int end);
-        QString stylingText(int * start, int * end);
-        QMap <int, struct STYLEDTEXT> parseText(int * start, int * end);
+        QString getTextRange(int start, int end);
+        void getStylingPosition(int * start, int * end);
+        void do_StylingText(int start, int end)
+        void do_InlineStylingText(int start, int end)
 };
 
 #endif

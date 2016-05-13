@@ -215,127 +215,152 @@ QString QsciLexerRest::description(int style) const
     return descs.key(style, QString());
 }
 
-QString QsciLexerRest::rangeText(int start, int end)
+QString QsciLexerRest::getTextRange(int start, int end)
 {
     QString text;
-    if(!editor())
+    if (!editor())
         return text;
     int bs_line, be_line, index;
     editor()->lineIndexFromPosition(start, &bs_line, &index);
     editor()->lineIndexFromPosition(end, &be_line, &index);
-    for(int line=bs_line;line<(be_line+1);line++){
+    for (int line=bs_line; line < (be_line + 1) ; line++){
         text += editor()->text(line);
     }
     return text;
 }
 
-QString QsciLexerRest::stylingText(int * start, int * end)
+void QsciLexerRest::getStylingPosition(int * start, int * end)
 {
-    QList<int> keys = styled_text.keys();
-    qSort(keys.begin(), keys.end(), qGreater<int>());
-    QList<int>::iterator item;
-    for(item=keys.begin(); item!=keys.end(); item++) {
-        if(*start > *item && styled_text[*item].style != 0) {
-            *start = *item;
+    QList<int> styled_keys = styled_text.keys();
+    if styled_keys.isEmpty()
+        return;
+    //qSort(keys.begin(), keys.end(), qGreater<int>());
+    int new_start = 0;
+    int new_end = editor()->length();
+    int pos;
+    for (int x = 0; x < keys.size(), x++) {
+        pos = styled_keys[x];
+        if (*start < pos) {
+            x = max(x - 3, 0);
+            new_start = styled_keys[x];
             break;
-        } else {
-            styled_text.remove(*item);
         }
     }
-    if(styled_text.empty()){
-        *start = 0;
+    for (int y = 0; y < keys.size(), y++) {
+        pos = styled_keys[y];
+        if (*end < pos) {
+            y = min(y + 3, styled_keys.size() - 1);
+            new_end = styled_keys[y];
+            break;
+        }
     }
-    *end = editor()->length();
-    return rangeText(*start, *end);
+    for (int k = x; k < y; k++) {
+        styled_text.removeAt(k)
+    }
+    *start = new_start;
+    *end = new_end;
+    return;
 }
 
-QMap <int, struct STYLEDTEXT> QsciLexerRest::parseText(int * start, int * end)
+void QsciLexerRest::do_StylingText(int start, int end)
 {
-    QString text;
-    text = stylingText(start, end);
+    QString text = getTextRange(start, end);
+    if (debug < 15) qDebug()<<"styling text:"<<text;
+
     int line, index;
-    editor()->lineIndexFromPosition(*start, &line, &index);
-    int offset = index;
-    QList<QString>::iterator item;
-    QMap <int, struct STYLEDTEXT> tstyles;
+    editor()->lineIndexFromPosition(start, &line, &index);
+
+    int m_start = start;
+    int offset = 0;
+    int m_end;
     QRegExp rx;
-    QString key, mstring;
-    int line_fix, index_end;
-    int m_start, m_end;
-    struct STYLEDTEXT stext;
     int pos;
-    while(1){
-        pos = -1;
-        for(item=regex_keys.begin();item!=regex_keys.end();item++){
-            if((*item).startsWith("in_")) continue;
-            key = *item;
-            rx = regexs[*item];
+    struct STYLEDTEXT styled_text;
+    QString key, mstring;
+    int line_fix, end_line, end_index;
+
+    startStyling(start);
+    while (offset < text.size()) {
+        foreach(key; regexs.keys()) {
+            rx = regexs[key];
             pos = rx.indexIn(text, offset, QRegExp::CaretAtOffset);
-            if(pos>=0) break;
+            if (pos > -1)
+                break;
         }
-        if(pos<0) break;
+        if (pos < 0) {
+            if (debug < 15) qDebug()<<"Could not match:"<<text.mid(offset);
+            break;
+        }
         mstring = rx.cap(0);
-        if(debug<15) qDebug()<<"[DEBUG] "<<line<<":"<<key<<":"<<rx.matchedLength()<<": "<<mstring;
+        if (debug < 15)
+            qDebug()<<"[DEBUG] "<<line<<":"<<key<<":"<<rx.matchedLength()<<": "<<mstring;
         line_fix = mstring.count('\n');
-        if(line_fix>0) {
-            index_end = 0;
+        end_line = line + line_fix;
+        if (line_fix > 0) {
+            end_index = 0;
         } else {
-            index_end = index + mstring.length();
+            end_index = index + mstring.length();
         }
-        m_start = editor()->positionFromLineIndex(line, index);
-        m_end = editor()->positionFromLineIndex(line + line_fix, index_end);
-        stext.length = m_end - m_start;
-        stext.style = descs[key];
-        tstyles[m_start] = stext;
-        line += line_fix;
-        index = index_end;
+        m_end = editor()->positionFromLineIndex(end_line, end_index);
+        if ((m_end - m_start) > 0) {
+            setStyling(m_end - m_start, descs[key]);
+            styled_text.length = m_end - m_start;
+            styled_text.style = key;
+            styled_text[m_start] = styled_text;
+        } else {
+            qDebug()<<"length < 0";
+        }
+        m_start = m_end;
+        line = end_line;
+        index = end_index;
         offset += rx.matchedLength();
     }
-    *end = qMax(*end, m_end);
-    return tstyles;
+    return;
 }
 
-void QsciLexerRest::styleText(int start, int end)
+void QsciLexerRest::do_InlineStylingText(int start, int end)
 {
-    if(debug<15) qDebug()<<"[DEBUG] "<<__FUNCTION__<<" start: "<<start<<" end: "<<end;
-    if(!editor())
-        return;
-    QMap <int, struct STYLEDTEXT> tstyles;
-    tstyles = parseText(&start, &end);
-    QList<int> nkeys = tstyles.keys();
-    qSort(nkeys.begin(), nkeys.end(), qGreater<int>());
-    QList<int>::iterator nitem;
-    for(nitem=nkeys.begin();nitem!=nkeys.end();nitem++){
-        startStyling(*nitem);
-        setStyling(tstyles[*nitem].length, tstyles[*nitem].style);
-    }
-    styled_text.unite(tstyles);
     int bs_line, be_line, index;
     editor()->lineIndexFromPosition(start, &bs_line, &index);
     editor()->lineIndexFromPosition(end, &be_line, &index);
-    int line, offset, cap_idx = 1;
-    int m_start, m_end;
-    QString line_text;
-    QList<QString>::iterator item;
     QRegExp rx;
-    for(line=bs_line;line<(be_line+1);line++){
-        line_text = editor()->text(line);
-        for(item=regex_keys.begin();item!=regex_keys.end();item++){
-            if(!(*item).startsWith("in_")) continue;
-            rx = inline_regexs[*item];
+    QString line_text;
+    int offset;
+    for (int line = bs_line; line < be_line; line++) {
+        line_text = editor().text(line);
+        foreach (QString key; inline_regexs.keys()) {
+            rx = inline_regexs[key]
             offset = 0;
             while(rx.indexIn(line_text, offset) != -1){
-                m_start = editor()->positionFromLineIndex(line, rx.pos(cap_idx));
-                m_end = editor()->positionFromLineIndex(line, rx.pos(cap_idx) + rx.cap(cap_idx).length());
+                m_start = editor()->positionFromLineIndex(line, rx.pos(1));
+                m_end = editor()->positionFromLineIndex(line, rx.pos(1) + rx.cap(1).length());
                 startStyling(m_start);
-                setStyling(m_end - m_start, descs[*item]);
-                if(debug<15) qDebug()<<"[DEBUG] "<<line<<":"<<*item<<":"<<rx.matchedLength()<<": "<<rx.cap(cap_idx);
+                setStyling(m_end - m_start, descs[key]);
+                if(debug<15) qDebug()<<"[DEBUG] "<<line<<":"<<key<<":"<<rx.matchedLength()<<": "<<rx.cap(1);
                 offset = rx.pos(0) + rx.matchedLength();
             }
         }
     }
-    startStyling(end);
+}
+
+void QsciLexerRest::styleText(int start, int end)
+{
+
+    if (!editor())
+        return;
+    if(debug<15) qDebug()<<"=====";
+    int s_start = start;
+    int s_end = end;
+    getStylingPosition(&s_start, &s_end);
+    do_StylingText(s_start, s_end);
+    do_InlineStylingText(s_start, s_end);
+    startStyling(editor()->length());
     return;
+}
+
+int QsciLexerRest::defaultStyle() const
+{
+    return descs["string"];
 }
 
 QColor QsciLexerRest::defaultColor(int style) const

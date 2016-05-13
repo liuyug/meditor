@@ -128,7 +128,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         ('definition', r'''^\w.*\n( +).+\n(\n*\1.+\n)*(\w.*\n( +).+\n(\n*\1.+\n)*)*\n'''),
         ('field',       r'''^:[ \w\-]+:.*\n(\n* .+\n)*(:[ \w\-]+:.*\n(\n* .+\n)*)*\n'''),
         ('option',      r'''^[\-/]+\w[^\n]+\n(\n* +.*\n)*([\-/]+\w[^\n]+\n(\n* +.*\n)*)*\n'''),
-        ('literal1',    r'''::\n\n( +).+\n(\1.+\n)*\n'''),
+        ('literal1',    r'''::\n\n( +).+\n(\n*\1.+\n)*\n'''),
         ('literal2',    r'''^>.*\n(>.*\n)*\n'''),
         ('literal3',    r'''^.. code::.*\n\n( +).+\n(\1.+\n)*\n'''),
         ('quote',       r'''^( {2,})\w.+\n(\n*\1.+\n)*\n'''),
@@ -216,14 +216,26 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         for x in range(len(styled_keys)):
             pos = styled_keys[x]
             if start < pos:
-                x = max(x - 3, 0)
-                new_start = styled_keys[x]
+                x = max(x - 1, 0)
+                while x >= 0:
+                    new_start = styled_keys[x]
+                    style_key = self.styled_text[new_start]['style']
+                    # find first non-string style
+                    if self.styles[style_key] != self.styles['string']:
+                        break
+                    x -= 1
                 break
         for y in range(len(styled_keys)):
             pos = styled_keys[y]
             if end < pos:
-                y = min(y + 3, len(styled_keys) - 1)
-                new_end = styled_keys[y]
+                y = min(y + 1, len(styled_keys) - 1)
+                while y < len(styled_keys):
+                    new_end = styled_keys[y]
+                    style_key = self.styled_text[new_end]['style']
+                    # find last non-string style
+                    if self.styles[style_key] != self.styles['string']:
+                        break
+                    y += 1
                 break
         for k in styled_keys[x:y]:
             del self.styled_text[k]
@@ -266,6 +278,11 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                 }
             else:
                 logger.error('*** !!! length < 0 !!! ***')
+                logger.debug('Error: match %s from %s(%s,%s) to %s(%s,%s)' % (
+                    repr(m_string),
+                    m_start, line, index,
+                    m_end, end_line, end_index,
+                ))
             # next position
             m_start = m_end
             line = end_line
