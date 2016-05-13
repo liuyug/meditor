@@ -56,8 +56,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         'transition': 3,
         'bullet': 4,
         'enumerated': 4,
-        'definition1': 5,
-        'definition2': 5,
+        'definition': 5,
         'field': 0,
         'in_field': 6,
         'option': 7,
@@ -117,46 +116,48 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     }
     token_regex = [
         # block markup
-        ('comment',     r'''^\.\. (?!_|\[)(?!.+::).+(?:\n{0,2} {3,}.+)*\n'''),
-        ('title',       r'''^([=`'"~^_*+#-]{2,})\n.+\n\1\n'''),
-        ('section',     r'''^.+\n[=`'"~^_*+#-]{2,}\n'''),
+        ('directive',   r'''^\.\. +[\-\w]+::.*\n'''),
+        ('comment',     r'''^\.\. +[\-\w].*\n(\n* .*\n)*\n'''),
+        # end with \n
+        ('title',       r'''^([=`'"~^_*+#-]+)\n.+\n\1\n'''),
+        # end with \n
+        ('section',     r'''^\w.*\n[=`'"~^_*+#-]+\n'''),
         ('transition',  r'''^\n[=`'"~^_*+#-]{4,}\n\n'''),
-        ('bullet',      r'''^ *[\-+*] +.+(?:\n+ +.+)*\n'''),
-        ('enumerated',  r'''^ *\(?[0-9a-zA-Z#](?:\.|\)) +.+(?:\n+ +.+)*\n'''),
-        ('definition1', r'''^\w+\n( +).+(?:\n+\1.+)*\n'''),
-        ('definition2', r'''^\w+ *:.*\n( +).+(?:\n+\1.+)*\n'''),
-        ('field',       r'''^:[^:]+:[ \n]+.+(?:\n+ +.+)*\n'''),
-        ('option',      r'''^[\-/]+.+(?:  .+)?(?:\n+ +.+)*\n'''),
-        ('literal1',    r'''::\n\n( +).+(?:\n+\1.*)*\n'''),
-        ('literal2',    r'''::\n\n(>).+(?:\n+\1.*)*\n'''),
-        ('literal3',    r'''.. code::(?:.*)\n\n([ >]+).+(?:\n+\1.*)*\n'''),
-        ('line',        r'''^ *\|(?: +.+)?(?:\n +.+)*\n'''),
-        ('quote',       r'''^( {2,}).+(?:\n\1.+)*\n'''),
-        ('doctest',     r'''^>>>.+\n'''),
-        ('table1',      r'''^( *)[\-=+]{2,}(\n\1[\|+].+)+\n'''),
-        ('table2',      r'''^( *)[\-=]{2,} [\-= ]+(\n\1.+)+\n'''),
-        ('footnote',    r'''^\.\. \[[^\n\]]+\][ \n]+.+(\n+ +.+)*\n'''),
-        ('target1',     r'''^\.\. _.+:(\n +)*.*\n'''),
-        ('target2',     r'''^__(?: .+)*\n'''),
-        ('directive',   r'''^\.\. (?!_|\[).+::.*(\n+ +.+)*\n'''),
+        ('bullet',      r'''^ *[\-+*] +.+\n(\n* {2,}.+\n)*\n'''),
+        ('enumerated',  r'''^ *[(]?[0-9a-zA-Z#]+[.)] +.+\n( *[(]?[0-9a-zA-Z#]+[.)] +.+\n)*\n'''),
+        ('definition', r'''^\w.*\n( +).+\n(\n*\1.+\n)*(\w.*\n( +).+\n(\n*\1.+\n)*)*\n'''),
+        ('field',       r'''^:[ \w\-]+:.*\n(\n* .+\n)*(:[ \w\-]+:.*\n(\n* .+\n)*)*\n'''),
+        ('option',      r'''^[\-/]+\w[^\n]+\n(\n* +.*\n)*([\-/]+\w[^\n]+\n(\n* +.*\n)*)*\n'''),
+        ('literal1',    r'''::\n\n( +).+\n(\1.+\n)*\n'''),
+        ('literal2',    r'''^>.*\n(>.*\n)*\n'''),
+        ('literal3',    r'''^.. code::.*\n\n( +).+\n(\1.+\n)*\n'''),
+        ('quote',       r'''^( {2,})\w.+\n(\n*\1.+\n)*\n'''),
+        ('line',        r'''^ *\|( +.+)?\n( {2,}.*\n)*( *\|( +.+)?\n( {2,}.*\n)*)*\n'''),
+        ('doctest',     r'''^>>> .+\n'''),
+        ('table1',      r'''^( *)[\-=+]{2,}\n(\1[\|+].+\n)+\n'''),
+        ('table2',      r'''^( *)[\-=]{2,} [\-= ]+\n(\1.+\n)+\n'''),
+        ('footnote',    r'''^\.\. \[[^\]]+\] .+\n(\n* {3,}.+\n)*\n'''),
+        ('target1',     r'''^\.\. _[^:]+:( .+)*\n'''),
+        ('target2',     r'''^__ .+\n'''),
         ('newline',     r'''\n'''),
         ('space',       r''' +'''),
         ('string',      r'''[^: \n]+'''),
         ('colon',       r''':'''),
+
         # inline markup
-        ('in_emphasis', r'''(?<!\*)(\*\w.*?\w\*)(?!\*)'''),
-        ('in_strong',   r'''(\*\*\w.*?\w\*\*)'''),
-        ('in_literal',  r'''(``\w.*?\w``)'''),
-        ('in_url1',     r'''\W((?:http://|https://|ftp://)[\w\-\.:/]+)\W'''),
-        ('in_url2',     r'''(`[^<]+<[^>]+>`_)'''),
-        ('in_link1',    r'''([\w\-]+_)\W'''),
-        ('in_link2',    r'''(`\w.*?\w`_)'''),
-        ('in_footnote', r'''(\[[\w\*#]+\]_)'''),
-        ('in_substitution', r'''(\|\w.*?\w\|)'''),
-        ('in_target',    r'''(_`\w.*?\w`)'''),
+        ('in_emphasis', r'''(\*\w[^*\n]*\*)'''),
+        ('in_strong',   r'''(\*\*\w[^*\n]*\*\*)'''),
+        ('in_literal',  r'''(``\w[^`\n]*``)'''),
+        ('in_url1',     r'''\W((http://|https://|ftp://)[\w\-\.:/]+)\W'''),
+        ('in_url2',     r'''(`[^<\n]+<[^>\n]+>`_)'''),
+        ('in_link1',    r'''\W(\w+_)\W'''),
+        ('in_link2',    r'''(`\w[^`\n]*`_)'''),
+        ('in_footnote', r'''(\[[\w*#]+\]_)'''),
+        ('in_substitution', r'''(\|\w[^\|]*\|)'''),
+        ('in_target',    r'''(_`\w[^`\n]*`)'''),
         ('in_reference', r'''(:\w+:`\w+`)'''),
-        ('in_directive', r'''^\.\. (%s)::''' % '|'.join(keyword_list)),
-        ('in_field',     r'''^:([^:]+?):(?!`)'''),
+        ('in_directive', r'''^\.\. +(%s)::''' % '|'.join(keyword_list)),
+        ('in_field',     r'''^:([^:]+):[ \n]'''),
         ('in_unusedspace', r'''( +)\n'''),
     ]
 
@@ -174,15 +175,12 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             if key.startswith('in_'):
                 self.inline_tokens.append((key, re.compile(
                     regex,
-                    re.U |
-                    re.I
+                    re.UNICODE | re.IGNORECASE,
                 )))
             else:
                 self.block_tokens.append((key, re.compile(
                     regex,
-                    re.U |
-                    re.M |
-                    re.I
+                    re.UNICODE | re.MULTILINE | re.IGNORECASE,
                 )))
         return
 
