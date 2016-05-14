@@ -221,7 +221,6 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                     new_start = styled_keys[x]
                     style_key = self.styled_text[new_start]['style']
                     # find first non-string style
-                    print('key', style_key)
                     if self.styles[style_key] != self.styles['string']:
                         break
                     x -= 1

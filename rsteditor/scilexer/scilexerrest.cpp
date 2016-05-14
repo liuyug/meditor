@@ -241,16 +241,26 @@ void QsciLexerRest::getStylingPosition(int * start, int * end)
     for (int x = 0; x < keys.size(), x++) {
         pos = styled_keys[x];
         if (*start < pos) {
-            x = max(x - 3, 0);
-            new_start = styled_keys[x];
+            x = max(x - 2, 0);
+            while (x >= 0) {
+                new_start = styled_keys[x];
+                if (styled_text[new_start].style != descs['string'])
+                    break;
+                x --;
+            }
             break;
         }
     }
     for (int y = 0; y < keys.size(), y++) {
         pos = styled_keys[y];
         if (*end < pos) {
-            y = min(y + 3, styled_keys.size() - 1);
-            new_end = styled_keys[y];
+            y = min(y + 1, styled_keys.size() - 1);
+            while (y < styled_keys.size()) {
+                new_end = styled_keys[y];
+                if (styled_text[new_end].style != descs['string'])
+                    break;
+                y ++;
+            }
             break;
         }
     }
