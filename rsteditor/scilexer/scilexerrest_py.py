@@ -216,11 +216,12 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         for x in range(len(styled_keys)):
             pos = styled_keys[x]
             if start < pos:
-                x = max(x - 1, 0)
+                x = max(x - 2, 0)
                 while x >= 0:
                     new_start = styled_keys[x]
                     style_key = self.styled_text[new_start]['style']
                     # find first non-string style
+                    print('key', style_key)
                     if self.styles[style_key] != self.styles['string']:
                         break
                     x -= 1
