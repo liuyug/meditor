@@ -3,9 +3,9 @@
 
 #include <Qsci/qscilexercustom.h>
 
-struct STYLEDTEXT{
+struct TEXTSTYLE{
     int length;
-    int style;
+    QString style;
 };
 
 class QsciLexerRest: public QsciLexerCustom
@@ -27,17 +27,16 @@ class QsciLexerRest: public QsciLexerCustom
         void readConfig(QString & prop_file);
     private:
         int debug;
-        QStringList keys;
-        QMap <QString, int> descs;
-        QList<QString> regex_keys;
-        QMap <QString, QRegExp> regexs;
-        QMap <QString, QRegExp> inline_regexs;
+        QStringList keyword_list;
+        QMap <QString, int> styles;
+        QMap <QString, QRegExp> block_tokens;
+        QMap <QString, QRegExp> inline_tokens;
         QMap <int, QString> properties;
-        QMap <int, struct STYLEDTEXT> styled_text;
+        QMap <int, struct TEXTSTYLE> styled_text;
         QString getTextRange(int start, int end);
         void getStylingPosition(int * start, int * end);
-        void do_StylingText(int start, int end)
-        void do_InlineStylingText(int start, int end)
+        void do_StylingText(int start, int end);
+        void do_InlineStylingText(int start, int end);
 };
 
 #endif

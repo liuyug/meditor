@@ -160,6 +160,9 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         ('in_field',     r'''^:([^:]+):[ \n]'''),
         ('in_unusedspace', r'''( +)\n'''),
     ]
+    styled_text = None
+    block_tokens = None
+    inline_tokens = None
 
     def __init__(self, *args, **kwargs):
         super(QsciLexerRest, self).__init__(*args, **kwargs)
