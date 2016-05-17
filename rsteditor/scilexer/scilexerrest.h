@@ -1,11 +1,22 @@
 #ifndef QSCILEXERREST_H
 #define QSCILEXERREST_H
 
+#include <QRegularExpression>
 #include <Qsci/qscilexercustom.h>
 
-struct TEXTSTYLE{
+struct TEXTSTYLE {
     int length;
     QString style;
+};
+
+struct REGEX_PATTERN {
+    QString name;
+    QString pattern;
+};
+
+struct REGEX_TOKEN {
+    QString name;
+    QRegularExpression regex;
 };
 
 class QsciLexerRest: public QsciLexerCustom
@@ -29,8 +40,8 @@ class QsciLexerRest: public QsciLexerCustom
         int debug;
         QStringList keyword_list;
         QMap <QString, int> styles;
-        QMap <QString, QRegExp> block_tokens;
-        QMap <QString, QRegExp> inline_tokens;
+        QList <struct REGEX_TOKEN> block_tokens;
+        QList <struct REGEX_TOKEN> inline_tokens;
         QMap <int, QString> properties;
         QMap <int, struct TEXTSTYLE> styled_text;
         QString getTextRange(int start, int end);

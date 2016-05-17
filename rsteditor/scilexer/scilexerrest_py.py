@@ -123,11 +123,11 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         # end with \n
         ('section',     r'''^\w.*\n[=`'"~^_*+#-]+\n'''),
         ('transition',  r'''^\n[=`'"~^_*+#-]{4,}\n\n'''),
-        ('bullet',      r'''^ *[\-+*] +.+\n(\n* {2,}.+\n)*\n'''),
-        ('enumerated',  r'''^ *[(]?[0-9a-zA-Z#]+[.)] +.+\n( *[(]?[0-9a-zA-Z#]+[.)] +.+\n)*\n'''),
-        ('definition', r'''^\w.*\n( +).+\n(\n*\1.+\n)*(\w.*\n( +).+\n(\n*\1.+\n)*)*\n'''),
+        ('bullet',      r'''^( *)[\-+*] +.+\n(\n*\1[\-+*] +.+\n)*\n'''),
+        ('enumerated',  r'''^( *)[(]?[0-9a-zA-Z#]+[.)] +.+\n(\1[(]?[0-9a-zA-Z#]+[.)] +.+\n)*\n'''),
+        ('definition',  r'''^\w.*\n( +).+\n(\n*\1.+\n)*(\w.*\n( +).+\n(\n*\1.+\n)*)*\n'''),
         ('field',       r'''^:[ \w\-]+:.*\n(\n* .+\n)*(:[ \w\-]+:.*\n(\n* .+\n)*)*\n'''),
-        ('option',      r'''^[\-/]+\w[^\n]+\n(\n* +.*\n)*([\-/]+\w[^\n]+\n(\n* +.*\n)*)*\n'''),
+        ('option',      r'''^[\-/]+\w.+\n(\n* +.*\n)*([\-/]+\w.+\n(\n* +.*\n)*)*\n'''),
         ('literal1',    r'''::\n\n( +).+\n(\n*\1.+\n)*\n'''),
         ('literal2',    r'''^>.*\n(>.*\n)*\n'''),
         ('literal3',    r'''^.. code::.*\n\n( +).+\n(\1.+\n)*\n'''),
@@ -139,10 +139,11 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         ('footnote',    r'''^\.\. \[[^\]]+\] .+\n(\n* {3,}.+\n)*\n'''),
         ('target1',     r'''^\.\. _[^:]+:( .+)*\n'''),
         ('target2',     r'''^__ .+\n'''),
-        ('newline',     r'''\n'''),
+        # ^ only match from line beginning
+        ('newline',     r'''\n+'''),
         ('space',       r''' +'''),
+        ('colon',       r''':+'''),
         ('string',      r'''[^: \n]+'''),
-        ('colon',       r''':'''),
 
         # inline markup
         ('in_emphasis', r'''(\*\w[^*\n]*\*)'''),
@@ -262,7 +263,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                 mo = tok.match(text, offset)
                 if mo:
                     break
-            assert(mo)
+            assert mo, repr(text[offset:])
             m_string = text[offset:mo.end()]
             line_fix = m_string.count('\n')
             end_line = line + line_fix
