@@ -54,17 +54,14 @@ struct REGEX_PATTERN token_patterns[] = {
     // ^ only match from line beginning
     // \n+
     {"newline",     "\\n+"},
-    //  +
-    {"space",       " +"},
-    // :+
-    {"colon",       ":+"},
-    // [^: \n]+
-    {"string",      "[^: \\n]+"},
+    {"colon",      ":+"},
+    {"string",      "[^:\\n]+"},
     // (\*\w[^*\n]*\*)
     {"in_emphasis",     "(\\*\\w[^*\\n]*\\*)"},
     {"in_strong",       "(\\*\\*\\w[^*\\n]*\\*\\*)"},
     {"in_literal",      "(``\\w[^`\\n]*``)"},
-    {"in_url1",         "\\W((http://|https://|ftp://)[\\w\\-\\.:/]+)\\W"},
+    // \W((http|https|ftp)://[\w\-\.:/]+)\W
+    {"in_url1",         "\\W((http|https|ftp)://[\\w\\-\\.:/]+)\\W"},
     {"in_url2",         "(`[^<\\n]+<[^>\\n]+>`_)"},
     {"in_link1",        "\\W(\\w+_)\\W"},
     {"in_link2",        "(`\\w[^`\\n]*`_)"},
@@ -145,7 +142,6 @@ QsciLexerRest::QsciLexerRest(QObject * parent): QsciLexerCustom(parent)
     properties.insert(25, "back:#ef2929");
     styles.insert("string", 0);
     styles.insert("colon", 0);
-    styles.insert("space", 0);
     styles.insert("newline", 0);
     styles.insert("comment", 1);
     styles.insert("title", 2);
@@ -234,6 +230,11 @@ QString QsciLexerRest::description(int style) const
     return styles.key(style, QString());
 }
 
+void QsciLexerRest::clear()
+{
+    styled_text.clear();
+}
+
 QString QsciLexerRest::getTextRange(int start, int end)
 {
     QString text;
@@ -275,7 +276,7 @@ void QsciLexerRest::getStylingPosition(int * start, int * end)
     for (y = 0; y < styled_keys.size(); y++) {
         pos = styled_keys[y];
         if (*end < pos) {
-            y = qMin(y + 1, styled_keys.size() - 1);
+            y = qMin(y + 3, styled_keys.size() - 1);
             while (y < styled_keys.size()) {
                 new_end = styled_keys[y];
                 key = styled_text[new_end].style;

@@ -90,12 +90,14 @@ class Editor(QsciScintilla):
     input_count = 0
     find_text = None
     find_forward = True
-    lexer = None
     tabWidth = 4
     edgeColumn = 78
+    lexers = None
+    cur_lexer = None
 
     def __init__(self, *args, **kwargs):
         super(Editor, self).__init__(*args, **kwargs)
+        self.lexers = {}
         self.setMarginType(0, QsciScintilla.NumberMargin)
         self.setMarginWidth(0, 30)
         self.setMarginWidth(1, 5)
@@ -108,6 +110,7 @@ class Editor(QsciScintilla):
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setEolMode(QsciScintilla.EolUnix)
         self.setUtf8(True)
+        self.setFont(QtGui.QFont('Monospace', 12))
         self.findDialog = FindDialog(self)
         self.copy_available = False
         self.copyAvailable.connect(self.setCopyAvailable)
@@ -319,40 +322,53 @@ class Editor(QsciScintilla):
         return
 
     def setStyle(self, filename):
+        import time
         lexer = None
+        t1 = time.clock()
         if filename and self.enable_lexer:
             ext = os.path.splitext(filename)[1].lower()
             if ext in ['.html', '.htm']:
-                lexer = QsciLexerHTML(self)
-                lexer.setFont(QtGui.QFont('Monospace', 12))
+                lexer = self.lexers.get('.html')
+                if not lexer:
+                    lexer = QsciLexerHTML(self)
+                    lexer.setFont(QtGui.QFont('Monospace', 12))
+                    self.lexers['.html'] = lexer
             elif ext in ['.py']:
-                lexer = QsciLexerPython(self)
-                lexer.setFont(QtGui.QFont('Monospace', 12))
+                lexer = self.lexers.get('.py')
+                if not lexer:
+                    lexer = QsciLexerPython(self)
+                    lexer.setFont(QtGui.QFont('Monospace', 12))
+                    self.lexers['.py'] = lexer
             elif ext in ['.sh']:
-                lexer = QsciLexerBash(self)
-                lexer.setFont(QtGui.QFont('Monospace', 12))
+                lexer = self.lexers.get('.sh')
+                if not lexer:
+                    lexer = QsciLexerBash(self)
+                    lexer.setFont(QtGui.QFont('Monospace', 12))
+                    self.lexers['.sh'] = lexer
             elif ext in ['.rst', '.rest']:
-                lexer = QsciLexerRest(self)
-                lexer.setDebugLevel(globalvars.logging_level)
-                rst_prop_files = [
-                    os.path.join(__home_data_path__, 'rst.properties'),
-                    os.path.join(__data_path__, 'rst.properties'),
-                ]
-                for rst_prop_file in rst_prop_files:
+                lexer = self.lexers.get('.rest')
+                if not lexer:
+                    lexer = QsciLexerRest(self)
+                    lexer.setDebugLevel(globalvars.logging_level)
+                    rst_prop_files = [
+                        os.path.join(__home_data_path__, 'rst.properties'),
+                        os.path.join(__data_path__, 'rst.properties'),
+                    ]
+                    for rst_prop_file in rst_prop_files:
+                        if os.path.exists(rst_prop_file):
+                            break
                     if os.path.exists(rst_prop_file):
-                        break
-                if os.path.exists(rst_prop_file):
-                    logger.debug('Loading %s', rst_prop_file)
-                    lexer.readConfig(rst_prop_file)
+                        logger.debug('Loading %s', rst_prop_file)
+                        lexer.readConfig(rst_prop_file)
+                    else:
+                        logger.info('Not found %s', rst_prop_file)
+                    self.lexers['.rest'] = lexer
                 else:
-                    logger.info('Not found %s', rst_prop_file)
-        self.lexer = lexer
-        if lexer:
-            self.setLexer(lexer)
-        else:
-            self.setLexer(None)
-            self.setFont(QtGui.QFont('Monospace', 12))
-        return
+                    lexer.clear()
+        self.setLexer(lexer)
+        t2 = time.clock()
+        print('total lexer(%s): %s' % (filename, t2 - t1))
+        self.cur_lexer = lexer
 
 
 class CodeViewer(Editor):

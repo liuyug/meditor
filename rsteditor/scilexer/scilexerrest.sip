@@ -19,6 +19,7 @@ class QsciLexerRest: QsciLexerCustom
         virtual QFont defaultFont(int style) const;
         void setDebugLevel(int level);
         void readConfig(QString & prop_file);
+        void clear();
 };
 
 

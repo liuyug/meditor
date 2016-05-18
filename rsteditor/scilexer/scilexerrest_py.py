@@ -48,7 +48,6 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     styles = {
         'string': 0,
         'colon': 0,
-        'space': 0,
         'newline': 0,
         'comment': 1,
         'title': 2,
@@ -141,15 +140,14 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         ('target2',     r'''^__ .+\n'''),
         # ^ only match from line beginning
         ('newline',     r'''\n+'''),
-        ('space',       r''' +'''),
         ('colon',       r''':+'''),
-        ('string',      r'''[^: \n]+'''),
+        ('string',      r'''[^:\n]+'''),
 
         # inline markup
         ('in_emphasis', r'''(\*\w[^*\n]*\*)'''),
         ('in_strong',   r'''(\*\*\w[^*\n]*\*\*)'''),
         ('in_literal',  r'''(``\w[^`\n]*``)'''),
-        ('in_url1',     r'''\W((http://|https://|ftp://)[\w\-\.:/]+)\W'''),
+        ('in_url1',     r'''\W((http|https|ftp)://[\w\-\.:/]+)\W'''),
         ('in_url2',     r'''(`[^<\n]+<[^>\n]+>`_)'''),
         ('in_link1',    r'''\W(\w+_)\W'''),
         ('in_link2',    r'''(`\w[^`\n]*`_)'''),
@@ -194,6 +192,9 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     def description(self, style):
         return self.rstyles.get(style, '')
 
+    def clear(self):
+        self.styled_text.clear()
+
     def getStyleAt(self, pos):
         return self.editor().SendScintilla(Qsci.QsciScintilla.SCI_GETSTYLEAT, pos)
 
@@ -232,7 +233,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         for y in range(len(styled_keys)):
             pos = styled_keys[y]
             if end < pos:
-                y = min(y + 1, len(styled_keys) - 1)
+                y = min(y + 2, len(styled_keys) - 1)
                 while y < len(styled_keys):
                     new_end = styled_keys[y]
                     style_key = self.styled_text[new_end]['style']
@@ -243,7 +244,6 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                 break
         for k in styled_keys[x:y]:
             del self.styled_text[k]
-        logger.debug('old: %s - %s, new: %s - %s' % (start, end, new_start, new_end))
         return (new_start, new_end)
 
     def do_StylingText(self, start, end):
@@ -314,12 +314,15 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     def styleText(self, start, end):
         if not self.editor():
             return
-        logger.debug('=' * 80)
+        logger.debug('%s %s %s' % ('=' * 35, 'style begin', '=' * 35))
         s_start, s_end = self.getStylingPosition(start, end)
+        logger.debug('** Fix styled range from (%s,%s) to (%s,%s) **' % (
+            start, end, s_start, s_end))
         self.do_StylingText(s_start, s_end)
         self.do_InlineStylingText(s_start, s_end)
         # tell to end styling
         self.startStyling(self.editor().length())
+        logger.debug('%s %s %s' % ('=' * 35, 'style end', '=' * 35))
 
     def defaultStyle(self):
         return self.styles['string']

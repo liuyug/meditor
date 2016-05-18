@@ -36,6 +36,7 @@ class QsciLexerRest: public QsciLexerCustom
         virtual int defaultStyle() const;
         void setDebugLevel(int level);
         void readConfig(QString & prop_file);
+        void clear();
     private:
         int debug;
         QStringList keyword_list;
