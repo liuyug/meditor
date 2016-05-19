@@ -1,4 +1,5 @@
 
+import time
 import os.path
 import logging
 
@@ -95,8 +96,8 @@ class Editor(QsciScintilla):
     lexers = None
     cur_lexer = None
 
-    def __init__(self, *args, **kwargs):
-        super(Editor, self).__init__(*args, **kwargs)
+    def __init__(self, parent):
+        super(Editor, self).__init__(parent)
         self.lexers = {}
         self.setMarginType(0, QsciScintilla.NumberMargin)
         self.setMarginWidth(0, 30)
@@ -322,7 +323,6 @@ class Editor(QsciScintilla):
         return
 
     def setStyle(self, filename):
-        import time
         lexer = None
         t1 = time.clock()
         if filename and self.enable_lexer:
@@ -367,7 +367,8 @@ class Editor(QsciScintilla):
                     lexer.clear()
         self.setLexer(lexer)
         t2 = time.clock()
-        print('total lexer(%s): %s' % (filename, t2 - t1))
+        logger.info('Lexer waste time: %s(%s)' % (
+            t2 - t1, filename))
         self.cur_lexer = lexer
 
 

@@ -115,29 +115,29 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     }
     token_regex = [
         # block markup
-        ('directive',   r'''^\.\. +[\-\w]+::.*\n'''),
-        ('comment',     r'''^\.\. +[\-\w].*\n(\n* .*\n)*\n'''),
+        ('directive',   r'''^\.{2} +[\-\w]+:{2}.*\n'''),
+        ('comment',     r'''^\.{2} +[\-\w].*\n(\n* .*\n)*\n'''),
         # end with \n
         ('title',       r'''^([=`'"~^_*+#-]+)\n.+\n\1\n'''),
         # end with \n
         ('section',     r'''^\w.*\n[=`'"~^_*+#-]+\n'''),
         ('transition',  r'''^\n[=`'"~^_*+#-]{4,}\n\n'''),
-        ('bullet',      r'''^( *)[\-+*] +.+\n(\n*\1[\-+*] +.+\n)*\n'''),
-        ('enumerated',  r'''^( *)[(]?[0-9a-zA-Z#]+[.)] +.+\n(\1[(]?[0-9a-zA-Z#]+[.)] +.+\n)*\n'''),
+        ('bullet',      r'''^( *[\-+*] +).+\n(\n* {2,}.+\n)*(\n*\1.+\n)*\n'''),
+        ('enumerated',  r'''^( *\(?)\w+([.)] +)\S.*\n(\n* {2,}.+\n)*(\n*\1\w+\2\S.*\n)*\n'''),
         ('definition',  r'''^\w.*\n( +).+\n(\n*\1.+\n)*(\w.*\n( +).+\n(\n*\1.+\n)*)*\n'''),
         ('field',       r'''^:[ \w\-]+:.*\n(\n* .+\n)*(:[ \w\-]+:.*\n(\n* .+\n)*)*\n'''),
         ('option',      r'''^[\-/]+\w.+\n(\n* +.*\n)*([\-/]+\w.+\n(\n* +.*\n)*)*\n'''),
-        ('literal1',    r'''::\n\n( +).+\n(\n*\1.+\n)*\n'''),
+        ('literal1',    r''':{2}\n{2}( +).+\n(\n*\1.+\n)*\n'''),
         ('literal2',    r'''^>.*\n(>.*\n)*\n'''),
-        ('literal3',    r'''^.. code::.*\n\n( +).+\n(\1.+\n)*\n'''),
-        ('quote',       r'''^( {2,})\w.+\n(\n*\1.+\n)*\n'''),
+        ('literal3',    r'''^.{2} code:{2}.*\n{2}( +).+\n(\1.+\n)*\n'''),
+        ('quote',       r'''^( {2,})\w.+\n(\n*\1\w.+\n)*\n'''),
         ('line',        r'''^ *\|( +.+)?\n( {2,}.*\n)*( *\|( +.+)?\n( {2,}.*\n)*)*\n'''),
-        ('doctest',     r'''^>>> .+\n'''),
+        ('doctest',     r'''^>{3} .+\n'''),
         ('table1',      r'''^( *)[\-=+]{2,}\n(\1[\|+].+\n)+\n'''),
         ('table2',      r'''^( *)[\-=]{2,} [\-= ]+\n(\1.+\n)+\n'''),
-        ('footnote',    r'''^\.\. \[[^\]]+\] .+\n(\n* {3,}.+\n)*\n'''),
-        ('target1',     r'''^\.\. _[^:]+:( .+)*\n'''),
-        ('target2',     r'''^__ .+\n'''),
+        ('footnote',    r'''^\.{2} \[[^\]]+\] .+\n(\n* {3,}.+\n)*\n'''),
+        ('target1',     r'''^\.{2} _[^:]+:( .+)*\n'''),
+        ('target2',     r'''^_{2} .+\n'''),
         # ^ only match from line beginning
         ('newline',     r'''\n+'''),
         ('colon',       r''':+'''),
@@ -145,9 +145,9 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
 
         # inline markup
         ('in_emphasis', r'''(\*\w[^*\n]*\*)'''),
-        ('in_strong',   r'''(\*\*\w[^*\n]*\*\*)'''),
-        ('in_literal',  r'''(``\w[^`\n]*``)'''),
-        ('in_url1',     r'''\W((http|https|ftp)://[\w\-\.:/]+)\W'''),
+        ('in_strong',   r'''(\*{2}\w[^*\n]*\*{2})'''),
+        ('in_literal',  r'''(`{2}\w[^`\n]*`{2})'''),
+        ('in_url1',     r'''\W(\w+://[\w\-\.:/]+)\W'''),
         ('in_url2',     r'''(`[^<\n]+<[^>\n]+>`_)'''),
         ('in_link1',    r'''\W(\w+_)\W'''),
         ('in_link2',    r'''(`\w[^`\n]*`_)'''),
@@ -155,7 +155,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         ('in_substitution', r'''(\|\w[^\|]*\|)'''),
         ('in_target',    r'''(_`\w[^`\n]*`)'''),
         ('in_reference', r'''(:\w+:`\w+`)'''),
-        ('in_directive', r'''^\.\. +(%s)::''' % '|'.join(keyword_list)),
+        ('in_directive', r'''^\.{2} +(%s):{2}''' % '|'.join(keyword_list)),
         ('in_field',     r'''^:([^:]+):[ \n]'''),
         ('in_unusedspace', r'''( +)\n'''),
     ]
