@@ -130,7 +130,7 @@ class Explorer(QtWidgets.QTreeWidget):
         newname = self.renamePath(filename)
         if newname:
             if os.path.dirname(newname) == self.root_path:
-                item.setText(0, newname)
+                item.setText(0, os.path.basename(newname))
             else:
                 self.root_item.removeChild(item)
 
