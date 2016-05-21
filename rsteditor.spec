@@ -23,7 +23,7 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=False,
-          console=True , icon='rsteditor\\share\\pixmaps\\rsteditor-text-editor.ico')
+          console=False , icon='rsteditor\\share\\pixmaps\\rsteditor-text-editor.ico')
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
