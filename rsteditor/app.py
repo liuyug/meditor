@@ -525,7 +525,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def onPrintPreview(self):
         printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
         preview = QtPrintSupport.QPrintPreviewDialog(printer, self.webview)
-        preview.paintRequested.connect(self.webview.printPreview)
+        # TODO: QWebEngineView don't have print function!!
+        preview.paintRequested.connect(self.webview.print_)
         preview.exec_()
 
     def onPrint(self):
@@ -708,15 +709,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onValueChanged(self, value):
         if self.settings.value('preview/sync', type=bool):
-            dx = self.editor.getHScrollValue()
             dy = self.editor.getVScrollValue()
             editor_vmax = self.editor.getVScrollMaximum()
-            webview_vmax = self.webview.getVScrollMaximum()
             if editor_vmax:
-                self.webview.setScrollBarValue(
-                    dx,
-                    dy * webview_vmax / editor_vmax
-                )
+                self.webview.scrollRatioPage(dy, editor_vmax)
         return
 
     def onInputPreview(self):
@@ -764,12 +760,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.webview.setHtml(self.previewHtml, self.previewPath)
         self.codeview.setValue(self.previewHtml)
         self.codeview.setFileName(self.previewPath + '.html')
-        dx = self.editor.getHScrollValue()
         dy = self.editor.getVScrollValue()
         editor_vmax = self.editor.getVScrollMaximum()
-        webview_vmax = self.webview.getVScrollMaximum()
         if editor_vmax:
-            self.webview.setScrollBarValue(dx, dy * webview_vmax / editor_vmax)
+            self.webview.scrollRatioPage(dy, editor_vmax)
 
     def saveAndContinue(self):
         if self.editor.isModified():

@@ -1,17 +1,14 @@
 
-from PyQt5 import QtGui, QtCore, QtWidgets, QtWebKitWidgets, QtNetwork, QtWebKit
+from PyQt5 import QtGui, QtCore, QtWidgets, QtNetwork, QtWebEngineWidgets
 
 from rsteditor import util
 
 
-class WebView(QtWebKitWidgets.QWebView):
+class WebView(QtWebEngineWidgets.QWebEngineView):
     def __init__(self, *args, **kwargs):
         super(WebView, self).__init__(*args, **kwargs)
         settings = self.settings()
         settings.setAttribute(settings.PluginsEnabled, False)
-        self.dx = 0
-        self.dy = 0
-        self.wait = False
         self.setHtml('')
         self.loadFinished.connect(self.onLoadFinished)
         self.popupMenu = QtWidgets.QMenu(self)
@@ -23,9 +20,6 @@ class WebView(QtWebKitWidgets.QWebView):
             self.popupMenu.popup(event.globalPos())
 
     def onLoadFinished(self, ok):
-        if ok and self.wait:
-            self.wait = False
-            self.scroll(self.dx, self.dy)
         return
 
     def setHtml(self, html, url=None):
@@ -36,21 +30,9 @@ class WebView(QtWebKitWidgets.QWebView):
             QtCore.QUrl.fromLocalFile(url)
         )
 
-    def getVScrollMaximum(self):
-        return self.page().mainFrame().scrollBarMaximum(QtCore.Qt.Vertical)
+    def scrollRatioPage(self, value, maximum):
+        scrollJS = 'window.scrollTo(0, document.body.scrollHeight * %s / %s);'
+        self.page().runJavaScript(scrollJS % (value, maximum))
 
-    def setScrollBarValue(self, dx, dy, wait=False):
-        if wait:
-            self.dx = dx
-            self.dy = dy
-            self.wait = wait
-        else:
-            self.scroll(dx, dy)
-        return
-
-    def scroll(self, dx, dy):
-        self.page().mainFrame().setScrollBarValue(QtCore.Qt.Horizontal, dx)
-        self.page().mainFrame().setScrollBarValue(QtCore.Qt.Vertical, dy)
-
-    def printPreview(self, printer):
-        self.print_(printer)
+    def print_(self, printer):
+        self.page().view().render(printer)
