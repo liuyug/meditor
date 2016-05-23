@@ -764,6 +764,7 @@ class MainWindow(QtWidgets.QMainWindow):
         editor_vmax = self.editor.getVScrollMaximum()
         if editor_vmax:
             self.webview.scrollRatioPage(dy, editor_vmax)
+        self.editor.setFocus()
 
     def saveAndContinue(self):
         if self.editor.isModified():
