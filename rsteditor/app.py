@@ -873,7 +873,10 @@ def main():
     logger.info('home data path: ' + __home_data_path__)
     qt_path = os.path.join(os.path.dirname(QtCore.__file__))
     QtWidgets.QApplication.addLibraryPath(qt_path)
+    # qt default
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'plugins'))
+    # for pyinstaller
+    QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'qt5_plugins'))
     rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
     QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)
