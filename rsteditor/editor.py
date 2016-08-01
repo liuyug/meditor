@@ -95,6 +95,9 @@ class Editor(QsciScintilla):
     edgeColumn = 78
     lexers = None
     cur_lexer = None
+    _pauseLexer = False
+    _lexerStart = 0
+    _lexerEnd = 0
 
     def __init__(self, parent):
         super(Editor, self).__init__(parent)
@@ -226,9 +229,10 @@ class Editor(QsciScintilla):
             action = self.indent
         else:
             action = self.unindent
-
+        self.pauseLexer(True)
         for line in range(lineFrom, lineTo + 1):
             action(line)
+        self.pauseLexer(False)
 
     def readFile(self, filename):
         try:
@@ -370,6 +374,14 @@ class Editor(QsciScintilla):
         logger.info('Lexer waste time: %s(%s)' % (
             t2 - t1, filename))
         self.cur_lexer = lexer
+
+    def pauseLexer(self, pause=True):
+        self._pauseLexer = pause
+        if pause:
+            self._lexerStart = 0
+            self._lexerEnd = 0
+        else:
+            self.cur_lexer.styleText(self._lexerStart, self._lexerEnd)
 
 
 class CodeViewer(Editor):

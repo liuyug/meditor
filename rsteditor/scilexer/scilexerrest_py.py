@@ -314,6 +314,10 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     def styleText(self, start, end):
         if not self.editor():
             return
+        if self.editor()._pauseLexer:
+            self.editor()._lexerStart = min(start, self.editor()._lexerStart)
+            self.editor()._lexerEnd = max(end, self.editor()._lexerEnd)
+            return
         logger.debug('%s %s %s' % ('=' * 35, 'style begin', '=' * 35))
         s_start, s_end = self.getStylingPosition(start, end)
         logger.debug('** Fix styled range from (%s,%s) to (%s,%s) **' % (
