@@ -218,21 +218,23 @@ class Editor(QsciScintilla):
         self.setModified(False)
 
     def indentLines(self, inc):
-        if not self.hasSelectedText():
-            if inc:
-                line, index = self.getCursorPosition()
-                self.insert(" " * self.tabWidth)
-                self.setCursorPosition(line, index + self.tabWidth)
-            return
-        lineFrom, indexFrom, lineTo, indexTo = self.getSelection()
         if inc:
             action = self.indent
         else:
             action = self.unindent
-        self.pauseLexer(True)
-        for line in range(lineFrom, lineTo + 1):
+        if not self.hasSelectedText():
+            line, index = self.getCursorPosition()
             action(line)
-        self.pauseLexer(False)
+            if inc:
+                self.setCursorPosition(line, index + self.tabWidth)
+            else:
+                self.setCursorPosition(line, max(0, index - self.tabWidth))
+        else:
+            lineFrom, indexFrom, lineTo, indexTo = self.getSelection()
+            self.pauseLexer(True)
+            for line in range(lineFrom, lineTo + 1):
+                action(line)
+            self.pauseLexer(False)
 
     def readFile(self, filename):
         try:
