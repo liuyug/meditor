@@ -1,3 +1,8 @@
 six
 pygments
 docutils
+# For win32, add PATH
+# C:\Python35-32\Lib\site-packages\PyQt5\Qt\bin
+pyqt5
+sip
+QScintilla
