@@ -3,9 +3,9 @@
 block_cipher = None
 
 
-a = Analysis(['rsteditor.py'],
-             pathex=[],
-             binaries=None,
+a = Analysis(['run.py'],
+             pathex=['D:\\Projects\\dev\\rsteditor-qt'],
+             binaries=[],
              datas=[('rsteditor\\share', 'share')],
              hiddenimports=['rsteditor.scilexer.scilexerrest_py'],
              hookspath=[],
@@ -23,7 +23,8 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=False,
-          console=False , icon='rsteditor\\share\\pixmaps\\rsteditor-text-editor.ico')
+          console=False,
+          icon='rsteditor\\share\\pixmaps\\rsteditor-text-editor.ico')
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,

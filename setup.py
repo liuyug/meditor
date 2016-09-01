@@ -6,10 +6,8 @@
 #   to build extention it need to install qt-5.5.1 with msvc2010
 
 import os.path
-# import glob
 
 from setuptools import setup, Extension
-# from distutils.command import install_scripts, install_data
 
 import sipdistutils
 import sipconfig
@@ -18,13 +16,11 @@ from PyQt5.QtCore import PYQT_CONFIGURATION
 
 from rsteditor import __app_name__
 from rsteditor import __app_version__
-# from rsteditor.util import myglob
+
 
 sip_cfg = sipconfig.Configuration()
-if sip_cfg.platform == 'win32-msvc2010':
-    qt_path = 'C:\\Qt\\Qt5.5.1\\5.5\\msvc2010'
-elif sip_cfg.platform == 'win32-g++':
-    qt_path = 'C:\\Qt\\Qt5.5.1\\5.5\\mingw492_32'
+if sip_cfg.platform == 'win32':
+    qt_path = 'C:\\Qt\\Qt5.7.0\\5.7\\msvc2015'
 else:
     qt_path = '/usr/include'
 pyqt_path = os.path.dirname(PyQt5.__file__)
@@ -59,14 +55,6 @@ scilexerrest = Extension(
 )
 
 
-# class post_install_data(install_data.install_data):
-#     """ update desktop """
-#     def run(self):
-#         install_data.install_data.run(self)
-#         print('running update-desktop-database')
-#         call('update-desktop-database')
-
-
 with open('README.rst') as f:
     long_description = f.read()
 
@@ -85,22 +73,6 @@ setup(
         'rsteditor.scilexer',
     ],
     include_package_data=True,
-    # data_files=[
-    #     ('share/%s' % __app_name__.lower(), [
-    #         'README.rst',
-    #         'MANIFEST.in',
-    #         'rst.properties',
-    #     ]),
-    #     ('share/applications', ['rsteditor.desktop']),
-    #     ('share/pixmaps', glob.glob('pixmaps/*.*')),
-    #     ('share/%s/template' % __app_name__.lower(), glob.glob('template/*.*')),
-    #     ('share/%s/docs' % __app_name__.lower(), glob.glob('docs/*.rst')),
-    #     ('share/%s/docs/images' % __app_name__.lower(), glob.glob('docs/images/*')),
-    #     ('share/%s/themes' % __app_name__.lower(), myglob(
-    #         'themes',
-    #         ['*.css', '*.json', '*.html', '*.rst'],
-    #     )),
-    # ],
     ext_modules=[scilexerrest],
     cmdclass={
         'build_ext': sipdistutils.build_ext,

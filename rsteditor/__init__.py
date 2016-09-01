@@ -8,7 +8,7 @@ __default_filename__ = 'unknown.rst'
 
 if sys.platform == 'win32':
     if getattr(sys, 'frozen', False):
-        prefix = os.path.dirname(os.path.abspath(sys.argv[0]))
+        prefix = sys._MEIPASS
     else:
         prefix = os.path.dirname(os.path.abspath(__file__))
     __icon_path__ = os.path.join(prefix, 'share', 'pixmaps')

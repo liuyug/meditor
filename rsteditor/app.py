@@ -877,6 +877,7 @@ def main():
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'plugins'))
     # for pyinstaller
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'qt5_plugins'))
+    QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5', 'Qt', 'plugins'))
     rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
     QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)

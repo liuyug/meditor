@@ -12,6 +12,7 @@ try:
 except Exception:
     print('[WARNING] Do not find c++ lexer, use PYTHON rst lexer')
     from rsteditor.scilexer.scilexerrest_py import QsciLexerRest
+
 from rsteditor.util import toUtf8
 from rsteditor import __home_data_path__, __data_path__
 from rsteditor import globalvars

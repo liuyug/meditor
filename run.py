@@ -3,5 +3,5 @@
 
 from rsteditor import app
 
-app.main()
 
+app.main()
