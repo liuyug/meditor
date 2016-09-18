@@ -7,15 +7,10 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.Qsci import QsciScintilla
 from PyQt5.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
 
-try:
-    from rsteditor.scilexer.scilexerrest import QsciLexerRest
-except Exception:
-    print('[WARNING] Do not find c++ lexer, use PYTHON rst lexer')
-    from rsteditor.scilexer.scilexerrest_py import QsciLexerRest
+from .scilib import QsciLexerRest, _SciImSupport
 
-from rsteditor.util import toUtf8
-from rsteditor import __home_data_path__, __data_path__
-from rsteditor import globalvars
+from .util import toUtf8
+from . import __home_data_path__, __data_path__, globalvars
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +94,7 @@ class Editor(QsciScintilla):
     _pauseLexer = False
     _lexerStart = 0
     _lexerEnd = 0
+    _imsupport = None
 
     def __init__(self, parent):
         super(Editor, self).__init__(parent)
@@ -120,6 +116,7 @@ class Editor(QsciScintilla):
         self.copy_available = False
         self.copyAvailable.connect(self.setCopyAvailable)
         self.inputMethodEventCount = 0
+        self._imsupport = _SciImSupport(self)
 
     def inputMethodQuery(self, query):
         if query == QtCore.Qt.ImMicroFocus:
@@ -140,16 +137,39 @@ class Editor(QsciScintilla):
         """
         if self.isReadOnly():
             return
-        if event.preeditString() and not event.commitString():
-            return
 
-        super(Editor, self).inputMethodEvent(event)
-        commit_text = toUtf8(event.commitString())
-        if commit_text:
-            self.input_count += len(commit_text)
-        if self.input_count > 5:
-            self.lineInputed.emit()
-            self.input_count = 0
+        # disable preedit
+        # if event.preeditString() and not event.commitString():
+        #     return
+
+        if event.preeditString():
+            self.pauseLexer(True)
+        else:
+            self.pauseLexer(False)
+
+        # input with preedit, from TortoiseHg
+        if self._imsupport:
+            self.removeSelectedText()
+            self._imsupport.removepreedit()
+            self._imsupport.commitstr(event.replacementStart(),
+                                      event.replacementLength(),
+                                      event.commitString())
+            self._imsupport.insertpreedit(event.preeditString())
+            for a in event.attributes():
+                if a.type == QtGui.QInputMethodEvent.Cursor:
+                    self._imsupport.movepreeditcursor(a.start)
+            event.accept()
+        else:
+            super(Editor, self).inputMethodEvent(event)
+
+        # count commit string
+        if event.commitString():
+            commit_text = toUtf8(event.commitString())
+            if commit_text:
+                self.input_count += len(commit_text)
+            if self.input_count > 5:
+                self.lineInputed.emit()
+                self.input_count = 0
 
     def keyPressEvent(self, event):
         super(Editor, self).keyPressEvent(event)

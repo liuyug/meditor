@@ -3,7 +3,7 @@ import logging
 
 from PyQt5 import Qsci, QtGui, QtCore
 
-from rsteditor.util import toUtf8
+from ..util import toUtf8
 
 logger = logging.getLogger(__name__)
 
