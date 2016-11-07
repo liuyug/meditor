@@ -35,4 +35,5 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.page().runJavaScript(scrollJS % (value, maximum))
 
     def print_(self, printer):
-        self.page().view().render(printer)
+        widget = self.page().view()
+        widget.render(printer)

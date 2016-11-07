@@ -4,8 +4,8 @@ import os.path
 import logging
 
 from PyQt5 import QtGui, QtCore, QtWidgets
-from PyQt5.Qsci import QsciScintilla
-from PyQt5.Qsci import QsciLexerPython, QsciLexerHTML, QsciLexerBash
+from PyQt5.Qsci import QsciScintilla, QsciLexerPython, QsciLexerHTML, \
+    QsciLexerBash, QsciPrinter
 
 from .scilib import QsciLexerRest, _SciImSupport
 
@@ -184,6 +184,12 @@ class Editor(QsciScintilla):
             self.lineInputed.emit()
             self.input_count = 0
         return
+
+    def getPrinter(self, resolution):
+        return QsciPrinter(resolution)
+
+    def print_(self, printer):
+        printer.printRange(self)
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:

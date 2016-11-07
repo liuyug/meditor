@@ -492,10 +492,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.saveAndContinue():
             return
         if label == 'html':
+            html_file = os.path.basename(
+                self.editor.getFileName()).partition('.')[0] + '.html'
             filename = QtWidgets.QFileDialog.getSaveFileName(
                 self,
                 self.tr('export HTML as ...'),
-                self.explorer.getRootPath(),
+                os.path.join(self.explorer.getRootPath(), html_file),
                 "HTML files (*.html *.htm)",
             )
             if isinstance(filename, tuple):
@@ -523,17 +525,38 @@ class MainWindow(QtWidgets.QMainWindow):
                 output.rst2odt(self.editor.getFileName(), filename)
 
     def onPrintPreview(self):
-        printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
-        preview = QtPrintSupport.QPrintPreviewDialog(printer, self.webview)
-        # TODO: QWebEngineView don't have print function!!
-        preview.paintRequested.connect(self.webview.print_)
+        if self.editor.hasFocus():
+            printer = self.editor.getPrinter(
+                QtPrintSupport.QPrinter.HighResolution)
+            widget = self.editor
+        elif self.webview.hasFocus():
+            printer = QtPrintSupport.QPrinter(
+                QtPrintSupport.QPrinter.HighResolution)
+            widget = self.webview
+        printer.setPageSize(QtPrintSupport.QPrinter.A4)
+        printer.setPageOrientation(QtGui.QPageLayout.Portrait)
+        printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
+        printer.setFullPage(True)
+        preview = QtPrintSupport.QPrintPreviewDialog(printer, widget)
+        preview.paintRequested.connect(widget.print_)
         preview.exec_()
 
     def onPrint(self):
-        printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
-        printDialog = QtPrintSupport.QPrintDialog(printer, self.webview)
+        if self.editor.hasFocus():
+            printer = self.editor.getPrinter(
+                QtPrintSupport.QPrinter.HighResolution)
+            widget = self.editor
+        elif self.webview.hasFocus():
+            printer = QtPrintSupport.QPrinter(
+                QtPrintSupport.QPrinter.HighResolution)
+            widget = self.webview
+        printer.setPaperSize(QtPrintSupport.QPrinter.A4)
+        printer.setPageSize(QtPrintSupport.QPrinter.A4)
+        printer.setPageMargins (15,15,15,15, QtPrintSupport.QPrinter.Millimeter)
+        printer.setFullPage(True)
+        printDialog = QtPrintSupport.QPrintDialog(printer, widget)
         if printDialog.exec_() == QtWidgets.QDialog.Accepted:
-            self.webview.print_(printer)
+            widget.print_(printer)
 
     def onEditMenuShow(self):
         widget = self.focusWidget()
