@@ -7,6 +7,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.Qsci import QsciScintilla, QsciLexerPython, QsciLexerHTML, \
     QsciLexerBash, QsciPrinter
 
+from .ui.ui_findreplace import Ui_FindReplaceDialog
 from .scilib import QsciLexerRest, _SciImSupport
 
 from .util import toUtf8
@@ -15,66 +16,62 @@ from . import __home_data_path__, __data_path__, globalvars
 logger = logging.getLogger(__name__)
 
 
-class FindDialog(QtWidgets.QDialog):
-    findNext = QtCore.pyqtSignal(str, int)
-    findPrevious = QtCore.pyqtSignal(str, int)
+class FindReplaceDialog(QtWidgets.QDialog):
+    find_next = QtCore.pyqtSignal(str)
+    find_previous = QtCore.pyqtSignal(str)
+    replace_next = QtCore.pyqtSignal(str, str)
+    replace_all = QtCore.pyqtSignal(str, str)
 
     def __init__(self, *args, **kwargs):
-        super(FindDialog, self).__init__(*args, **kwargs)
-        label = QtWidgets.QLabel(self.tr('&Search for:'))
-        self.lineEdit = QtWidgets.QLineEdit()
-        label.setBuddy(self.lineEdit)
+        super(FindReplaceDialog, self).__init__(*args, **kwargs)
+        self.ui = Ui_FindReplaceDialog()
+        self.ui.setupUi(self)
 
-        self.wholewordCheckBox = QtWidgets.QCheckBox(self.tr('Match &whole word'))
-        self.caseCheckBox = QtWidgets.QCheckBox(self.tr('&Match case'))
+        self.ui.lineEdit_find.textChanged.connect(self.enableButton)
+        self.ui.lineEdit_replace.textChanged.connect(self.enableButton)
 
-        self.findButton = QtWidgets.QPushButton(self.tr("&Find"))
-        self.findButton.setDefault(True)
-        self.findButton.setEnabled(False)
+        self.ui.pushButton_close.clicked.connect(self.handleButton)
+        self.ui.pushButton_find_next.clicked.connect(self.handleButton)
+        self.ui.pushButton_find_previous.clicked.connect(self.handleButton)
+        self.ui.pushButton_replace.clicked.connect(self.handleButton)
+        self.ui.pushButton_replaceall.clicked.connect(self.handleButton)
 
-        closeButton = QtWidgets.QPushButton(self.tr('&Close'))
+    def handleButton(self):
+        if self.sender() == self.ui.pushButton_close:
+            self.close()
+        elif self.sender() == self.ui.pushButton_find_next:
+            self.find_next.emit(self.ui.lineEdit_find.text())
+        elif self.sender() == self.ui.pushButton_find_previous:
+            self.find_previous.emit(self.ui.lineEdit_find.text())
+        elif self.sender() == self.ui.pushButton_replace:
+            self.replace_next.emit(
+                self.ui.lineEdit_find.text(),
+                self.ui.lineEdit_replace.text())
+        elif self.sender() == self.ui.pushButton_replaceall:
+            self.replace_all.emit(
+                self.ui.lineEdit_find.text(),
+                self.ui.lineEdit_replace.text())
 
-        self.lineEdit.textChanged.connect(self.enableFindButton)
-        self.findButton.clicked.connect(self.findClicked)
-        closeButton.clicked.connect(self.close)
-
-        topLeftLayout = QtWidgets.QHBoxLayout()
-        topLeftLayout.addWidget(label)
-        topLeftLayout.addWidget(self.lineEdit)
-
-        leftLayout = QtWidgets.QVBoxLayout()
-        leftLayout.addLayout(topLeftLayout)
-        leftLayout.addWidget(self.caseCheckBox)
-        leftLayout.addWidget(self.wholewordCheckBox)
-
-        rightLayout = QtWidgets.QVBoxLayout()
-        rightLayout.addWidget(self.findButton)
-        rightLayout.addWidget(closeButton)
-        rightLayout.addStretch()
-
-        mainLayout = QtWidgets.QHBoxLayout()
-        mainLayout.addLayout(leftLayout)
-        mainLayout.addLayout(rightLayout)
-        self.setLayout(mainLayout)
-
-        self.setWindowTitle(self.tr("Find"))
-        self.setFixedHeight(self.sizeHint().height())
-
-    def enableFindButton(self, text):
+    def enableButton(self, text):
         enable = True if text else False
-        self.findButton.setEnabled(enable)
-
-    def findClicked(self):
-        self.close()
+        if self.sender() == self.ui.lineEdit_find:
+            self.ui.pushButton_find_next.setEnabled(enable)
+            self.ui.pushButton_find_previous.setEnabled(enable)
+        if self.sender() == self.ui.lineEdit_replace:
+            self.ui.pushButton_replace.setEnabled(enable)
+            self.ui.pushButton_replaceall.setEnabled(enable)
 
     def getFindText(self):
-        return self.lineEdit.text()
+        return self.ui.lineEdit_find.text()
+
+    def getReplaceText(self):
+        return self.ui.lineEdit_replace.text()
 
     def isCaseSensitive(self):
-        return self.caseCheckBox.isChecked()
+        return self.ui.checkBox_case_sensitive.isChecked()
 
     def isWholeWord(self):
-        return self.caseCheckBox.isChecked()
+        return self.ui.checkBox_whole_words.isChecked()
 
 
 class Editor(QsciScintilla):
@@ -112,11 +109,15 @@ class Editor(QsciScintilla):
         self.setEolMode(QsciScintilla.EolUnix)
         self.setUtf8(True)
         self.setFont(QtGui.QFont('Monospace', 12))
-        self.findDialog = FindDialog(self)
         self.copy_available = False
         self.copyAvailable.connect(self.setCopyAvailable)
         self.inputMethodEventCount = 0
         self._imsupport = _SciImSupport(self)
+        self.findDialog = FindReplaceDialog(self)
+        self.findDialog.find_next.connect(self.findNext)
+        self.findDialog.find_previous.connect(self.findPrevious)
+        self.findDialog.replace_next.connect(self.replaceNext)
+        self.findDialog.replace_all.connect(self.replaceAll)
 
     def inputMethodQuery(self, query):
         if query == QtCore.Qt.ImMicroFocus:
@@ -299,27 +300,12 @@ class Editor(QsciScintilla):
 
     def find(self):
         self.findDialog.exec_()
-        self.find_text = self.findDialog.getFindText()
-        bfind = self.findFirst(
-            self.find_text,
-            False,  # re
-            self.findDialog.isCaseSensitive(),  # cs
-            self.findDialog.isWholeWord(),   # wo
-            True,   # wrap
-            True,   # forward
-        )
-        if not bfind:
-            QtWidgets.QMessageBox.information(
-                self,
-                self.tr('Find'),
-                self.tr('Not found "%s"') % (self.find_text),
-            )
-        return
 
-    def findNext(self):
+    def findNext(self, text=None):
+        find_text = text or self.findDialog.getFindText()
         line, index = self.getCursorPosition()
         bfind = self.findFirst(
-            self.find_text,
+            find_text,
             False,  # re
             self.findDialog.isCaseSensitive(),  # cs
             self.findDialog.isWholeWord(),   # wo
@@ -331,15 +317,16 @@ class Editor(QsciScintilla):
             QtWidgets.QMessageBox.information(
                 self,
                 self.tr('Find'),
-                self.tr('Not found "%s"') % (self.find_text),
+                self.tr('Not found "%s"') % (find_text),
             )
         return
 
-    def findPrevious(self):
+    def findPrevious(self, text=None):
+        find_text = text or self.findDialog.getFindText()
         line, index = self.getCursorPosition()
-        index -= len(self.find_text)
+        index -= len(find_text)
         bfind = self.findFirst(
-            self.find_text,
+            find_text,
             False,  # re
             self.findDialog.isCaseSensitive(),  # cs
             self.findDialog.isWholeWord(),   # wo
@@ -351,8 +338,50 @@ class Editor(QsciScintilla):
             QtWidgets.QMessageBox.information(
                 self,
                 self.tr('Find'),
-                self.tr('Not found "%s"') % (self.find_text),
+                self.tr('Not found "%s"') % (find_text),
             )
+        return
+
+    def replaceNext(self, text1=None, text2=None):
+        find_text = text1 or self.findDialog.getFindText()
+        replace_text = text2 or self.findDialog.getReplaceText()
+        line, index = self.getCursorPosition()
+        bfind = self.findFirst(
+            find_text,
+            False,  # re
+            self.findDialog.isCaseSensitive(),  # cs
+            self.findDialog.isWholeWord(),   # wo
+            True,   # wrap
+            True,   # forward
+            line, index
+        )
+        if bfind:
+            self.replace(replace_text)
+        else:
+            QtWidgets.QMessageBox.information(
+                self,
+                self.tr('Replace'),
+                self.tr('Not found "%s"') % (find_text),
+            )
+        return
+
+    def replaceAll(self, text1=None, text2=None):
+        find_text = text1 or self.findDialog.getFindText()
+        replace_text = text2 or self.findDialog.getReplaceText()
+        bfind = True
+        while bfind:
+            line, index = self.getCursorPosition()
+            bfind = self.findFirst(
+                find_text,
+                False,  # re
+                self.findDialog.isCaseSensitive(),  # cs
+                self.findDialog.isWholeWord(),   # wo
+                True,   # wrap
+                True,   # forward
+                line, index
+            )
+            if bfind:
+                self.replace(replace_text)
         return
 
     def setStyle(self, filename):

@@ -145,15 +145,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.selectallAction.setShortcut('Ctrl+A')
         self.selectallAction.triggered.connect(partial(self.onEdit,
                                                        'selectall'))
-        self.findAction = QtWidgets.QAction(self.tr('&Find'), self)
+        self.findAction = QtWidgets.QAction(self.tr('&Find or Replace'), self)
         self.findAction.setShortcut('Ctrl+F')
         self.findAction.triggered.connect(partial(self.onEdit, 'find'))
-        self.findnextAction = QtWidgets.QAction(self.tr('Find next'), self)
+        self.findnextAction = QtWidgets.QAction(self.tr('Find Next'), self)
         self.findnextAction.setShortcut('F3')
         self.findnextAction.triggered.connect(partial(self.onEdit, 'findnext'))
-        self.findprevAction = QtWidgets.QAction(self.tr('Find previous'), self)
+        self.findprevAction = QtWidgets.QAction(self.tr('Find Previous'), self)
         self.findprevAction.setShortcut('Shift+F3')
         self.findprevAction.triggered.connect(partial(self.onEdit, 'findprev'))
+
+        self.replacenextAction = QtWidgets.QAction(self.tr('Replace Next'), self)
+        self.replacenextAction.setShortcut('F4')
+        self.replacenextAction.triggered.connect(partial(self.onEdit, 'replacenext'))
 
         self.indentAction = QtWidgets.QAction(self.tr('Indent'), self)
         self.indentAction.setShortcut('TAB')
@@ -309,6 +313,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.findAction)
         menu.addAction(self.findnextAction)
         menu.addAction(self.findprevAction)
+        menu.addAction(self.replacenextAction)
         menu.addSeparator()
         menu.addAction(self.indentAction)
         menu.addAction(self.unindentAction)
@@ -642,6 +647,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 widget.findNext()
             elif label == 'findprev':
                 widget.findPrevious()
+            elif label == 'replacenext':
+                widget.replaceNext()
             elif label == 'indent':
                 widget.indentLines(True)
             elif label == 'unindent':
