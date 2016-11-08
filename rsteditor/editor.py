@@ -21,6 +21,7 @@ class FindReplaceDialog(QtWidgets.QDialog):
     find_previous = QtCore.pyqtSignal(str)
     replace_next = QtCore.pyqtSignal(str, str)
     replace_all = QtCore.pyqtSignal(str, str)
+    _readonly = False
 
     def __init__(self, *args, **kwargs):
         super(FindReplaceDialog, self).__init__(*args, **kwargs)
@@ -36,6 +37,9 @@ class FindReplaceDialog(QtWidgets.QDialog):
         self.ui.pushButton_replace.clicked.connect(self.handleButton)
         self.ui.pushButton_replaceall.clicked.connect(self.handleButton)
 
+    def setReadOnly(self, readonly):
+        self._readonly = readonly
+
     def handleButton(self):
         if self.sender() == self.ui.pushButton_close:
             self.close()
@@ -43,11 +47,11 @@ class FindReplaceDialog(QtWidgets.QDialog):
             self.find_next.emit(self.ui.lineEdit_find.text())
         elif self.sender() == self.ui.pushButton_find_previous:
             self.find_previous.emit(self.ui.lineEdit_find.text())
-        elif self.sender() == self.ui.pushButton_replace:
+        elif not self._readonly and self.sender() == self.ui.pushButton_replace:
             self.replace_next.emit(
                 self.ui.lineEdit_find.text(),
                 self.ui.lineEdit_replace.text())
-        elif self.sender() == self.ui.pushButton_replaceall:
+        elif not self._readonly and self.sender() == self.ui.pushButton_replaceall:
             self.replace_all.emit(
                 self.ui.lineEdit_find.text(),
                 self.ui.lineEdit_replace.text())
@@ -57,7 +61,7 @@ class FindReplaceDialog(QtWidgets.QDialog):
         if self.sender() == self.ui.lineEdit_find:
             self.ui.pushButton_find_next.setEnabled(enable)
             self.ui.pushButton_find_previous.setEnabled(enable)
-        if self.sender() == self.ui.lineEdit_replace:
+        if not self._readonly and self.sender() == self.ui.lineEdit_replace:
             self.ui.pushButton_replace.setEnabled(enable)
             self.ui.pushButton_replaceall.setEnabled(enable)
 
@@ -446,6 +450,7 @@ class CodeViewer(Editor):
     """ code viewer, readonly """
     def __init__(self, *args, **kwargs):
         super(CodeViewer, self).__init__(*args, **kwargs)
+        self.findDialog.setReadOnly(True)
         self.setReadOnly(True)
 
     def setValue(self, text):
