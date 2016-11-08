@@ -35,5 +35,6 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.page().runJavaScript(scrollJS % (value, maximum))
 
     def print_(self, printer):
+        """ QWebEngineView don't support print in Qt5.7 """
         widget = self.page().view()
         widget.render(printer)

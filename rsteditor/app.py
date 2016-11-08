@@ -529,10 +529,16 @@ class MainWindow(QtWidgets.QMainWindow):
             printer = self.editor.getPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.editor
+        elif self.codeview.hasFocus():
+            printer = self.editor.getPrinter(
+                QtPrintSupport.QPrinter.HighResolution)
+            widget = self.codeview
         elif self.webview.hasFocus():
             printer = QtPrintSupport.QPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.webview
+        else:
+            return
         printer.setPageSize(QtPrintSupport.QPrinter.A4)
         printer.setPageOrientation(QtGui.QPageLayout.Portrait)
         printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
@@ -546,13 +552,18 @@ class MainWindow(QtWidgets.QMainWindow):
             printer = self.editor.getPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.editor
+        elif self.codeview.hasFocus():
+            printer = self.editor.getPrinter(
+                QtPrintSupport.QPrinter.HighResolution)
+            widget = self.codeview
         elif self.webview.hasFocus():
             printer = QtPrintSupport.QPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.webview
-        printer.setPaperSize(QtPrintSupport.QPrinter.A4)
+        else:
+            return
         printer.setPageSize(QtPrintSupport.QPrinter.A4)
-        printer.setPageMargins (15,15,15,15, QtPrintSupport.QPrinter.Millimeter)
+        printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
         printer.setFullPage(True)
         printDialog = QtPrintSupport.QPrintDialog(printer, widget)
         if printDialog.exec_() == QtWidgets.QDialog.Accepted:
