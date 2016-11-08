@@ -26,6 +26,8 @@ from rsteditor import explorer
 from rsteditor import output
 from rsteditor.util import toUtf8, toBytes
 from rsteditor import globalvars
+from .findreplace import FindReplaceDialog
+
 
 ALLOWED_LOADS = ['.rst', '.rest',
                  '.md', '.markdown',
@@ -354,7 +356,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.tb_normal.addAction(saveAction)
         # self.tb_normal.addAction(exitAction)
         # self.addToolBar(self.tb_normal)
+
         # main window
+        self.findDialog = FindReplaceDialog(self)
+
         self.editor = editor.Editor(self)
         self.editor.setObjectName('editor')
         self.setCentralWidget(self.editor)
@@ -575,36 +580,37 @@ class MainWindow(QtWidgets.QMainWindow):
             widget.print_(printer)
 
     def onEditMenuShow(self):
-        widget = self.focusWidget()
-        if isinstance(widget, editor.CodeViewer):
+        if self.codeview.hasFocus():
             self.undoAction.setEnabled(False)
             self.redoAction.setEnabled(False)
             self.cutAction.setEnabled(False)
-            self.copyAction.setEnabled(widget.isCopyAvailable())
+            self.copyAction.setEnabled(self.codeview.isCopyAvailable())
             self.pasteAction.setEnabled(False)
             self.deleteAction.setEnabled(False)
             self.selectallAction.setEnabled(True)
             self.findAction.setEnabled(True)
             self.findnextAction.setEnabled(True)
             self.findprevAction.setEnabled(True)
-        elif isinstance(widget, editor.Editor):
-            self.undoAction.setEnabled(widget.isUndoAvailable())
-            self.redoAction.setEnabled(widget.isRedoAvailable())
-            self.cutAction.setEnabled(widget.isCopyAvailable())
-            self.copyAction.setEnabled(widget.isCopyAvailable())
-            self.pasteAction.setEnabled(widget.isPasteAvailable())
-            self.deleteAction.setEnabled(widget.isCopyAvailable())
+            self.replacenextAction.setEnabled(False)
+        elif self.editor.hasFocus():
+            self.undoAction.setEnabled(self.editor.isUndoAvailable())
+            self.redoAction.setEnabled(self.editor.isRedoAvailable())
+            self.cutAction.setEnabled(self.editor.isCopyAvailable())
+            self.copyAction.setEnabled(self.editor.isCopyAvailable())
+            self.pasteAction.setEnabled(self.editor.isPasteAvailable())
+            self.deleteAction.setEnabled(self.editor.isCopyAvailable())
             self.selectallAction.setEnabled(True)
             self.findAction.setEnabled(True)
             self.findnextAction.setEnabled(True)
             self.findprevAction.setEnabled(True)
-            self.indentAction.setEnabled(widget.hasSelectedText())
-            self.unindentAction.setEnabled(widget.hasSelectedText())
-        elif isinstance(widget, webview.WebView):
+            self.replacenextAction.setEnabled(True)
+            self.indentAction.setEnabled(self.editor.hasSelectedText())
+            self.unindentAction.setEnabled(self.editor.hasSelectedText())
+        elif self.webview.hasFocus():
             self.undoAction.setEnabled(False)
             self.redoAction.setEnabled(False)
             self.cutAction.setEnabled(False)
-            action = widget.pageAction(widget.page().Copy)
+            action = self.webview.pageAction(self.webview.page().Copy)
             self.copyAction.setEnabled(action.isEnabled())
             self.pasteAction.setEnabled(False)
             self.deleteAction.setEnabled(False)
@@ -614,50 +620,57 @@ class MainWindow(QtWidgets.QMainWindow):
             self.findprevAction.setEnabled(False)
 
     def onEdit(self, label):
-        widget = self.focusWidget()
-        if isinstance(widget, editor.CodeViewer):
+        if self.codeview.hasFocus():
             if label == 'copy':
-                widget.copy()
+                self.codeview.copy()
             elif label == 'selectall':
-                widget.selectAll()
+                self.codeview.selectAll()
             elif label == 'find':
-                widget.find()
+                self.codeview.find(self.findDialog)
             elif label == 'findnext':
-                widget.findNext()
+                self.codeview.findNext(self.findDialog.getFindText())
             elif label == 'findprev':
-                widget.findPrevious()
-        elif isinstance(widget, editor.Editor):
+                self.codeview.findPrevious(self.findDialog.getFindText())
+        elif self.editor.hasFocus():
             if label == 'undo':
-                widget.undo()
+                self.editor.undo()
             elif label == 'redo':
-                widget.redo()
+                self.editor.redo()
             elif label == 'cut':
-                widget.cut()
+                self.editor.cut()
             elif label == 'copy':
-                widget.copy()
+                self.editor.copy()
             elif label == 'paste':
-                widget.paste()
+                self.editor.paste()
             elif label == 'delete':
-                widget.delete()
+                self.editor.delete()
             elif label == 'selectall':
-                widget.selectAll()
+                self.editor.selectAll()
             elif label == 'find':
-                widget.find()
+                self.editor.find(self.findDialog)
             elif label == 'findnext':
-                widget.findNext()
+                self.editor.findNext(self.findDialog.getFindText())
             elif label == 'findprev':
-                widget.findPrevious()
+                self.editor.findPrevious(self.findDialog.getFindText())
             elif label == 'replacenext':
-                widget.replaceNext()
+                self.editor.replaceNext(
+                    self.findDialog.getFindText(),
+                    self.findDialog.getReplaceText())
             elif label == 'indent':
-                widget.indentLines(True)
+                self.editor.indentLines(True)
             elif label == 'unindent':
-                widget.indentLines(False)
-        elif isinstance(widget, webview.WebView):
+                self.editor.indentLines(False)
+        elif self.webview.hasFocus():
             if label == 'copy':
-                widget.triggerPageAction(widget.page().Copy)
+                self.webview.triggerPageAction(self.webview.page().Copy)
             elif label == 'selectall':
-                widget.triggerPageAction(widget.page().SelectAll)
+                self.webview.triggerPageAction(self.webview.page().SelectAll)
+            elif label == 'find':
+                self.webview.find(self.findDialog)
+            elif label == 'findnext':
+                self.webview.findNext(self.findDialog.getFindText())
+            elif label == 'findprev':
+                self.webview.findPrevious(self.findDialog.getFindText())
         return
 
     def onViewMenuShow(self):

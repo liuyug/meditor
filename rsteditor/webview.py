@@ -1,16 +1,27 @@
 
-from PyQt5 import QtGui, QtCore, QtWidgets, QtNetwork, QtWebEngineWidgets
+from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets
 
 from rsteditor import util
 
+from .findreplace import FindReplaceDialog
+
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
+    _case_sensitive = False
+    _whole_word = False
+
     def __init__(self, *args, **kwargs):
         super(WebView, self).__init__(*args, **kwargs)
         settings = self.settings()
         settings.setAttribute(settings.PluginsEnabled, False)
         self.setHtml('')
         self.loadFinished.connect(self.onLoadFinished)
+
+        self.findDialog = FindReplaceDialog(self)
+        self.findDialog.setReadOnly(True)
+        self.findDialog.find_next.connect(self.findNext)
+        self.findDialog.find_previous.connect(self.findPrevious)
+
         self.popupMenu = QtWidgets.QMenu(self)
         self.popupMenu.addAction(self.pageAction(self.page().Copy))
         self.popupMenu.addAction(self.pageAction(self.page().SelectAll))
@@ -38,3 +49,19 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         """ QWebEngineView don't support print in Qt5.7 """
         widget = self.page().view()
         widget.render(printer)
+
+    def find(self, finddialog, readonly=True):
+        finddialog.setReadOnly(readonly)
+        finddialog.find_next.connect(self.findNext)
+        finddialog.find_previous.connect(self.findPrevious)
+        finddialog.exec_()
+        finddialog.find_next.disconnect(self.findNext)
+        finddialog.find_previous.disconnect(self.findPrevious)
+        self._case_sensitive = finddialog.isCaseSensitive()
+        self._whole_word = finddialog.isWholeWord()
+
+    def findNext(self, text):
+        self.page().findText(text, self.page().FindFlags())
+
+    def findPrevious(self, text):
+        self.page().findText(text, self.page().FindBackward)
