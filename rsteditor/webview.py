@@ -1,9 +1,7 @@
 
-from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
 from rsteditor import util
-
-from .findreplace import FindReplaceDialog
 
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
@@ -16,15 +14,15 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         settings.setAttribute(settings.PluginsEnabled, False)
         self.setHtml('')
         self.loadFinished.connect(self.onLoadFinished)
-
-        self.findDialog = FindReplaceDialog(self)
-        self.findDialog.setReadOnly(True)
-        self.findDialog.find_next.connect(self.findNext)
-        self.findDialog.find_previous.connect(self.findPrevious)
-
+        # popup menu
         self.popupMenu = QtWidgets.QMenu(self)
-        self.popupMenu.addAction(self.pageAction(self.page().Copy))
-        self.popupMenu.addAction(self.pageAction(self.page().SelectAll))
+        action = self.pageAction(self.page().Copy)
+        action.setShortcut(QtGui.QKeySequence('Ctrl+C'))
+        self.popupMenu.addAction(action)
+        self.popupMenu.addSeparator()
+        action = self.pageAction(self.page().SelectAll)
+        action.setShortcut(QtGui.QKeySequence('Ctrl+A'))
+        self.popupMenu.addAction(action)
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:

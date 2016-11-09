@@ -10,7 +10,6 @@ from PyQt5.Qsci import QsciScintilla, QsciLexerPython, QsciLexerHTML, \
 from .scilib import QsciLexerRest, _SciImSupport
 
 from .util import toUtf8
-from .findreplace import FindReplaceDialog
 from . import __home_data_path__, __data_path__, globalvars
 
 
