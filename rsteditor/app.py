@@ -934,8 +934,9 @@ def main():
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5', 'Qt', 'plugins'))
     rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
     QtWidgets.QApplication.setStyle(args.style)
+    if sys.platform == 'win32':
+        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     app = QtWidgets.QApplication(sys.argv)
-    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow()
     win.loadFile(rstfile)
