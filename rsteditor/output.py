@@ -7,7 +7,7 @@ try:
     from docutils.core import publish_cmdline
     from docutils.core import publish_cmdline_to_binary
     from docutils.writers.odf_odt import Writer, Reader
-    from docutils.writers import html4css1
+    from docutils.writers import html5_polyglot
 except:
     raise Exception('Please install docutils firstly')
 
@@ -42,33 +42,34 @@ def get_themes():
 def get_theme_settings(theme, pygments):
     """
     1. pygments.css has been created in app.py so parameter pygments is unused.
-    2. load html4css1 css from docutils packages. if not found load from home data path
+    2. docutils writer will load css file.
     """
     stylesheet = {}
-    html4css1_paths = [
-        os.path.realpath(os.path.dirname(html4css1.__file__)),
-        '/usr/share/docutils/writers/html4css1',
-        os.path.join(__data_path__, 'docutils', 'writers', 'html4css1'),
+    search_paths = [
+        '/usr/share/docutils/writers',
+        os.path.abspath(os.path.dirname(os.path.dirname(html5_polyglot.__file__))),
+        os.path.abspath(os.path.join(__data_path__, 'docutils', 'writers')),
     ]
-    html4css1_path = ''
-    for path in html4css1_paths:
-        if os.path.exists(os.path.join(path, 'html4css1.css')):
-            html4css1_path = path
+    docutils_theme_path = ''
+    for path in search_paths:
+        if os.path.exists(os.path.join(path, 'html5_polyglot', 'template.txt')):
+            docutils_theme_path = path
             break
-    stylesheet['stylesheet_dirs'] = [html4css1_path]
-    stylesheet['template'] = os.path.join(html4css1_path, 'template.txt')
+    stylesheet['stylesheet_dirs'] = [
+        os.path.join(docutils_theme_path, 'html4css1'),
+        os.path.join(docutils_theme_path, 'html5_polyglot'),
+    ]
+
     pygments_path = os.path.join(__home_data_path__, 'themes', 'pygments.css')
     if os.path.exists(pygments_path):
         stylesheet['stylesheet_path'] = pygments_path
         stylesheet['syntax_highlight'] = 'short'
+
+    # docutils default theme
     if theme == 'docutils':
-        css_paths = []
-        css_paths.append('html4css1.css')
-        css_paths.append('math.css')
-        if 'stylesheet_path' in stylesheet:
-            css_paths += stylesheet['stylesheet_path'].split(',')
-        stylesheet['stylesheet_path'] = ','.join(css_paths)
         return stylesheet
+
+    # third part theme
     themes = get_themes()
     try:
         theme_json = themes.get(theme)
@@ -108,7 +109,7 @@ def rst2htmlcode(rst_text, theme='docutils', pygments='docutils', settings={}):
         logger.debug(overrides)
         output = publish_string(
             rst_text,
-            writer_name='html',
+            writer_name='html5',
             settings_overrides=overrides,
         )
     except Exception as err:
@@ -126,7 +127,7 @@ def rst2html(rst_file, filename, theme='docutils', pygments='docutils', settings
         overrides.update(get_theme_settings(theme, pygments))
         logger.debug(overrides)
         output = publish_cmdline(
-            writer_name='html',
+            writer_name='html5',
             settings_overrides=overrides,
             argv=[
                 rst_file,
