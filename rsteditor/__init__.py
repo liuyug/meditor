@@ -3,7 +3,7 @@ import os.path
 from collections import OrderedDict
 
 __app_name__ = 'RSTEditor'
-__app_version__ = '0.2.2.1'
+__app_version__ = '0.2.3.1'
 __default_filename__ = 'unknown.rst'
 
 if sys.platform == 'win32':
@@ -40,10 +40,9 @@ os.makedirs(os.path.join(__home_data_path__, 'themes'), exist_ok=True)
 pygments_styles = {}
 try:
     from pygments import styles
-    pygments_styles = OrderedDict(sorted(
-        styles.STYLE_MAP.items(),
-        key=lambda x: x[0]
-    ))
+    pygments_styles = OrderedDict(
+        [('null', 'null::NullStyle')] + sorted(styles.STYLE_MAP.items(), key=lambda x: x[0])
+    )
     for k, v in pygments_styles.items():
         pygments_styles[k] = v.split('::')[1]
 except:

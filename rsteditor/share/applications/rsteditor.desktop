@@ -1,6 +1,6 @@
 
 [Desktop Entry]
-Version=0.2.2.1
+Version=0.2.3.1
 Name=RSTEditor
 Comment=reStructuredText Editor
 Exec=rsteditor

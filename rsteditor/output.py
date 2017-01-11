@@ -1,6 +1,7 @@
 import os.path
 import logging
 import json
+from collections import OrderedDict
 
 try:
     from docutils.core import publish_string
@@ -23,19 +24,26 @@ default_overrides = {
 
 def get_themes():
     """
-    result: { 'theme': theme_json, ... }
+    result: { 'theme': theme_dict, ... }
     """
-    themes = {}
     themes_dirs = [
         os.path.join(__home_data_path__, 'themes'),
         os.path.join(__data_path__, 'themes'),
     ]
+    themes = OrderedDict()
     for themes_dir in themes_dirs:
         if os.path.exists(themes_dir):
             for theme in os.listdir(themes_dir):
                 theme_json = os.path.join(themes_dir, theme, 'theme.json')
                 if os.path.exists(theme_json):
-                    themes[theme] = theme_json
+                    try:
+                        styles = json.load(open(theme_json))
+                        for name, style in styles.items():
+                            style['stylesheet_dirs'] = [os.path.dirname(theme_json)]
+                            themes[name] = style
+                    except Exception as err:
+                        logger.error(err)
+                        continue
     return themes
 
 
@@ -71,16 +79,12 @@ def get_theme_settings(theme, pygments):
 
     # third part theme
     themes = get_themes()
-    try:
-        theme_json = themes.get(theme)
-        stylesheet['stylesheet_dirs'].append(os.path.dirname(theme_json))
-        styles = json.load(open(theme_json))
-    except Exception as err:
-        logger.error(err)
-        styles = {}
+    styles = themes.get(theme)
+
     # stylesheet_path : css file path
     # syntax_highlight: short
     # template: template file path
+    stylesheet['stylesheet_dirs'].extend(styles['stylesheet_dirs'])
     if 'syntax_highlight' in styles:
         stylesheet['syntax_highlight'] = styles['syntax_highlight']
     if 'stylesheet_path' in styles:
@@ -90,7 +94,7 @@ def get_theme_settings(theme, pygments):
         stylesheet['stylesheet_path'] = ','.join(css_paths)
     if 'template' in styles:
         old_path = styles['template']
-        new_path = os.path.realpath(
+        new_path = os.path.abspath(
             os.path.join(__home_data_path__,
                          'themes',
                          theme,

@@ -252,31 +252,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 act.setChecked(True)
                 break
         # code style
-        docutils_codeStyleAction = QtWidgets.QAction('docutilsSyle',
-                                           self,
-                                           checkable=True)
-        docutils_codeStyleAction.triggered.connect(partial(self.onCodeStyleChanged,
-                                                   'docutils'))
-        codeStyleGroup = QtWidgets.QActionGroup(self)
-        codeStyleGroup.setExclusive(True)
-        codeStyleGroup.addAction(docutils_codeStyleAction)
+        self.codeStyleGroup = QtWidgets.QActionGroup(self)
+        self.codeStyleGroup.setExclusive(True)
         for k, v in pygments_styles.items():
                 act = QtWidgets.QAction(v,
                                     self,
                                     checkable=True)
                 act.triggered.connect(partial(self.onCodeStyleChanged, k))
-                codeStyleGroup.addAction(act)
-        value = toUtf8(settings.value('pygments', 'docutils', type=str))
+                self.codeStyleGroup.addAction(act)
+        value = toUtf8(settings.value('pygments', 'null', type=str))
         settings.setValue('pygments', value)
         self.pygments = value
-        if self.pygments == 'docutils':
-            docutils_codeStyleAction.setChecked(True)
-        else:
-            for act in codeStyleGroup.actions():
-                pygments_desc = toUtf8(act.text())
-                if pygments_desc == pygments_styles[value]:
-                    act.setChecked(True)
-                    break
+        for act in self.codeStyleGroup.actions():
+            pygments_desc = toUtf8(act.text())
+            if pygments_desc == pygments_styles.get(value, ''):
+                act.setChecked(True)
+                break
         # help
         helpAction = QtWidgets.QAction(self.tr('&Help'), self)
         helpAction.triggered.connect(self.onHelp)
@@ -340,7 +331,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addMenu(submenu)
         menu.addSeparator()
         submenu = QtWidgets.QMenu(self.tr('&Pygments'), menu)
-        for act in codeStyleGroup.actions():
+        for act in self.codeStyleGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
         menu = menubar.addMenu(self.tr('&Help'))
@@ -707,8 +698,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def onThemeChanged(self, label, checked):
         self.theme = label
         self.settings.setValue('theme', self.theme)
-        self.previewCurrentText()
-        return
+        if self.theme == 'docutils':
+            code_style = 'default'
+        else:
+            code_style = 'null'
+        for act in self.codeStyleGroup.actions():
+            if act.text() == pygments_styles.get(code_style, 'null'):
+                act.trigger()
+                break
 
     def onCodeStyleChanged(self, label, checked):
         self.pygments = label
@@ -716,11 +713,10 @@ class MainWindow(QtWidgets.QMainWindow):
         pygments_style_path = os.path.join(
             __home_data_path__, 'themes', 'pygments.css')
         with open(pygments_style_path, 'wb') as f:
-            if self.pygments != 'docutils':
+            if self.pygments != 'null':
                 formatter = get_formatter_by_name('html', style=self.pygments)
                 f.write(toBytes(formatter.get_style_defs('pre.code')))
         self.previewCurrentText()
-        return
 
     def onHelp(self):
         help_paths = [
