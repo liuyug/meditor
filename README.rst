@@ -24,11 +24,11 @@ Install
 =======
 in Linux::
 
-    pip install rsteditor-qt
+    pip3 install rsteditor-qt
 
 or install it in user directory::
 
-    pip install rsteditor-qt --user
+    pip3 install rsteditor-qt --user
 
 in Window:
 
@@ -60,7 +60,7 @@ Install them on all platform:
 
 + docutils
 + Pygments
-+ pyqt4/pyqt5
++ pyqt5
 + sip
 
 some packages for debian/ubuntu
