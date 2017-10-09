@@ -60,6 +60,8 @@ def previewWorker(self):
             self.previewHtml = output.rst2htmlcode(self.previewText,
                                                    theme=self.theme,
                                                    pygments=self.pygments)
+        elif ext in ['.md', '.markdown']:
+            self.previewHtml = output.md2htmlcode(self.previewText)
         elif ext in ['.html', '.htm']:
             self.previewHtml = self.previewText
         elif ext in ALLOWED_LOADS:

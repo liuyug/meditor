@@ -3,6 +3,8 @@ import logging
 import json
 from collections import OrderedDict
 
+import markdown
+
 try:
     from docutils.core import publish_string
     from docutils.core import publish_cmdline
@@ -163,6 +165,18 @@ def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings=
                 filename,
             ]
         )
+    except Exception as err:
+        logger.error(err)
+        output = err
+    return output
+
+
+def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
+    output = None
+    try:
+        overrides = {}
+        logger.debug(overrides)
+        output = markdown.markdown(markup_file)
     except Exception as err:
         logger.error(err)
         output = err

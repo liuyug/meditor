@@ -1,4 +1,5 @@
 from .input import _SciImSupport
+from .scilexerdefault import QsciLexerDefault
 
 try:
     from .scilexerrest import QsciLexerRest

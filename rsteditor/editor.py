@@ -4,10 +4,10 @@ import os.path
 import logging
 
 from PyQt5 import QtGui, QtCore, QtWidgets
-from PyQt5.Qsci import QsciScintilla, QsciLexerPython, QsciLexerHTML, \
-    QsciLexerBash, QsciPrinter
+from PyQt5.Qsci import QsciScintilla, QsciPrinter, \
+    QsciLexerPython, QsciLexerHTML, QsciLexerBash, QsciLexerMarkdown
 
-from .scilib import QsciLexerRest, _SciImSupport
+from .scilib import QsciLexerRest, _SciImSupport, QsciLexerDefault
 
 from .util import toUtf8
 from . import __home_data_path__, __data_path__, globalvars
@@ -333,28 +333,39 @@ class Editor(QsciScintilla):
     def setStyle(self, filename):
         lexer = None
         t1 = time.clock()
-        if filename and self.enable_lexer:
+        if filename:
             ext = os.path.splitext(filename)[1].lower()
             if ext in ['.html', '.htm']:
-                lexer = self.lexers.get('.html')
+                ext = 'html'
+                lexer = self.lexers.get(ext)
                 if not lexer:
                     lexer = QsciLexerHTML(self)
                     lexer.setFont(QtGui.QFont('Monospace', 12))
-                    self.lexers['.html'] = lexer
+                    self.lexers[ext] = lexer
             elif ext in ['.py']:
-                lexer = self.lexers.get('.py')
+                ext = 'python'
+                lexer = self.lexers.get(ext)
                 if not lexer:
                     lexer = QsciLexerPython(self)
                     lexer.setFont(QtGui.QFont('Monospace', 12))
-                    self.lexers['.py'] = lexer
+                    self.lexers[ext] = lexer
             elif ext in ['.sh']:
-                lexer = self.lexers.get('.sh')
+                ext = 'bash'
+                lexer = self.lexers.get(ext)
                 if not lexer:
                     lexer = QsciLexerBash(self)
                     lexer.setFont(QtGui.QFont('Monospace', 12))
-                    self.lexers['.sh'] = lexer
+                    self.lexers[ext] = lexer
+            elif ext in ['.md', '.markdown']:
+                ext = 'markdown'
+                lexer = self.lexers.get(ext)
+                if not lexer:
+                    lexer = QsciLexerMarkdown(self)
+                    lexer.setFont(QtGui.QFont('Monospace', 12))
+                    self.lexers[ext] = lexer
             elif ext in ['.rst', '.rest']:
-                lexer = self.lexers.get('.rest')
+                ext = 'reStructedText'
+                lexer = self.lexers.get(ext)
                 if not lexer:
                     lexer = QsciLexerRest(self)
                     lexer.setDebugLevel(globalvars.logging_level)
@@ -370,13 +381,16 @@ class Editor(QsciScintilla):
                         lexer.readConfig(rst_prop_file)
                     else:
                         logger.info('Not found %s', rst_prop_file)
-                    self.lexers['.rest'] = lexer
-                else:
-                    lexer.clear()
+                    self.lexers[ext] = lexer
+            else:
+                ext = 'default'
+                lexer = self.lexers.get(ext)
+                if not lexer:
+                    lexer = QsciLexerDefault(self)
+                    self.lexers[ext] = lexer
         self.setLexer(lexer)
         t2 = time.clock()
-        logger.info('Lexer waste time: %s(%s)' % (
-            t2 - t1, filename))
+        logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
         self.cur_lexer = lexer
 
     def pauseLexer(self, pause=True):
