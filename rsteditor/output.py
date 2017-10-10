@@ -70,7 +70,7 @@ def get_theme_settings(theme, pygments):
         os.path.join(docutils_theme_path, 'html5_polyglot'),
     ]
 
-    pygments_path = os.path.join(__home_data_path__, 'themes', 'pygments.css')
+    pygments_path = os.path.join(__home_data_path__, 'themes', 'pygments_rst.css')
     if os.path.exists(pygments_path):
         stylesheet['stylesheet_path'] = pygments_path
         stylesheet['syntax_highlight'] = 'short'
@@ -172,11 +172,6 @@ def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings=
 
 
 def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
-    head = [
-        '<meta charset="UTF-8" />',
-    ]
-    body = ''
-
     extensions = [
         'markdown.extensions.extra',
         'markdown.extensions.abbr',
@@ -204,11 +199,27 @@ def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
     except Exception as err:
         logger.error(err)
         body = err
+    pygments_path = os.path.join(__home_data_path__, 'themes', 'pygments_md.css')
+    pygment_css = ''
+    with open(pygments_path) as f:
+        pygment_css = f.read()
     html = []
     html.append('<!DOCTYPE html>')
     html.append('<html>')
     html.append('<head>')
+    head = []
+    head.append('<meta charset="UTF-8" />')
+    head.append('<style type="text/css">')
+    if pygment_css:
+        head.append('/*')
+        head.append(' * +---------------+')
+        head.append(' * | pygment style |')
+        head.append(' * +---------------+')
+        head.append(' */')
+        head.append(pygment_css)
+    head.append('</style>')
     html.extend(head)
+
     html.append('</head>')
     html.append('<body>')
     html.append(body)
