@@ -172,7 +172,11 @@ def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings=
 
 
 def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
-    output = None
+    head = [
+        '<meta charset="UTF-8" />',
+    ]
+    body = ''
+
     extensions = [
         'markdown.extensions.extra',
         'markdown.extensions.abbr',
@@ -195,9 +199,20 @@ def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
     try:
         overrides = {}
         logger.debug(overrides)
-        output = markdown.markdown(
+        body = markdown.markdown(
             markup_file, output_format='html5', extensions=extensions)
     except Exception as err:
         logger.error(err)
-        output = err
-    return output
+        body = err
+    html = []
+    html.append('<!DOCTYPE html>')
+    html.append('<html>')
+    html.append('<head>')
+    html.extend(head)
+    html.append('</head>')
+    html.append('<body>')
+    html.append(body)
+    html.append('</body>')
+    html.append('</html>')
+
+    return '\n'.join(html)
