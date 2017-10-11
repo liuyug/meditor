@@ -785,6 +785,8 @@ class MainWindow(QtWidgets.QMainWindow):
                        ) % (__app_name__, __app_version__)
         text += self.tr('Platform: %s\n') % (sys.platform)
         text += self.tr('Configuration path: %s\n') % (__home_data_path__)
+        text += self.tr('Configuration path: %s\n') % (__data_path__)
+
         text += self.tr('Scilexer: %s\n') % self.editor.cur_lexer.__module__
         QtWidgets.QMessageBox.about(self, title, text)
 
