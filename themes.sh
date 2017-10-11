@@ -105,6 +105,20 @@ cd $theme_name
 cp -f themes/*.css $md_share_theme/$theme_name
 )
 
+# https://github.com/hzlzh/MarkDown-Theme
+theme_name="hzlzh-markdown-theme"
+mkdir -p $md_share_theme/$theme_name
+if [ -d $theme_name ]; then
+    (cd $theme_name; git pull)
+else
+    git clone http://github.com/hzlzh/MarkDown-Theme $theme_name
+fi
+(
+cd $theme_name
+cp -f CSS/*.css $md_share_theme/$theme_name
+)
+
+
 
 )
 
