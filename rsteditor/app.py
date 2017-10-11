@@ -717,11 +717,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
         pygments_md_path = os.path.join(
             __home_data_path__, 'themes', 'pygments_md.css')
+
+        comment = """
+/*
+ * +---------------+
+ * | pygment style |
+ * +---------------+
+ */\n"""
         with open(pygments_rst_path, 'wb') as f:
+            f.write(toBytes(comment))
             if self.pygments != 'null':
                 formatter = get_formatter_by_name('html', style=self.pygments)
                 f.write(toBytes(formatter.get_style_defs('pre.code')))
         with open(pygments_md_path, 'wb') as f:
+            f.write(toBytes(comment))
             if self.pygments != 'null':
                 formatter = get_formatter_by_name('html', style=self.pygments)
                 f.write(toBytes(formatter.get_style_defs('.codehilite')))

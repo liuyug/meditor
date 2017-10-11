@@ -211,11 +211,6 @@ def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
     head.append('<meta charset="UTF-8" />')
     head.append('<style type="text/css">')
     if pygment_css:
-        head.append('/*')
-        head.append(' * +---------------+')
-        head.append(' * | pygment style |')
-        head.append(' * +---------------+')
-        head.append(' */')
         head.append(pygment_css)
     head.append('</style>')
     html.extend(head)
