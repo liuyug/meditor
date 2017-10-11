@@ -729,26 +729,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def onRstThemeChanged(self, label, checked):
         self.rst_theme = label
         self.settings.setValue('rst_theme', self.rst_theme)
-        if self.rst_theme == 'default':
-            code_style = 'default'
-        else:
-            code_style = 'null'
-        for act in self.codeStyleGroup.actions():
-            if act.text() == pygments_styles.get(code_style, 'null'):
-                act.trigger()
-                break
+        self.previewCurrentText()
 
     def onMdThemeChanged(self, label, checked):
         self.md_theme = label
         self.settings.setValue('md_theme', self.md_theme)
-        if self.md_theme == 'default':
-            code_style = 'default'
-        else:
-            code_style = 'null'
-        for act in self.codeStyleGroup.actions():
-            if act.text() == pygments_styles.get(code_style, 'null'):
-                act.trigger()
-                break
+        self.previewCurrentText()
 
     def onCodeStyleChanged(self, label, checked):
         if not label:
