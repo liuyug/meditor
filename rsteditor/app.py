@@ -741,7 +741,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def onMdThemeChanged(self, label, checked):
         self.md_theme = label
         self.settings.setValue('md_theme', self.md_theme)
-        if self.rst_theme == 'default':
+        if self.md_theme == 'default':
             code_style = 'default'
         else:
             code_style = 'null'
