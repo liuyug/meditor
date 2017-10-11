@@ -55,13 +55,14 @@ def previewWorker(self):
             break
         logger.debug('Preview %s', self.previewPath)
         ext = os.path.splitext(self.previewPath)[1].lower()
-        self.previewHtml = ''
-        if ext in ['.rst', '.rest', '.txt']:
+        if not self.previewText:
+            self.previewHtml = ''
+        elif ext in ['.rst', '.rest', '.txt']:
             self.previewHtml = output.rst2htmlcode(self.previewText,
-                                                   theme=self.theme,
-                                                   pygments=self.pygments)
+                                                   theme=self.rst_theme)
         elif ext in ['.md', '.markdown']:
-            self.previewHtml = output.md2htmlcode(self.previewText)
+            self.previewHtml = output.md2htmlcode(self.previewText,
+                                                  theme=self.md_theme)
         elif ext in ['.html', '.htm']:
             self.previewHtml = self.previewText
         elif ext in ALLOWED_LOADS:
@@ -74,8 +75,8 @@ def previewWorker(self):
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    theme = 'docutils'
-    pygments = 'docutils'
+    rst_theme = 'default'
+    md_theme = 'default'
     previewText = ''
     previewHtml = ''
     previewPath = None
@@ -229,26 +230,51 @@ class MainWindow(QtWidgets.QMainWindow):
         previewsyncAction.setChecked(value)
         # theme
         # docutils theme
-        docutils_cssAction = QtWidgets.QAction('docutils theme',
+        default_cssAction = QtWidgets.QAction('Default theme',
                                            self,
                                            checkable=True)
-        docutils_cssAction.triggered.connect(partial(self.onThemeChanged,
-                                                   'docutils'))
-        themeGroup = QtWidgets.QActionGroup(self)
-        themeGroup.setExclusive(True)
-        themeGroup.addAction(docutils_cssAction)
-        for theme in output.get_themes().keys():
+        default_cssAction.triggered.connect(
+            partial(self.onRstThemeChanged, 'default'))
+        rstThemeGroup = QtWidgets.QActionGroup(self)
+        rstThemeGroup.setExclusive(True)
+        rstThemeGroup.addAction(default_cssAction)
+        for theme in output.get_rst_themes().keys():
             act = QtWidgets.QAction('%s theme' % theme,
                                 self,
                                 checkable=True)
-            act.triggered.connect(partial(self.onThemeChanged, theme))
-            themeGroup.addAction(act)
-        value = toUtf8(settings.value('theme', 'docutils', type=str))
-        settings.setValue('theme', value)
-        self.theme = value
-        docutils_cssAction.setChecked(True)
+            act.triggered.connect(partial(self.onRstThemeChanged, theme))
+            rstThemeGroup.addAction(act)
+        value = toUtf8(settings.value('rst_theme', 'default', type=str))
+        settings.setValue('rst_theme', value)
+        self.rst_theme = value
+        default_cssAction.setChecked(True)
         theme_name = '%s theme' % toUtf8(value)
-        for act in themeGroup.actions():
+        for act in rstThemeGroup.actions():
+            theme = toUtf8(act.text())
+            if theme_name == theme:
+                act.setChecked(True)
+                break
+        # markdown theme
+        default_cssAction = QtWidgets.QAction('Default theme',
+                                           self,
+                                           checkable=True)
+        default_cssAction.triggered.connect(
+            partial(self.onMdThemeChanged, 'default'))
+        mdThemeGroup = QtWidgets.QActionGroup(self)
+        mdThemeGroup.setExclusive(True)
+        mdThemeGroup.addAction(default_cssAction)
+        for theme in output.get_md_themes().keys():
+            act = QtWidgets.QAction('%s theme' % theme,
+                                self,
+                                checkable=True)
+            act.triggered.connect(partial(self.onMdThemeChanged, theme))
+            mdThemeGroup.addAction(act)
+        value = toUtf8(settings.value('md_theme', 'default', type=str))
+        settings.setValue('md_theme', value)
+        self.md_theme = value
+        default_cssAction.setChecked(True)
+        theme_name = '%s theme' % toUtf8(value)
+        for act in mdThemeGroup.actions():
             theme = toUtf8(act.text())
             if theme_name == theme:
                 act.setChecked(True)
@@ -264,7 +290,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.codeStyleGroup.addAction(act)
         value = toUtf8(settings.value('pygments', 'null', type=str))
         settings.setValue('pygments', value)
-        self.pygments = value
         for act in self.codeStyleGroup.actions():
             pygments_desc = toUtf8(act.text())
             if pygments_desc == pygments_styles.get(value, ''):
@@ -327,8 +352,12 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(previewinputAction)
         menu.addAction(previewsyncAction)
         menu = menubar.addMenu(self.tr('&Theme'))
-        submenu = QtWidgets.QMenu(self.tr('&Docutils'), menu)
-        for act in themeGroup.actions():
+        submenu = QtWidgets.QMenu(self.tr('&reStructedText'), menu)
+        for act in rstThemeGroup.actions():
+            submenu.addAction(act)
+        menu.addMenu(submenu)
+        submenu = QtWidgets.QMenu(self.tr('&Markdown'), menu)
+        for act in mdThemeGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
         menu.addSeparator()
@@ -512,7 +541,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     filename += '.html'
                 output.rst2html(self.editor.getFileName(),
                                 filename,
-                                theme=self.theme)
+                                theme=self.rst_theme)
         elif label == 'odt':
             filename = QtWidgets.QFileDialog.getSaveFileName(
                 self,
@@ -697,10 +726,22 @@ class MainWindow(QtWidgets.QMainWindow):
             self.editor.enableLexer(checked)
         return
 
-    def onThemeChanged(self, label, checked):
-        self.theme = label
-        self.settings.setValue('theme', self.theme)
-        if self.theme == 'docutils':
+    def onRstThemeChanged(self, label, checked):
+        self.rst_theme = label
+        self.settings.setValue('rst_theme', self.rst_theme)
+        if self.rst_theme == 'default':
+            code_style = 'default'
+        else:
+            code_style = 'null'
+        for act in self.codeStyleGroup.actions():
+            if act.text() == pygments_styles.get(code_style, 'null'):
+                act.trigger()
+                break
+
+    def onMdThemeChanged(self, label, checked):
+        self.md_theme = label
+        self.settings.setValue('md_theme', self.md_theme)
+        if self.rst_theme == 'default':
             code_style = 'default'
         else:
             code_style = 'null'
@@ -710,14 +751,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 break
 
     def onCodeStyleChanged(self, label, checked):
-        self.pygments = label
-        self.settings.setValue('pygments', self.pygments)
+        if not label:
+            return
+        self.settings.setValue('pygments', label)
         pygments_rst_path = os.path.join(
-            __home_data_path__, 'themes', 'pygments_rst.css')
+            __home_data_path__, 'themes', 'reStructedText',
+            'pygments.css')
 
         pygments_md_path = os.path.join(
-            __home_data_path__, 'themes', 'pygments_md.css')
-
+            __home_data_path__, 'themes', 'Markdown',
+            'pygments.css')
         comment = """
 /*
  * +---------------+
@@ -726,13 +769,13 @@ class MainWindow(QtWidgets.QMainWindow):
  */\n"""
         with open(pygments_rst_path, 'wb') as f:
             f.write(toBytes(comment))
-            if self.pygments != 'null':
-                formatter = get_formatter_by_name('html', style=self.pygments)
+            if label != 'null':
+                formatter = get_formatter_by_name('html', style=label)
                 f.write(toBytes(formatter.get_style_defs('pre.code')))
         with open(pygments_md_path, 'wb') as f:
             f.write(toBytes(comment))
-            if self.pygments != 'null':
-                formatter = get_formatter_by_name('html', style=self.pygments)
+            if label != 'null':
+                formatter = get_formatter_by_name('html', style=label)
                 f.write(toBytes(formatter.get_style_defs('.codehilite')))
         self.previewCurrentText()
 

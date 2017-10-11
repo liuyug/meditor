@@ -34,8 +34,12 @@ else:
         __app_name__.lower()
     )
 
-os.makedirs(__home_data_path__, exist_ok=True)
-os.makedirs(os.path.join(__home_data_path__, 'themes'), exist_ok=True)
+os.makedirs(
+    os.path.join(__home_data_path__, 'themes', 'reStructedText'),
+    exist_ok=True)
+os.makedirs(
+    os.path.join(__home_data_path__, 'themes', 'Markdown'),
+    exist_ok=True)
 
 pygments_styles = {}
 try:

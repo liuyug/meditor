@@ -24,13 +24,13 @@ default_overrides = {
 }
 
 
-def get_themes():
+def get_rst_themes():
     """
     result: { 'theme': theme_dict, ... }
     """
     themes_dirs = [
-        os.path.join(__home_data_path__, 'themes'),
-        os.path.join(__data_path__, 'themes'),
+        os.path.join(__home_data_path__, 'themes', 'reSturctedText'),
+        os.path.join(__data_path__, 'themes', 'reStructedText'),
     ]
     themes = OrderedDict()
     for themes_dir in themes_dirs:
@@ -49,10 +49,9 @@ def get_themes():
     return themes
 
 
-def get_theme_settings(theme, pygments):
+def get_theme_settings(theme):
     """
-    1. pygments.css has been created in app.py so parameter pygments is unused.
-    2. docutils writer will load css file.
+    docutils writer will load css file.
     """
     stylesheet = {}
     search_paths = [
@@ -70,17 +69,16 @@ def get_theme_settings(theme, pygments):
         os.path.join(docutils_theme_path, 'html5_polyglot'),
     ]
 
-    pygments_path = os.path.join(__home_data_path__, 'themes', 'pygments_rst.css')
+    pygments_path = os.path.join(__home_data_path__, 'themes', 'reStructedText', 'pygments.css')
     if os.path.exists(pygments_path):
         stylesheet['stylesheet_path'] = pygments_path
         stylesheet['syntax_highlight'] = 'short'
-
     # docutils default theme
-    if theme == 'docutils':
+    if theme == 'default':
         return stylesheet
 
     # third part theme
-    themes = get_themes()
+    themes = get_rst_themes()
     styles = themes.get(theme)
 
     # stylesheet_path : css file path
@@ -98,20 +96,20 @@ def get_theme_settings(theme, pygments):
         old_path = styles['template']
         new_path = os.path.abspath(
             os.path.join(__home_data_path__,
-                         'themes',
+                         'themes', 'reStructedText',
                          theme,
                          old_path))
         stylesheet['template'] = new_path
     return stylesheet
 
 
-def rst2htmlcode(rst_text, theme='docutils', pygments='docutils', settings={}):
+def rst2htmlcode(rst_text, theme='restructedtext', settings={}):
     output = None
     try:
         overrides = {}
         overrides.update(default_overrides)
         overrides.update(settings)
-        overrides.update(get_theme_settings(theme, pygments))
+        overrides.update(get_theme_settings(theme))
         logger.debug(overrides)
         output = publish_string(
             rst_text,
@@ -124,13 +122,13 @@ def rst2htmlcode(rst_text, theme='docutils', pygments='docutils', settings={}):
     return output
 
 
-def rst2html(rst_file, filename, theme='docutils', pygments='docutils', settings={}):
+def rst2html(rst_file, filename, theme='restructedtext', settings={}):
     output = None
     try:
         overrides = {}
         overrides.update(default_overrides)
         overrides.update(settings)
-        overrides.update(get_theme_settings(theme, pygments))
+        overrides.update(get_theme_settings(theme))
         logger.debug(overrides)
         output = publish_cmdline(
             writer_name='html5',
@@ -146,13 +144,13 @@ def rst2html(rst_file, filename, theme='docutils', pygments='docutils', settings
     return output
 
 
-def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings={}):
+def rst2odt(rst_file, filename, theme='restructedtext', settings={}):
     output = None
     try:
         overrides = {}
         overrides.update(default_overrides)
         overrides.update(settings)
-        overrides.update(get_theme_settings(theme, pygments))
+        overrides.update(get_theme_settings(theme))
         logger.debug(overrides)
         writer = Writer()
         reader = Reader()
@@ -171,7 +169,28 @@ def rst2odt(rst_file, filename, theme='docutils', pygments='docutils', settings=
     return output
 
 
-def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
+def get_md_themes():
+    """
+    result: { 'theme': theme_dict, ... }
+    """
+    themes_dirs = [
+        os.path.join(__home_data_path__, 'themes', 'Markdown'),
+        os.path.join(__data_path__, 'themes', 'Markdown'),
+    ]
+    themes = OrderedDict()
+    for themes_dir in themes_dirs:
+        if os.path.isdir(themes_dir):
+            for theme_dir in os.listdir(themes_dir):
+                theme_dir = os.path.join(themes_dir, theme_dir)
+                if os.path.isdir(theme_dir):
+                    for theme in os.listdir(theme_dir):
+                        name, ext = os.path.splitext(theme)
+                        if ext.lower() == '.css':
+                            themes[name] = os.path.join(theme_dir, theme)
+    return themes
+
+
+def md2htmlcode(markup_file, theme=None, settings={}):
     extensions = [
         'markdown.extensions.extra',
         'markdown.extensions.abbr',
@@ -199,10 +218,21 @@ def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
     except Exception as err:
         logger.error(err)
         body = err
-    pygments_path = os.path.join(__home_data_path__, 'themes', 'pygments_md.css')
+
+    themes = get_md_themes()
+    theme_path = themes.get(theme, 'default')
+    theme_css = ''
+    if os.path.exists(theme_path):
+        with open(theme_path) as f:
+            theme_css = f.read()
+
+    pygments_path = os.path.join(
+        __home_data_path__, 'themes', 'Markdown', 'pygments.css')
     pygment_css = ''
-    with open(pygments_path) as f:
-        pygment_css = f.read()
+    if os.path.exists(pygments_path):
+        with open(pygments_path) as f:
+            pygment_css = f.read()
+
     html = []
     html.append('<!DOCTYPE html>')
     html.append('<html>')
@@ -210,6 +240,8 @@ def md2htmlcode(markup_file, theme=None, pygments=None, settings={}):
     head = []
     head.append('<meta charset="UTF-8" />')
     head.append('<style type="text/css">')
+    if theme_css:
+        head.append(theme_css)
     if pygment_css:
         head.append(pygment_css)
     head.append('</style>')
