@@ -398,8 +398,11 @@ class Editor(QsciScintilla):
         if pause:
             self._lexerStart = 0
             self._lexerEnd = 0
-        else:
+        elif self.cur_lexer.__module__.startswith('rsteditor.scilib'):
             self.cur_lexer.styleText(self._lexerStart, self._lexerEnd)
+        else:
+            # PyQt5.Qsci
+            pass
 
 
 class CodeViewer(Editor):
