@@ -781,13 +781,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onAbout(self):
         title = self.tr('About %s') % (__app_name__)
-        text = self.tr("%s %s\n\nThe editor for reStructuredText\n\n"
+        text = self.tr("%s %s\n\nThe editor for Markup Text\n\n"
                        ) % (__app_name__, __app_version__)
         text += self.tr('Platform: %s\n') % (sys.platform)
-        text += self.tr('Configuration path: %s\n') % (__home_data_path__)
-        text += self.tr('Configuration path: %s\n') % (__data_path__)
-
-        text += self.tr('Scilexer: %s\n') % self.editor.cur_lexer.__module__
+        text += self.tr('Config path: %s\n') % (__home_data_path__)
+        text += self.tr('Application path: %s\n') % (__data_path__)
+        text += self.tr('Editor lexer: %s\n') % self.editor.cur_lexer.__module__
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
