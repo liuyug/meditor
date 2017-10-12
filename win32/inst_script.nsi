@@ -8,9 +8,11 @@
 !include "MUI2.nsh"
 
 ;--------------------------------
+; makensis /DPRODUCT_VER=v0.0.0.0
+
 ;General
 !define PRODUCT_NAME "rsteditor"
-!define PRODUCT_VER "0.2.3.1"
+;!define PRODUCT_VER "x.x.x.x"
 !define SHORTCUT_NAME "rsteditor.lnk"
 !define EXEC_NAME "rsteditor.exe"
 !define EXEC_ICON "$INSTDIR\share\pixmaps\rsteditor-text-editor.ico"
