@@ -3,7 +3,7 @@ import os.path
 from collections import OrderedDict
 
 __app_name__ = 'RSTEditor'
-__app_version__ = '0.2.4.1'
+__app_version__ = '0.2.4.2'
 __default_filename__ = 'unknown.rst'
 
 if sys.platform == 'win32':

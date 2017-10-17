@@ -38,6 +38,13 @@ ALLOWED_LOADS = ['.rst', '.rest',
                  '.py'
                  ]
 
+FILTER = [
+    'All support files (*.rst *.md *.txt);;',
+    'reStructedText files (*.rst *.rest);;',
+    'Markdown files (*.md *.markdown);;',
+    'Text files (*.txt)',
+]
+
 requestPreview = threading.Event()
 
 # for debug
@@ -500,8 +507,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def onOpen(self):
         if not self.saveAndContinue():
             return
-        filename = QtWidgets.QFileDialog.getOpenFileName(self,
-                                                     self.tr('Open a file'))
+        filename = QtWidgets.QFileDialog.getOpenFileName(
+            self, self.tr('Open a file'),
+            filter=''.join(FILTER),
+        )
         # ???: return a tuple
         if isinstance(filename, tuple):
             filename = filename[0]
@@ -528,9 +537,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self,
             self.tr('Save file as ...'),
             self.explorer.getRootPath(),
-            "All support files (*.rst *.rest *.txt);;"
-            "RST files (*.rst *.rest);;"
-            "Text files (*.txt)",
+            ''.join(FILTER),
         )
         if isinstance(filename, tuple):
             filename = filename[0]
