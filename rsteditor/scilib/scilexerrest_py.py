@@ -189,7 +189,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         return
 
     def language(self):
-        return 'rst'
+        return 'reStructedText'
 
     def description(self, style):
         return self.rstyles.get(style, '')

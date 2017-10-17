@@ -15,12 +15,22 @@ from . import __home_data_path__, __data_path__, globalvars
 
 logger = logging.getLogger(__name__)
 
+eol_description = {
+    QsciScintilla.EolWindows: 'CR+LF',
+    QsciScintilla.EolUnix: 'LF',
+    QsciScintilla.EolMac: 'CR',
+}
+
 
 class Editor(QsciScintilla):
     """
     Scintilla Offical Document: http://www.scintilla.org/ScintillaDoc.html
     """
     lineInputed = QtCore.pyqtSignal()
+    encodingChange = QtCore.pyqtSignal('QString')
+    lexerChange = QtCore.pyqtSignal('QString')
+    positionChange = QtCore.pyqtSignal('int', 'int')
+    eolChange = QtCore.pyqtSignal('QString')
     enable_lexer = True
     filename = None
     input_count = 0
@@ -183,6 +193,8 @@ class Editor(QsciScintilla):
         self.setText(toUtf8(text))
         self.setCursorPosition(0, 0)
         self.setModified(False)
+        self.encodingChange.emit('UTF-8')
+        self.eolChange.emit(eol_description[self.eolMode()])
 
     def indentLines(self, inc):
         if inc:
@@ -389,6 +401,10 @@ class Editor(QsciScintilla):
                     lexer = QsciLexerDefault(self)
                     self.lexers[ext] = lexer
         self.setLexer(lexer)
+        if lexer:
+            self.lexerChange.emit(lexer.language())
+        else:
+            self.lexerChange.emit('')
         t2 = time.clock()
         logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
         self.cur_lexer = lexer
@@ -407,15 +423,15 @@ class Editor(QsciScintilla):
 
 class CodeViewer(Editor):
     """ code viewer, readonly """
-    def __init__(self, *args, **kwargs):
-        super(CodeViewer, self).__init__(*args, **kwargs)
+    def __init__(self, parent):
+        super(CodeViewer, self).__init__(parent)
         self.setReadOnly(True)
 
     def setValue(self, text):
         """ set all readonly text """
-        self.setReadOnly(False)
-        super(CodeViewer, self).setValue(text)
-        self.setReadOnly(True)
+        self.setText(toUtf8(text))
+        self.setCursorPosition(0, 0)
+        self.setModified(False)
 
     def find(self, finddialog, readonly=True):
         super(CodeViewer, self).find(finddialog, readonly)

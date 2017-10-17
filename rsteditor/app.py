@@ -100,6 +100,15 @@ class MainWindow(QtWidgets.QMainWindow):
         logger.info('icon path: %s' % __icon_path__)
         self.setWindowIcon(QtGui.QIcon(icon_path))
         # status bar
+        self.statusEncoding = QtWidgets.QLabel('ASCII', self)
+        self.statusBar().addPermanentWidget(self.statusEncoding)
+
+        self.statusEol = QtWidgets.QLabel('EOL', self)
+        self.statusBar().addPermanentWidget(self.statusEol)
+
+        self.statusLexer = QtWidgets.QLabel('Lexer', self)
+        self.statusBar().addPermanentWidget(self.statusLexer)
+
         self.statusBar().showMessage(self.tr('Ready'))
         # action
         # file
@@ -384,6 +393,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.editor = editor.Editor(self)
         self.editor.setObjectName('editor')
+        self.editor.encodingChange.connect(
+            partial(self.onStatusChange, 'encoding'))
+        self.editor.lexerChange.connect(
+            partial(self.onStatusChange, 'lexer'))
+        self.editor.eolChange.connect(
+            partial(self.onStatusChange, 'eol'))
+
         self.setCentralWidget(self.editor)
         # left dock window
         self.dock_explorer = QtWidgets.QDockWidget(self.tr('Explorer'), self)
@@ -441,6 +457,14 @@ class MainWindow(QtWidgets.QMainWindow):
         requestPreview.set()
         self.previewWorker.join()
         logger.info('=== rsteditor end ===')
+
+    def onStatusChange(self, status, value):
+        if status == 'lexer':
+            self.statusLexer.setText(value)
+        elif status == 'encoding':
+            self.statusEncoding.setText(value)
+        elif status == 'eol':
+            self.statusEol.setText(value)
 
     def onNew(self, path=None):
         if not self.saveAndContinue():
