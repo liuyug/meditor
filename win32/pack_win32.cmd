@@ -7,6 +7,6 @@ pushd ..
 rmdir build /s /q
 rmdir dist\meditor /s /q
 
-pyinstaller --clean --noconfirm %1 meditor.spec
+pyinstaller --clean --noconfirm --noconsole --name meditor --icon "meditor\share\pixmaps\meditor-text-editor.ico" --add-data "meditor\share;share" --hidden-import "meditor.scilib.scilexerrest_py" run.py
 
 popd
