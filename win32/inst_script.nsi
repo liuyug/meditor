@@ -11,7 +11,7 @@
 ; makensis /DPRODUCT_VER=v0.0.0.0
 
 ;General
-!define PRODUCT_NAME "meditor"
+!define PRODUCT_NAME "Markup Editor"
 ;!define PRODUCT_VER "x.x.x.x"
 !define SHORTCUT_NAME "meditor.lnk"
 !define EXEC_NAME "meditor.exe"
@@ -20,7 +20,7 @@
 !define DIST_PATH '..\dist'
 
 Name "${PRODUCT_NAME}"
-OutFile "${DIST_PATH}\${PRODUCT_NAME}-${PRODUCT_VER}.exe"
+OutFile "${DIST_PATH}\meditor-${PRODUCT_VER}.exe"
 
 ;--------------------------------
 SetCompressor lzma
