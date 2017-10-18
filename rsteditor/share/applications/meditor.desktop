@@ -1,11 +1,11 @@
 
 [Desktop Entry]
 Version=0.2.3.1
-Name=RSTEditor
-Comment=reStructuredText Editor
-Exec=rsteditor
+Name=MarkupEditor
+Comment=Markup Editor
+Exec=meditor
 MimeType=text/plain;
-Icon=rsteditor-text-editor
+Icon=meditor-text-editor
 Terminal=false
 Type=Application
 Categories=Application;Office;
