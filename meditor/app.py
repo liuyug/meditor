@@ -13,19 +13,19 @@ from functools import partial
 from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from pygments.formatters import get_formatter_by_name
 
-from rsteditor import __app_name__
-from rsteditor import __app_version__
-from rsteditor import __default_filename__
-from rsteditor import __data_path__
-from rsteditor import __icon_path__
-from rsteditor import __home_data_path__
-from rsteditor import pygments_styles
-from rsteditor import editor
-from rsteditor import webview
-from rsteditor import explorer
-from rsteditor import output
-from rsteditor.util import toUtf8, toBytes
-from rsteditor import globalvars
+from . import __app_name__
+from . import __app_version__
+from . import __default_filename__
+from . import __data_path__
+from . import __icon_path__
+from . import __home_data_path__
+from . import pygments_styles
+from . import editor
+from . import webview
+from . import explorer
+from . import output
+from . import globalvars
+from .util import toUtf8, toBytes
 from .findreplace import FindReplaceDialog
 
 

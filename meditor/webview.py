@@ -1,7 +1,7 @@
 
 from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
-from rsteditor import util
+from . import util
 
 
 class WebView(QtWebEngineWidgets.QWebEngineView):

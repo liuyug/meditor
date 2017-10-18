@@ -14,7 +14,7 @@ try:
 except:
     raise Exception('Please install docutils firstly')
 
-from rsteditor import __data_path__, __home_data_path__
+from . import __data_path__, __home_data_path__
 
 logger = logging.getLogger(__name__)
 

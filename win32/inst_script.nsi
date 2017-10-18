@@ -11,11 +11,11 @@
 ; makensis /DPRODUCT_VER=v0.0.0.0
 
 ;General
-!define PRODUCT_NAME "rsteditor"
+!define PRODUCT_NAME "meditor"
 ;!define PRODUCT_VER "x.x.x.x"
-!define SHORTCUT_NAME "rsteditor.lnk"
-!define EXEC_NAME "rsteditor.exe"
-!define EXEC_ICON "$INSTDIR\share\pixmaps\rsteditor-text-editor.ico"
+!define SHORTCUT_NAME "meditor.lnk"
+!define EXEC_NAME "meditor.exe"
+!define EXEC_ICON "$INSTDIR\share\pixmaps\meditor-text-editor.ico"
 ;
 !define DIST_PATH '..\dist'
 
@@ -75,7 +75,7 @@ BrandingText "${PRODUCT_NAME} ${PRODUCT_VER}"
 Section "!Install"
 
   SetOutPath "$INSTDIR"
-  File /r "${DIST_PATH}\rsteditor\*.*"
+  File /r "${DIST_PATH}\meditor\*.*"
 
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"

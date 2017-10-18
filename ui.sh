@@ -4,7 +4,7 @@ set -e
 
 uic='pyuic5'
 
-ui_dir='rsteditor/ui'
+ui_dir='meditor/ui'
 
 
 for ui_file in `ls $ui_dir/*.ui`; do

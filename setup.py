@@ -3,8 +3,8 @@
 
 from setuptools import setup
 
-from rsteditor import __app_name__
-from rsteditor import __app_version__
+from meditor import __app_name__
+from meditor import __app_version__
 
 
 with open('README.rst') as f:
@@ -21,13 +21,13 @@ setup(
     long_description=long_description,
     platforms=['noarch'],
     packages=[
-        'rsteditor',
-        'rsteditor.scilib',
+        'meditor',
+        'meditor.scilib',
     ],
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'rsteditor = rsteditor.app:main',
+            'meditor = meditor.app:main',
         ],
     },
     zip_safe=False,

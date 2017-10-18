@@ -3,7 +3,7 @@
 set -e
 set -x
 
-share_theme="`pwd`/rsteditor/share/rsteditor/themes"
+share_theme="`pwd`/meditor/share/meditor/themes"
 
 mkdir -p themes/reStructedText
 mkdir -p themes/Markdown

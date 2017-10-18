@@ -2,8 +2,8 @@ import sys
 import os.path
 from collections import OrderedDict
 
-__app_name__ = 'RSTEditor'
-__app_version__ = '0.2.4.2'
+__app_name__ = 'MEditor'
+__app_version__ = '0.2.5.1'
 __default_filename__ = 'unknown.rst'
 
 if sys.platform == 'win32':

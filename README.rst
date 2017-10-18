@@ -1,9 +1,9 @@
-=========
-RSTEditor
-=========
+=============
+Markup Editor
+=============
 |version| |download|
 
-RSTEditor is a editor for reStructuredText and Markdown.
+Markup Editor is a editor for reStructuredText and Markdown.
 
 .. tip::
 
@@ -30,12 +30,6 @@ in Linux::
 or install it in user directory::
 
     pip3 install rsteditor-qt --user
-
-in Window:
-
-Please download win32_ installer file.
-
-.. _win32: https://sourceforge.net/projects/rsteditor/files/latest/download?source=files
 
 HTML theme
 ===========

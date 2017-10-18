@@ -9,7 +9,7 @@ from functools import partial
 
 from PyQt5 import QtCore, QtWidgets
 
-from rsteditor.util import toUtf8
+from .util import toUtf8
 
 logger = logging.getLogger(__name__)
 

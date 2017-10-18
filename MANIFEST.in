@@ -1,12 +1,11 @@
-recursive-include rsteditor *
-recursive-exclude rsteditor *.pyc
-include autoversion.sh
+recursive-include meditor *
+recursive-exclude meditor *.pyc
 include inst_script.nsi
 include MANIFEST.in
 include README.rst
 include requirement.txt
 include rst.properties
-include rsteditor.desktop
+include meditor.desktop
 include screenshot.png
 include setup.py
 include themes.sh
