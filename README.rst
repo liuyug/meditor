@@ -25,11 +25,11 @@ Install
 =======
 in Linux::
 
-    pip3 install rsteditor-qt
+    pip3 install meditor
 
 or install it in user directory::
 
-    pip3 install rsteditor-qt --user
+    pip3 install meditor --user
 
 HTML theme
 ===========
@@ -41,12 +41,12 @@ Screen Shot
 ===========
 .. image:: screenshot.png
 
-.. |version| image:: https://img.shields.io/pypi/v/rsteditor.png
-   :target: https://pypi.python.org/pypi/rsteditor
+.. |version| image:: https://img.shields.io/pypi/v/meditor.png
+   :target: https://pypi.python.org/pypi/meditor
    :alt: Version
 
-.. |download| image:: https://img.shields.io/pypi/dm/rsteditor.png
-   :target: https://pypi.python.org/pypi/rsteditor
+.. |download| image:: https://img.shields.io/pypi/dm/meditor.png
+   :target: https://pypi.python.org/pypi/meditor
    :alt: Downloads
 
 Other
