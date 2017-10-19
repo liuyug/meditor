@@ -3,6 +3,7 @@ import os.path
 from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
 from . import util
+from . import __data_path__
 
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
@@ -28,10 +29,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.popupMenu.addAction(action)
         # mathjax single
         # https://github.com/pkra/MathJax-single-file
-        mathjax_min_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'MathJax.min.js',
-        )
+        mathjax_min_path = os.path.join(__data_path__, 'math', 'MathJax.min.js')
         with open(mathjax_min_path, encoding='UTF-8') as f:
             self._mathjax = f.read()
 

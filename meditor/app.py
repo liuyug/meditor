@@ -103,7 +103,7 @@ class MainWindow(QtWidgets.QMainWindow):
             'config'
         )
         # No support fromTheme function in Qt4.6
-        icon_path = os.path.join(__icon_path__, 'rsteditor-text-editor.ico')
+        icon_path = os.path.join(__icon_path__, 'meditor-text-editor.ico')
         logger.info('icon path: %s' % __icon_path__)
         self.setWindowIcon(QtGui.QIcon(icon_path))
         # status bar
