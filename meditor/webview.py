@@ -1,4 +1,5 @@
 
+import os.path
 from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
 from . import util
@@ -7,6 +8,8 @@ from . import util
 class WebView(QtWebEngineWidgets.QWebEngineView):
     _case_sensitive = False
     _whole_word = False
+    _enable_mathjax = False
+    _mathjax = None
 
     def __init__(self, *args, **kwargs):
         super(WebView, self).__init__(*args, **kwargs)
@@ -23,17 +26,28 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         action = self.pageAction(self.page().SelectAll)
         action.setShortcut(QtGui.QKeySequence('Ctrl+A'))
         self.popupMenu.addAction(action)
+        # mathjax single
+        # https://github.com/pkra/MathJax-single-file
+        mathjax_min_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'MathJax.min.js',
+        )
+        with open(mathjax_min_path, encoding='UTF-8') as f:
+            self._mathjax = f.read()
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
             self.popupMenu.popup(event.globalPos())
 
     def onLoadFinished(self, ok):
-        return
+        if self._enable_mathjax:
+            self.page().runJavaScript(self._mathjax)
 
     def setHtml(self, html, url=None):
         if not url:
             url = ''
+        ext = os.path.splitext(url)
+        self._enable_mathjax = ext[1].lower() == '.md'
         super(WebView, self).setHtml(
             util.toUtf8(html),
             QtCore.QUrl.fromLocalFile(url)

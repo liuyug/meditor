@@ -3,6 +3,8 @@
 set -e
 set -x
 
+
+echo "Get reStructedText themes..."
 share_theme="`pwd`/meditor/share/meditor/themes"
 
 mkdir -p themes/reStructedText
@@ -75,6 +77,7 @@ EOF
 )
 
 
+echo "Get Markdown themes..."
 # Markdown Themes
 (
 cd themes/Markdown

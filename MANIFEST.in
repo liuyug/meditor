@@ -1,4 +1,5 @@
 recursive-include meditor *
+recursive-include win32 *
 recursive-exclude meditor *.pyc
 include inst_script.nsi
 include MANIFEST.in

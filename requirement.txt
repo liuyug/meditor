@@ -9,3 +9,4 @@ QScintilla
 # markup text
 docutils
 markdown
+python-markdown-math

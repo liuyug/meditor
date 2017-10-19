@@ -15,9 +15,9 @@ setup(
     version=__app_version__,
     author='Yugang LIU',
     author_email='liuyug@gmail.com',
-    url='https://github.com/liuyug/rsteditor-qt.git',
+    url='https://github.com/liuyug/meditor.git',
     license='GPLv3',
-    description='Editor for ReStructedText',
+    description='Editor for ReStructedText and Markdown',
     long_description=long_description,
     platforms=['noarch'],
     packages=[
