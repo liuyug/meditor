@@ -13,6 +13,7 @@ Feature
 =======
 + support Markdown and reStructedText
 + Syntax Highlight for reStructuredText
++ support MathJax
 + HTML Preview
 + Customized rst properties
 + Synchronize scroll with preview window

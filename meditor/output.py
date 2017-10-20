@@ -243,10 +243,17 @@ def md2htmlcode(markup_file, theme=None, settings={}):
     head.append('<meta charset="UTF-8" />')
     mathjax = settings.get('mathjax')
     if not mathjax:
-        mathjax = """<script type="text/javascript"
- src="file:///%s?config=TeX-MML-AM_CHTML">
-</script>""" % os.path.join(__data_path__, 'MathJax-master', 'MathJax.js')
-    head.append(mathjax)
+        mathjax_path = os.path.join(
+            __home_data_path__, 'MathJax-master', 'MathJax.js')
+        if os.path.exists(mathjax_path):
+            mathjax_path += '?config=TeX-MML-AM_CHTML'
+        else:
+            mathjax_path = os.path.join(
+                __data_path__, 'math', 'MathJax.min.js')
+        if mathjax_path:
+            mathjax = """<script type="text/javascript" src="file:///%s"></script>""" % mathjax_path
+    if mathjax:
+        head.append(mathjax)
     head.append('<style type="text/css">')
     if theme_css:
         head.append(theme_css)

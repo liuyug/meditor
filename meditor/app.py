@@ -25,7 +25,7 @@ from . import webview
 from . import explorer
 from . import output
 from . import globalvars
-from .util import toUtf8, toBytes
+from .util import toUtf8, toBytes, download, unzip
 from .findreplace import FindReplaceDialog
 
 
@@ -364,6 +364,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if pygments_desc == pygments_styles.get(value, ''):
                 act.setChecked(True)
                 break
+        self.mathjaxAction = QtWidgets.QAction(
+            self.tr('Install MathJax'), self)
+        self.mathjaxAction.triggered.connect(
+            partial(self.onMathJax, 'install'))
+        self.mathjaxAction.setEnabled(not os.path.exists(os.path.join(
+            __home_data_path__, 'MathJax-master', 'MathJax.js')))
         # help
         helpAction = QtWidgets.QAction(self.tr('&Help'), self)
         helpAction.triggered.connect(self.onHelp)
@@ -374,12 +380,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # menu
         menubar = self.menuBar()
         menu = menubar.addMenu(self.tr('&File'))
-
         submenu = QtWidgets.QMenu(self.tr('&New'), menu)
         submenu.addAction(newRstAction)
         submenu.addAction(newMdAction)
         menu.addMenu(submenu)
-
         menu.addAction(newwindowAction)
         menu.addAction(openAction)
         menu.addSeparator()
@@ -392,6 +396,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(printAction)
         menu.addSeparator()
         menu.addAction(exitAction)
+
         menu = menubar.addMenu(self.tr('&Edit'))
         menu.addAction(self.undoAction)
         menu.addAction(self.redoAction)
@@ -413,17 +418,20 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addSeparator()
         menu.addAction(enableLexerAction)
         menu.aboutToShow.connect(self.onEditMenuShow)
+
         menu = menubar.addMenu(self.tr('&View'))
         menu.addAction(self.explorerAction)
         menu.addAction(self.webviewAction)
         menu.addAction(self.codeviewAction)
         menu.aboutToShow.connect(self.onViewMenuShow)
+
         menu = menubar.addMenu(self.tr('&Preview'))
         menu.addAction(previewAction)
         menu.addSeparator()
         menu.addAction(previewsaveAction)
         menu.addAction(previewinputAction)
         menu.addAction(previewsyncAction)
+
         menu = menubar.addMenu(self.tr('&Theme'))
         submenu = QtWidgets.QMenu(self.tr('&reStructedText'), menu)
         for act in rstThemeGroup.actions():
@@ -438,6 +446,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for act in self.codeStyleGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
+        menu.addAction(self.mathjaxAction)
+
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
         menu.addSeparator()
@@ -807,6 +817,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 formatter = get_formatter_by_name('html', style=label)
                 f.write(toBytes(formatter.get_style_defs('.codehilite')))
         self.previewCurrentText()
+
+    def onMathJax(self, label):
+        if label == 'install':
+            url = 'https://github.com/mathjax/MathJax/archive/master.zip'
+            dest_file = os.path.join(__home_data_path__, 'MathJax.zip')
+            success = download(
+                url, dest_file, parent=self, text='download MathJax...')
+            if success:
+                unzip(
+                    dest_file, __home_data_path__,
+                    parent=self, text='uncompress MathJax...')
+                self.mathjaxAction.setEnabled(False)
 
     def onHelp(self):
         help_paths = [

@@ -1,16 +1,12 @@
 
-import os.path
 from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
 from . import util
-from . import __data_path__
 
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
     _case_sensitive = False
     _whole_word = False
-    _enable_mathjax = False
-    _mathjax = None
 
     def __init__(self, *args, **kwargs):
         super(WebView, self).__init__(*args, **kwargs)
@@ -33,8 +29,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
             self.popupMenu.popup(event.globalPos())
 
     def onLoadFinished(self, ok):
-        if self._enable_mathjax:
-            self.page().runJavaScript(self._mathjax)
+        pass
 
     def setHtml(self, html, url=None):
         if not url:

@@ -1,19 +1,15 @@
 #!/bin/bash
 
 (
-echo "Get MathJax file..."
+echo "Get Single MathJax file..."
 
-MATHJAX="MathJax-master.zip"
-cur_dir=`pwd`
+MATHJAX="MathJax.min.js"
 
+mkdir -p meditor/share/meditor/math
+cd meditor/share/meditor/math
 rm -f $MATHJAX
-wget https://github.com/mathjax/MathJax/archive/master.zip -O $MATHJAX
 
-mkdir -p meditor/share/meditor
-cd meditor/share/meditor
-rm -rf MathJax-master
-
-unzip "$cur_dir/$MATHJAX"
+wget https://github.com/pkra/MathJax-single-file/raw/master/dist/TeXCommonHTMLTeX/MathJax.min.js -O $MATHJAX
 )
 
 
