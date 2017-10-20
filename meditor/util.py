@@ -3,8 +3,6 @@ import fnmatch
 import urllib.request
 import zipfile
 
-from PyQt5.QtWidgets import QProgressDialog
-
 
 def toUtf8(text):
     if isinstance(text, bytes):
@@ -47,23 +45,21 @@ def get_include_files(src, patterns, dest):
     return files
 
 
-def download(src, dest, parent=None, text=None, block=8192):
+def download(src, dest, progress=None, block=8192):
     def _download(response, dest_file, dest_size):
-        dlg = QProgressDialog(text, 'Cancel', 0, dest_size, parent)
-        dlg.setWindowTitle('Markup Editor')
-        dlg.setModal(True)
+        if progress:
+            progress.setRange(0, dest_size)
         count = 0
         while True:
             data = response.read(block)
             if not data:
                 break
             count += len(data)
-            dlg.setValue(count)
-            if dlg.wasCanceled():
-                dlg.close()
-                return False
+            if progress:
+                progress.setValue(count)
+                if progress.wasCanceled():
+                    return False
             dest_file.write(data)
-        dlg.close()
         return True
 
     with open(dest, 'wb') as dest_file:
@@ -75,19 +71,18 @@ def download(src, dest, parent=None, text=None, block=8192):
             return _download(response, dest_file, dest_size)
 
 
-def unzip(src, dest=None, parent=None, text=None):
+def unzip(src, dest=None, progress=None):
     zip_file = zipfile.ZipFile(src)
     total = sum(f.file_size for f in zip_file.infolist())
     count = 0
 
-    dlg = QProgressDialog(text, 'Cancel', 0, total, parent)
-    dlg.setWindowTitle('Markup Editor')
-    dlg.setModal(True)
+    if progress:
+        progress.setRange(0, total)
     for f in zip_file.infolist():
         count += f.file_size
-        dlg.setValue(count)
-        if dlg.wasCanceled():
-            dlg.close()
-            break
+        if progress:
+            progress.setValue(count)
+            if progress.wasCanceled():
+                return False
         zip_file.extract(f, dest)
-    dlg.close()
+    return True

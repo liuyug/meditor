@@ -820,15 +820,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onMathJax(self, label):
         if label == 'install':
+            dlg = QtWidgets.QProgressDialog(self)
+            dlg.setWindowModality(QtCore.Qt.WindowModal)
+            dlg.forceShow()
+            dlg.setWindowTitle('Wait')
             url = 'https://github.com/mathjax/MathJax/archive/master.zip'
             dest_file = os.path.join(__home_data_path__, 'MathJax.zip')
-            success = download(
-                url, dest_file, parent=self, text='download MathJax...')
+            dlg.setLabelText('Download MathJax...')
+            success = download(url, dest_file, dlg)
             if success:
-                unzip(
-                    dest_file, __home_data_path__,
-                    parent=self, text='uncompress MathJax...')
-                self.mathjaxAction.setEnabled(False)
+                dlg.setLabelText('Uncompress MathJax...')
+                success = unzip(dest_file, __home_data_path__, dlg)
+                self.mathjaxAction.setEnabled(success)
 
     def onHelp(self):
         help_paths = [
