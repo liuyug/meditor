@@ -27,11 +27,6 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         action = self.pageAction(self.page().SelectAll)
         action.setShortcut(QtGui.QKeySequence('Ctrl+A'))
         self.popupMenu.addAction(action)
-        # mathjax single
-        # https://github.com/pkra/MathJax-single-file
-        mathjax_min_path = os.path.join(__data_path__, 'math', 'MathJax.min.js')
-        with open(mathjax_min_path, encoding='UTF-8') as f:
-            self._mathjax = f.read()
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -44,8 +39,6 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     def setHtml(self, html, url=None):
         if not url:
             url = ''
-        ext = os.path.splitext(url)
-        self._enable_mathjax = ext[1].lower() == '.md'
         super(WebView, self).setHtml(
             util.toUtf8(html),
             QtCore.QUrl.fromLocalFile(url)

@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 __app_name__ = 'MEditor'
 __app_version__ = '0.2.6.1'
-__default_filename__ = 'unknown.rst'
+__default_basename__ = 'unknown'
 
 if sys.platform == 'win32':
     if getattr(sys, 'frozen', False):

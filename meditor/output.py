@@ -241,10 +241,12 @@ def md2htmlcode(markup_file, theme=None, settings={}):
     html.append('<head>')
     head = []
     head.append('<meta charset="UTF-8" />')
-    head.append('<script type="text/javascript">')
-    # head.append('src="https://cdn.rawgit.com/mathjax/MathJax/2.7.1/MathJax.js"')
-    head.append('src="https://cdn.rawgit.com/mathjax/MathJax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"')
-    head.append('</script>')
+    mathjax = settings.get('mathjax')
+    if not mathjax:
+        mathjax = """<script type="text/javascript"
+ src="file:///%s?config=TeX-MML-AM_CHTML">
+</script>""" % os.path.join(__data_path__, 'MathJax-master', 'MathJax.js')
+    head.append(mathjax)
     head.append('<style type="text/css">')
     if theme_css:
         head.append(theme_css)
@@ -260,3 +262,15 @@ def md2htmlcode(markup_file, theme=None, settings={}):
     html.append('</html>')
 
     return '\n'.join(html)
+
+
+def md2html(md_file, filename, theme):
+    with open(md_file, encoding='UTF-8') as f:
+        md_text = f.read()
+    settings = {}
+    settings['mathjax'] = """<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>"""
+    html = md2htmlcode(md_text, theme=theme, settings=settings)
+    with open(filename, 'wt') as f:
+        f.write(html)

@@ -15,7 +15,7 @@ from pygments.formatters import get_formatter_by_name
 
 from . import __app_name__
 from . import __app_version__
-from . import __default_filename__
+from . import __default_basename__
 from . import __data_path__
 from . import __icon_path__
 from . import __home_data_path__
@@ -106,22 +106,77 @@ class MainWindow(QtWidgets.QMainWindow):
         icon_path = os.path.join(__icon_path__, 'meditor-text-editor.ico')
         logger.info('icon path: %s' % __icon_path__)
         self.setWindowIcon(QtGui.QIcon(icon_path))
-        # status bar
-        self.statusEncoding = QtWidgets.QLabel('ASCII', self)
-        self.statusBar().addPermanentWidget(self.statusEncoding)
+        self.setupMenu()
+        self.setupToolbar()
+        self.setupStatusBar()
+        # main window
+        self.findDialog = FindReplaceDialog(self)
 
-        self.statusEol = QtWidgets.QLabel('EOL', self)
-        self.statusBar().addPermanentWidget(self.statusEol)
+        self.editor = editor.Editor(self)
+        self.editor.setObjectName('editor')
+        self.editor.encodingChange.connect(
+            partial(self.onStatusChange, 'encoding'))
+        self.editor.lexerChange.connect(
+            partial(self.onStatusChange, 'lexer'))
+        self.editor.eolChange.connect(
+            partial(self.onStatusChange, 'eol'))
 
-        self.statusLexer = QtWidgets.QLabel('Lexer', self)
-        self.statusBar().addPermanentWidget(self.statusLexer)
+        self.setCentralWidget(self.editor)
+        # left dock window
+        self.dock_explorer = QtWidgets.QDockWidget(self.tr('Explorer'), self)
+        self.dock_explorer.setObjectName('dock_explorer')
+        self.explorer = explorer.Explorer(self.dock_explorer)
+        self.dock_explorer.setWidget(self.explorer)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
+        # right dock window
+        self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Previewer'), self)
+        self.dock_webview.setObjectName('dock_webview')
+        self.webview = webview.WebView(self.dock_webview)
+        self.dock_webview.setWidget(self.webview)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
+        self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code viewer'), self)
+        self.dock_codeview.setObjectName('dock_codeview')
+        self.codeview = editor.CodeViewer(self.dock_codeview)
+        self.dock_codeview.setWidget(self.codeview)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
+        # event
+        self.explorer.fileLoaded.connect(self.onFileLoaded)
+        self.explorer.fileNew.connect(partial(self.onNew, 'rst'))
+        self.explorer.fileRenamed.connect(self.onFileRenamed)
+        self.explorer.fileDeleted.connect(self.onFileDeleted)
+        self.editor.verticalScrollBar().valueChanged.connect(
+            self.onValueChanged)
+        self.editor.lineInputed.connect(self.onInputPreview)
+        # window state
+        self.restoreGeometry(settings.value('geometry', type=QtCore.QByteArray))
+        self.restoreState(settings.value('windowState', type=QtCore.QByteArray))
+        path = toUtf8(settings.value('explorer/rootPath', type=str))
+        if not os.path.exists(path):
+            path = os.path.expanduser('~')
+        self.explorer.setRootPath(path)
+        self.setFont(QtGui.QFont('Monospace', 12))
+        self.editor.emptyFile()
 
-        self.statusBar().showMessage(self.tr('Ready'))
+        value = settings.value('editor/enableLexer', True, type=bool)
+        self.editor.enableLexer(value)
+        self.previewWorker = threading.Thread(target=previewWorker,
+                                              args=(self,))
+        self.previewSignal.connect(self.previewDisplay)
+        logger.debug('Preview worker start')
+        self.previewWorker.start()
+
+    def setupMenu(self):
+        settings = self.settings
         # action
         # file
-        newAction = QtWidgets.QAction(self.tr('&New'), self)
-        newAction.setShortcut('Ctrl+N')
-        newAction.triggered.connect(self.onNew)
+        newRstAction = QtWidgets.QAction(
+            self.tr('reStructedText'), self)
+        newRstAction.setShortcut('Ctrl+N')
+        newRstAction.triggered.connect(partial(self.onNew, 'rst'))
+
+        newMdAction = QtWidgets.QAction(self.tr('Markdown'), self)
+        newMdAction.triggered.connect(partial(self.onNew, 'md'))
+
         newwindowAction = QtWidgets.QAction(self.tr('New &window'), self)
         newwindowAction.setShortcut('Ctrl+W')
         newwindowAction.triggered.connect(self.onNewWindow)
@@ -135,8 +190,6 @@ class MainWindow(QtWidgets.QMainWindow):
         saveAsAction.triggered.connect(self.onSaveAs)
         exportHTMLAction = QtWidgets.QAction(self.tr('Export as HTML...'), self)
         exportHTMLAction.triggered.connect(partial(self.onExport, 'html'))
-        exportODTAction = QtWidgets.QAction(self.tr('Export as ODT...'), self)
-        exportODTAction.triggered.connect(partial(self.onExport, 'odt'))
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
         printAction.triggered.connect(self.onPrint)
         printPreviewAction = QtWidgets.QAction(self.tr('Print Pre&view'), self)
@@ -321,7 +374,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # menu
         menubar = self.menuBar()
         menu = menubar.addMenu(self.tr('&File'))
-        menu.addAction(newAction)
+
+        submenu = QtWidgets.QMenu(self.tr('&New'), menu)
+        submenu.addAction(newRstAction)
+        submenu.addAction(newMdAction)
+        menu.addMenu(submenu)
+
         menu.addAction(newwindowAction)
         menu.addAction(openAction)
         menu.addSeparator()
@@ -329,7 +387,6 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(saveAsAction)
         menu.addSeparator()
         menu.addAction(exportHTMLAction)
-        # menu.addAction(exportODTAction)
         menu.addSeparator()
         menu.addAction(printPreviewAction)
         menu.addAction(printAction)
@@ -386,6 +443,8 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addSeparator()
         menu.addAction(aboutAction)
         menu.addAction(aboutqtAction)
+
+    def setupToolbar(self):
         # toolbar
         # self.tb_normal = QtWidgets.QToolBar('normal')
         # self.tb_normal.setObjectName('normal')
@@ -394,61 +453,20 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.tb_normal.addAction(saveAction)
         # self.tb_normal.addAction(exitAction)
         # self.addToolBar(self.tb_normal)
+        pass
 
-        # main window
-        self.findDialog = FindReplaceDialog(self)
+    def setupStatusBar(self):
+        # status bar
+        self.statusEncoding = QtWidgets.QLabel('ASCII', self)
+        self.statusBar().addPermanentWidget(self.statusEncoding)
 
-        self.editor = editor.Editor(self)
-        self.editor.setObjectName('editor')
-        self.editor.encodingChange.connect(
-            partial(self.onStatusChange, 'encoding'))
-        self.editor.lexerChange.connect(
-            partial(self.onStatusChange, 'lexer'))
-        self.editor.eolChange.connect(
-            partial(self.onStatusChange, 'eol'))
+        self.statusEol = QtWidgets.QLabel('EOL', self)
+        self.statusBar().addPermanentWidget(self.statusEol)
 
-        self.setCentralWidget(self.editor)
-        # left dock window
-        self.dock_explorer = QtWidgets.QDockWidget(self.tr('Explorer'), self)
-        self.dock_explorer.setObjectName('dock_explorer')
-        self.explorer = explorer.Explorer(self.dock_explorer)
-        self.dock_explorer.setWidget(self.explorer)
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
-        # right dock window
-        self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Previewer'), self)
-        self.dock_webview.setObjectName('dock_webview')
-        self.webview = webview.WebView(self.dock_webview)
-        self.dock_webview.setWidget(self.webview)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
-        self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code viewer'), self)
-        self.dock_codeview.setObjectName('dock_codeview')
-        self.codeview = editor.CodeViewer(self.dock_codeview)
-        self.dock_codeview.setWidget(self.codeview)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
-        # event
-        self.explorer.fileLoaded.connect(self.onFileLoaded)
-        self.explorer.fileNew.connect(self.onNew)
-        self.explorer.fileRenamed.connect(self.onFileRenamed)
-        self.explorer.fileDeleted.connect(self.onFileDeleted)
-        self.editor.verticalScrollBar().valueChanged.connect(
-            self.onValueChanged)
-        self.editor.lineInputed.connect(self.onInputPreview)
-        # window state
-        self.restoreGeometry(settings.value('geometry', type=QtCore.QByteArray))
-        self.restoreState(settings.value('windowState', type=QtCore.QByteArray))
-        path = toUtf8(settings.value('explorer/rootPath', type=str))
-        if not os.path.exists(path):
-            path = os.path.expanduser('~')
-        self.explorer.setRootPath(path)
-        self.setFont(QtGui.QFont('Monospace', 12))
-        self.editor.emptyFile()
-        value = enableLexerAction.isChecked()
-        self.editor.enableLexer(value)
-        self.previewWorker = threading.Thread(target=previewWorker,
-                                              args=(self,))
-        self.previewSignal.connect(self.previewDisplay)
-        logger.debug('Preview worker start')
-        self.previewWorker.start()
+        self.statusLexer = QtWidgets.QLabel('Lexer', self)
+        self.statusBar().addPermanentWidget(self.statusLexer)
+
+        self.statusBar().showMessage(self.tr('Ready'))
 
     def closeEvent(self, event):
         if self.saveAndContinue():
@@ -473,13 +491,14 @@ class MainWindow(QtWidgets.QMainWindow):
         elif status == 'eol':
             self.statusEol.setText(value)
 
-    def onNew(self, path=None):
+    def onNew(self, ext, path=None):
         if not self.saveAndContinue():
             return
         if path:
             filename = path
         else:
-            filename = __default_filename__
+            filename = '%s.%s' % (__default_basename__, ext)
+
         self.setWindowTitle('%s - %s' % (__app_name__, filename))
         ext = os.path.splitext(filename)[1].lower()
         text = ''
@@ -523,7 +542,8 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = self.editor.getFileName()
         if isinstance(filename, tuple):
             filename = filename[0]
-        if filename == __default_filename__:
+        basename = os.path.basename(filename)
+        if basename == __default_basename__:
             self.onSaveAs()
         else:
             self.editor.writeFile()
@@ -554,38 +574,30 @@ class MainWindow(QtWidgets.QMainWindow):
     def onExport(self, label):
         if not self.saveAndContinue():
             return
-        if label == 'html':
-            html_file = os.path.basename(
-                self.editor.getFileName()).partition('.')[0] + '.html'
-            filename = QtWidgets.QFileDialog.getSaveFileName(
-                self,
-                self.tr('export HTML as ...'),
-                os.path.join(self.explorer.getRootPath(), html_file),
-                "HTML files (*.html *.htm)",
-            )
-            if isinstance(filename, tuple):
-                filename = filename[0]
-            if filename:
-                filename = toUtf8(filename)
-                ext = os.path.splitext(filename)[1].lower()
-                if ext not in ['.html', '.htm']:
-                    filename += '.html'
+        in_basename, in_ext = os.path.splitext(
+            os.path.basename(self.editor.getFileName()))
+        out_file = in_basename + '.html'
+        out_html = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            self.tr('export HTML as ...'),
+            os.path.join(self.explorer.getRootPath(), out_file),
+            "HTML files (*.html *.htm)",
+        )
+        if isinstance(out_html, tuple):
+            out_html = out_html[0]
+        if out_html:
+            out_html = toUtf8(out_html)
+            basename, out_ext = os.path.splitext(out_html)
+            if out_ext.lower() not in ['.html', '.htm']:
+                out_html += '.html'
+            if in_ext.lower() in ['.rst', '.rest']:
                 output.rst2html(self.editor.getFileName(),
-                                filename,
+                                out_html,
                                 theme=self.rst_theme)
-        elif label == 'odt':
-            filename = QtWidgets.QFileDialog.getSaveFileName(
-                self,
-                self.tr('export ODT as ...'),
-                self.explorer.getRootPath(),
-                "ODT files (*.odt)",
-            )
-            if filename:
-                filename = toUtf8(filename)
-                ext = os.path.splitext(filename)[1].lower()
-                if ext not in ['.odt']:
-                    filename += '.odt'
-                output.rst2odt(self.editor.getFileName(), filename)
+            elif in_ext.lower() in ['.md', '.markdown']:
+                output.md2html(self.editor.getFileName(),
+                               out_html,
+                               theme=self.md_theme)
 
     def onPrintPreview(self):
         if self.editor.hasFocus():
@@ -859,12 +871,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def onFileDeleted(self, name):
         filename = self.editor.getFileName()
         if toUtf8(name) == filename:
+            default_filename = '%s.rst' % __default_basename__
             self.editor.emptyFile()
             self.setWindowTitle('%s - %s' % (
                 __app_name__,
-                __default_filename__)
+                default_filename)
             )
-            self.preview('', __default_filename__)
+            self.preview('', default_filename)
 
     def moveCenter(self):
         qr = self.frameGeometry()
@@ -924,8 +937,9 @@ class MainWindow(QtWidgets.QMainWindow):
             file exist, load file
             not exist, create new file
         """
+        default_filename = '%s.rst' % __default_basename__
         if not path:
-            path = __default_filename__
+            path = default_filename
             text = ''
             self.explorer.setRootPath(os.path.dirname(path))
         else:
