@@ -1,3 +1,4 @@
+import tempfile
 
 from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
@@ -23,6 +24,10 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         action = self.pageAction(self.page().SelectAll)
         action.setShortcut(QtGui.QKeySequence('Ctrl+A'))
         self.popupMenu.addAction(action)
+        self.popupMenu.addSeparator()
+        action = QtWidgets.QAction(self.tr('Save to PDF'), self)
+        action.triggered.connect(self.onSaveToPdf)
+        self.popupMenu.addAction(action)
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -30,6 +35,18 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def onLoadFinished(self, ok):
         pass
+
+    def onSaveToPdf(self):
+        filename = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            self.tr('Save file as ...'),
+            '',
+            'PDF files (*.pdf)',
+        )
+        if isinstance(filename, tuple):
+            filename = filename[0]
+        if filename:
+            self.page().printToPdf(filename)
 
     def setHtml(self, html, url=None):
         if not url:
