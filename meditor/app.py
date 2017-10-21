@@ -141,7 +141,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
         # event
         self.explorer.fileLoaded.connect(self.onFileLoaded)
-        self.explorer.fileNew.connect(partial(self.onNew, 'rst'))
+        self.explorer.fileNew.connect(self.onNew)
         self.explorer.fileRenamed.connect(self.onFileRenamed)
         self.explorer.fileDeleted.connect(self.onFileDeleted)
         self.editor.verticalScrollBar().valueChanged.connect(

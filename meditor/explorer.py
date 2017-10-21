@@ -19,7 +19,7 @@ class Explorer(QtWidgets.QTreeWidget):
     pathLoaded = QtCore.pyqtSignal('QString')
     fileDeleted = QtCore.pyqtSignal('QString')
     fileRenamed = QtCore.pyqtSignal('QString', 'QString')
-    fileNew = QtCore.pyqtSignal()
+    fileNew = QtCore.pyqtSignal('QString')
 
     def __init__(self, parent, style=None):
         super(Explorer, self).__init__(parent)
@@ -37,8 +37,11 @@ class Explorer(QtWidgets.QTreeWidget):
         self.itemActivated.connect(self.onItemActivated)
         self.pathLoaded.connect(self.onPathLoaded)
         # popup menu
-        newAction = QtWidgets.QAction(self.tr('&New'), self)
-        newAction.triggered.connect(self.onNewFile)
+        newRstAction = QtWidgets.QAction(self.tr('reStructedText'), self)
+        newRstAction.triggered.connect(partial(self.onNewFile, 'rst'))
+        newMdAction = QtWidgets.QAction(self.tr('Markdown'), self)
+        newMdAction.triggered.connect(partial(self.onNewFile, 'md'))
+
         newdirectoryAction = QtWidgets.QAction(self.tr('New &directory'), self)
         newdirectoryAction.triggered.connect(self.onNewDirectory)
         self.renameAction = QtWidgets.QAction(self.tr('&Rename...'), self)
@@ -56,7 +59,11 @@ class Explorer(QtWidgets.QTreeWidget):
             act.triggered.connect(partial(self.onDriveChanged, drive_path))
             self.driveGroup.addAction(act)
         self.popupMenu = QtWidgets.QMenu(self)
-        self.popupMenu.addAction(newAction)
+        submenu = QtWidgets.QMenu(self.tr('New'), self.popupMenu)
+        submenu.addAction(newRstAction)
+        submenu.addAction(newMdAction)
+        self.popupMenu.addMenu(submenu)
+
         self.popupMenu.addAction(newdirectoryAction)
         self.popupMenu.addSeparator()
         self.popupMenu.addAction(self.renameAction)
@@ -114,8 +121,8 @@ class Explorer(QtWidgets.QTreeWidget):
     def onPathLoaded(self, path):
         self.setRootPath(path)
 
-    def onNewFile(self):
-        self.fileNew.emit()
+    def onNewFile(self, label):
+        self.fileNew.emit(label)
 
     def onNewDirectory(self):
         newpath = self.newDirectory()
