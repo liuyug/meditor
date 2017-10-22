@@ -552,7 +552,7 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = self.editor.getFileName()
         if isinstance(filename, tuple):
             filename = filename[0]
-        basename = os.path.basename(filename)
+        basename, _ = os.path.splitext(filename)
         if basename == __default_basename__:
             self.onSaveAs()
         else:
