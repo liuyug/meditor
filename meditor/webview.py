@@ -1,8 +1,7 @@
-import tempfile
 
 from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
-from . import util
+from .util import toUtf8
 
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
@@ -13,8 +12,9 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         super(WebView, self).__init__(*args, **kwargs)
         settings = self.settings()
         settings.setAttribute(settings.PluginsEnabled, False)
-        self.setHtml('')
-        self.loadFinished.connect(self.onLoadFinished)
+        self.page().setHtml('')
+        self.page().loadFinished.connect(self.onLoadFinished)
+        self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
         # popup menu
         self.popupMenu = QtWidgets.QMenu(self)
         action = self.pageAction(self.page().Copy)
@@ -25,8 +25,8 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         action.setShortcut(QtGui.QKeySequence('Ctrl+A'))
         self.popupMenu.addAction(action)
         self.popupMenu.addSeparator()
-        action = QtWidgets.QAction(self.tr('Save to PDF'), self)
-        action.triggered.connect(self.onSaveToPdf)
+        action = QtWidgets.QAction(self.tr('Export to PDF'), self)
+        action.triggered.connect(self.onExportToPdf)
         self.popupMenu.addAction(action)
 
     def contextMenuEvent(self, event):
@@ -36,25 +36,30 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     def onLoadFinished(self, ok):
         pass
 
-    def onSaveToPdf(self):
+    def onPdfPrintingFinished(self, filePath, success):
+        pass
+
+    def onExportToPdf(self):
         filename = QtWidgets.QFileDialog.getSaveFileName(
             self,
-            self.tr('Save file as ...'),
+            self.tr('Export file as ...'),
             '',
             'PDF files (*.pdf)',
         )
         if isinstance(filename, tuple):
             filename = filename[0]
         if filename:
-            self.page().printToPdf(filename)
+            pageLayout = QtGui.QPageLayout(
+                QtGui.QPageSize(QtGui.QPageSize.A4),
+                QtGui.QPageLayout.Portrait,
+                QtCore.QMarginsF(15, 15, 15, 15),
+                QtGui.QPageLayout.Millimeter
+            )
+            self.page().printToPdf(filename, pageLayout)
 
     def setHtml(self, html, url=None):
-        if not url:
-            url = ''
-        super(WebView, self).setHtml(
-            util.toUtf8(html),
-            QtCore.QUrl.fromLocalFile(url)
-        )
+        url = url or ''
+        self.page().setHtml(toUtf8(html), QtCore.QUrl.fromLocalFile(url))
 
     def scrollRatioPage(self, value, maximum):
         scrollJS = 'window.scrollTo(0, document.body.scrollHeight * %s / %s);'
