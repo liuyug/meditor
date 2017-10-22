@@ -627,7 +627,6 @@ class MainWindow(QtWidgets.QMainWindow):
         printer.setPageSize(QtPrintSupport.QPrinter.A4)
         printer.setPageOrientation(QtGui.QPageLayout.Portrait)
         printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
-        printer.setFullPage(True)
         preview = QtPrintSupport.QPrintPreviewDialog(printer, widget)
         preview.paintRequested.connect(widget.print_)
         preview.exec_()
@@ -649,7 +648,6 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         printer.setPageSize(QtPrintSupport.QPrinter.A4)
         printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
-        printer.setFullPage(True)
         printDialog = QtPrintSupport.QPrintDialog(printer, widget)
         if printDialog.exec_() == QtWidgets.QDialog.Accepted:
             widget.print_(printer)
