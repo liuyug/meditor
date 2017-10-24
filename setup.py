@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- encoding:utf-8 -*-
 
+import os
+import fnmatch
 from setuptools import setup
 from setuptools.command.install import install
 
@@ -22,6 +24,10 @@ StartupNotify=true
 """ % __app_version__
 
 
+with open('README.rst') as f:
+    long_description = f.read()
+
+
 class install_desktop(install):
     def run(self):
         desktop_path = 'meditor.desktop'
@@ -30,8 +36,22 @@ class install_desktop(install):
         install.run(self)
 
 
-with open('README.rst') as f:
-    long_description = f.read()
+def get_data_files(dest, src, patterns=None):
+    if not patterns:
+        patterns = ['*']
+    data_files = []
+    for root, dirnames, filenames in os.walk(src):
+        if not filenames:
+            continue
+        files = []
+        for pattern in patterns:
+            for filename in fnmatch.filter(filenames, pattern):
+                files.append(os.path.join(root, filename))
+        if files:
+            dest_path = os.path.join(dest, os.path.relpath(root, src))
+            data_files.append([dest_path, files])
+    return data_files
+
 
 setup(
     name=__app_name__.lower(),
@@ -49,9 +69,8 @@ setup(
     ],
     include_package_data=True,
     data_files=[
-        ('share/pixmaps', ['meditor/share/pixmaps/meditor-text-editor.ico']),
-        ('share/applications', ['meditor.desktop'])
-    ],
+        ('share/applications', ['meditor.desktop']),
+    ] + get_data_files('share', 'meditor/share', '*'),
     entry_points={
         'console_scripts': [
             'meditor = meditor.app:main',
