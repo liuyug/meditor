@@ -5,6 +5,7 @@ from .util import toUtf8
 
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
+    exportHtml = QtCore.pyqtSignal()
     _case_sensitive = False
     _whole_word = False
 
@@ -28,6 +29,9 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         action = QtWidgets.QAction(self.tr('Export to PDF'), self)
         action.triggered.connect(self.onExportToPdf)
         self.popupMenu.addAction(action)
+        action = QtWidgets.QAction(self.tr('Export to HTML'), self)
+        action.triggered.connect(self.onExportToHtml)
+        self.popupMenu.addAction(action)
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -40,10 +44,10 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         pass
 
     def onExportToPdf(self):
+        pdf_file = '%s.pdf' % self.title()
         filename = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            self.tr('Export file as ...'),
-            '',
+            self, self.tr('export PDF as ...'),
+            pdf_file,
             'PDF files (*.pdf)',
         )
         if isinstance(filename, tuple):
@@ -56,6 +60,9 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
                 QtGui.QPageLayout.Millimeter
             )
             self.page().printToPdf(filename, pageLayout)
+
+    def onExportToHtml(self):
+        self.exportHtml.emit()
 
     def setHtml(self, html, url=None):
         url = url or ''

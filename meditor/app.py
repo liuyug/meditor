@@ -140,6 +140,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_codeview.setWidget(self.codeview)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
         # event
+        self.webview.exportHtml.connect(self.onExportHtml)
         self.explorer.fileLoaded.connect(self.onFileLoaded)
         self.explorer.fileNew.connect(self.onNew)
         self.explorer.fileRenamed.connect(self.onFileRenamed)
@@ -189,7 +190,7 @@ class MainWindow(QtWidgets.QMainWindow):
         saveAsAction = QtWidgets.QAction(self.tr('Save as...'), self)
         saveAsAction.triggered.connect(self.onSaveAs)
         exportHTMLAction = QtWidgets.QAction(self.tr('Export as HTML...'), self)
-        exportHTMLAction.triggered.connect(partial(self.onExport, 'html'))
+        exportHTMLAction.triggered.connect(self.onExportHtml)
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
         printAction.triggered.connect(self.onPrint)
         printPreviewAction = QtWidgets.QAction(self.tr('Print Pre&view'), self)
@@ -581,15 +582,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.explorer.setRootPath(os.path.dirname(filename), True)
         return
 
-    def onExport(self, label):
+    def onExportHtml(self):
         if not self.saveAndContinue():
             return
         in_basename, in_ext = os.path.splitext(
             os.path.basename(self.editor.getFileName()))
         out_file = in_basename + '.html'
         out_html = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            self.tr('export HTML as ...'),
+            self, self.tr('export HTML as ...'),
             os.path.join(self.explorer.getRootPath(), out_file),
             "HTML files (*.html *.htm)",
         )
