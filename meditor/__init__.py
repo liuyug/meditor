@@ -6,33 +6,20 @@ __app_name__ = 'MEditor'
 __app_version__ = '0.2.7.2'
 __default_basename__ = 'unknown'
 
-if sys.platform == 'win32':
-    if getattr(sys, 'frozen', False):
-        prefix = sys._MEIPASS
-    else:
-        prefix = os.path.dirname(os.path.abspath(__file__))
-    __icon_path__ = os.path.join(prefix, 'share', 'pixmaps')
+prefixs = [
+    sys.prefix,
+    os.path.join(os.path.expanduser('~'), '.local'),
+    os.path.dirname(os.path.abspath(__file__)),
+    getattr(sys, '_MEIPASS', ''),
+]
+for prefix in prefixs:
     __data_path__ = os.path.join(prefix, 'share', __app_name__.lower())
-    __home_data_path__ = os.path.join(
-        os.path.expanduser('~'),
-        '.%s' % __app_name__.lower()
-    )
-else:
-    __icon_path__ = os.path.join(sys.prefix, 'share', 'pixmaps')
-    __data_path__ = os.path.join(sys.prefix, 'share', __app_name__.lower())
-    if not os.path.exists(__data_path__):
-        # for pip install --local
-        __data_path__ = os.path.join(
-            os.path.expanduser('~'),
-            '.local',
-            'share',
-            __app_name__.lower()
-        )
-    __home_data_path__ = os.path.join(
-        os.path.expanduser('~'),
-        '.config',
-        __app_name__.lower()
-    )
+    if os.path.exists(__data_path__):
+        __icon_path__ = os.path.join(prefix, 'share', 'pixmaps')
+        break
+# ~/.config/meditor
+__home_data_path__ = os.path.join(
+    os.path.expanduser('~'), '.config', __app_name__.lower())
 
 os.makedirs(
     os.path.join(__home_data_path__, 'themes', 'reStructedText'),
