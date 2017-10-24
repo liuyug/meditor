@@ -140,7 +140,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_codeview.setWidget(self.codeview)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
         # event
-        self.webview.exportHtml.connect(self.onExportHtml)
+        self.webview.exportHtml.connect(partial(self.onExport, 'html'))
         self.explorer.fileLoaded.connect(self.onFileLoaded)
         self.explorer.fileNew.connect(self.onNew)
         self.explorer.fileRenamed.connect(self.onFileRenamed)
@@ -189,8 +189,10 @@ class MainWindow(QtWidgets.QMainWindow):
         saveAction.triggered.connect(self.onSave)
         saveAsAction = QtWidgets.QAction(self.tr('Save as...'), self)
         saveAsAction.triggered.connect(self.onSaveAs)
-        exportHTMLAction = QtWidgets.QAction(self.tr('Export as HTML...'), self)
-        exportHTMLAction.triggered.connect(self.onExportHtml)
+        exportPDFAction = QtWidgets.QAction(self.tr('Export to PDF'), self)
+        exportPDFAction.triggered.connect(partial(self.onExport, 'pdf'))
+        exportHTMLAction = QtWidgets.QAction(self.tr('Export to HTML'), self)
+        exportHTMLAction.triggered.connect(partial(self.onExport, 'html'))
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
         printAction.triggered.connect(self.onPrint)
         printPreviewAction = QtWidgets.QAction(self.tr('Print Pre&view'), self)
@@ -391,6 +393,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(saveAction)
         menu.addAction(saveAsAction)
         menu.addSeparator()
+        menu.addAction(exportPDFAction)
         menu.addAction(exportHTMLAction)
         menu.addSeparator()
         menu.addAction(printPreviewAction)
@@ -582,32 +585,35 @@ class MainWindow(QtWidgets.QMainWindow):
             self.explorer.setRootPath(os.path.dirname(filename), True)
         return
 
-    def onExportHtml(self):
+    def onExport(self, label):
         if not self.saveAndContinue():
             return
-        in_basename, in_ext = os.path.splitext(
-            os.path.basename(self.editor.getFileName()))
-        out_file = in_basename + '.html'
-        out_html = QtWidgets.QFileDialog.getSaveFileName(
-            self, self.tr('export HTML as ...'),
-            os.path.join(self.explorer.getRootPath(), out_file),
-            "HTML files (*.html *.htm)",
-        )
-        if isinstance(out_html, tuple):
-            out_html = out_html[0]
-        if out_html:
-            out_html = toUtf8(out_html)
-            basename, out_ext = os.path.splitext(out_html)
-            if out_ext.lower() not in ['.html', '.htm']:
-                out_html += '.html'
-            if in_ext.lower() in ['.rst', '.rest']:
-                output.rst2html(self.editor.getFileName(),
+        if label == 'html':
+            in_basename, in_ext = os.path.splitext(
+                os.path.basename(self.editor.getFileName()))
+            out_file = in_basename + '.html'
+            out_html = QtWidgets.QFileDialog.getSaveFileName(
+                self, self.tr('export HTML as ...'),
+                os.path.join(self.explorer.getRootPath(), out_file),
+                "HTML files (*.html *.htm)",
+            )
+            if isinstance(out_html, tuple):
+                out_html = out_html[0]
+            if out_html:
+                out_html = toUtf8(out_html)
+                basename, out_ext = os.path.splitext(out_html)
+                if out_ext.lower() not in ['.html', '.htm']:
+                    out_html += '.html'
+                if in_ext.lower() in ['.rst', '.rest']:
+                    output.rst2html(self.editor.getFileName(),
+                                    out_html,
+                                    theme=self.rst_theme)
+                elif in_ext.lower() in ['.md', '.markdown']:
+                    output.md2html(self.editor.getFileName(),
                                 out_html,
-                                theme=self.rst_theme)
-            elif in_ext.lower() in ['.md', '.markdown']:
-                output.md2html(self.editor.getFileName(),
-                               out_html,
-                               theme=self.md_theme)
+                                theme=self.md_theme)
+        elif label == 'pdf':
+            self.webview.onExportToPdf()
 
     def onPrintPreview(self):
         if self.editor.hasFocus():
