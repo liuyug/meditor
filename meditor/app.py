@@ -869,6 +869,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.setWindowTitle('%s - %s' % (__app_name__, path))
                 text = toUtf8(self.editor.getValue())
                 self.preview(text, path)
+        else:
+            subprocess.Popen(path, shell=True)
         return
 
     def onValueChanged(self, value):
