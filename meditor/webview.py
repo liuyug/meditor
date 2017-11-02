@@ -74,8 +74,19 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def print_(self, printer):
         """ QWebEngineView don't support print in Qt5.7 """
-        widget = self.page().view()
-        widget.render(printer)
+        # TODO: crash ???
+        # self.page().print(printer, lambda x: x)
+        painter = QtGui.QPainter()
+        painter.begin(printer)
+        xscale = printer.pageRect().width() / float(self.width())
+        yscale = printer.pageRect().height() / float(self.height())
+        scale = min(xscale, yscale)
+        painter.translate(
+            printer.paperRect().x() + printer.pageRect().width() / 2,
+            printer.paperRect().y() + printer.pageRect().height() / 2)
+        painter.scale(scale, scale)
+        painter.translate(-self.width() / 2, -self.height() / 2)
+        self.render(painter)
 
     def find(self, finddialog, readonly=True):
         finddialog.setReadOnly(readonly)
