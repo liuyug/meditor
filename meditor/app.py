@@ -194,6 +194,7 @@ class MainWindow(QtWidgets.QMainWindow):
         exportHTMLAction = QtWidgets.QAction(self.tr('Export to HTML'), self)
         exportHTMLAction.triggered.connect(partial(self.onExport, 'html'))
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
+        printAction.setShortcut('Ctrl+P')
         printAction.triggered.connect(self.onPrint)
         printPreviewAction = QtWidgets.QAction(self.tr('Print Pre&view'), self)
         printPreviewAction.triggered.connect(self.onPrintPreview)
@@ -274,7 +275,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.codeviewAction.setChecked(value)
         # preview
         previewAction = QtWidgets.QAction(self.tr('&Preview'), self)
-        previewAction.setShortcut('Ctrl+P')
         previewAction.triggered.connect(partial(self.onPreview, 'preview'))
         previewsaveAction = QtWidgets.QAction(self.tr('Preview on save'),
                                           self,
