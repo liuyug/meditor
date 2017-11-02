@@ -2,6 +2,7 @@
 import os
 import os.path
 import sys
+import subprocess
 import shutil
 import logging
 from unicodedata import east_asian_width
@@ -50,6 +51,8 @@ class Explorer(QtWidgets.QTreeWidget):
         self.deleteAction.triggered.connect(self.onDelete)
         refreshAction = QtWidgets.QAction(self.tr('Refresh'), self)
         refreshAction.triggered.connect(self.onRefresh)
+        explorerAction = QtWidgets.QAction(self.tr('Windows Explorer'), self)
+        explorerAction.triggered.connect(self.onWindowsExplorer)
         drivers_path = self.getDrivesPath()
         self.driveGroup = QtWidgets.QActionGroup(self)
         for drive_path in drivers_path:
@@ -70,6 +73,7 @@ class Explorer(QtWidgets.QTreeWidget):
         self.popupMenu.addAction(self.deleteAction)
         self.popupMenu.addSeparator()
         self.popupMenu.addAction(refreshAction)
+        self.popupMenu.addAction(explorerAction)
         self.popupMenu.addSeparator()
         for act in self.driveGroup.actions():
             self.popupMenu.addAction(act)
@@ -151,6 +155,9 @@ class Explorer(QtWidgets.QTreeWidget):
 
     def onRefresh(self):
         self.setRootPath(self.root_path, True)
+
+    def onWindowsExplorer(self):
+        subprocess.Popen('explorer "%s"' % self.root_path, shell=True)
 
     def onDriveChanged(self, drive, checked):
         self.setRootPath(drive)

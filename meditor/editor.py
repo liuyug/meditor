@@ -1,6 +1,7 @@
 
 import time
 import os.path
+import codecs
 import logging
 
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -217,7 +218,16 @@ class Editor(QsciScintilla):
 
     def readFile(self, filename):
         try:
-            with open(filename, 'rU', encoding='utf8') as f:
+            encoding = 'utf-8'
+            with open(filename, 'rb') as f:
+                head = f.read(min(32, os.path.getsize(filename)))
+                if head.startswith(codecs.BOM_UTF8):
+                    encoding = 'utf-8-sig'
+                elif head.startswith(codecs.BOM_UTF16):
+                    encoding = 'utf-16'
+                elif head.startswith(codecs.BOM_UTF32):
+                    encoding = 'utf-32'
+            with open(filename, 'rU', encoding=encoding) as f:
                 text = f.read()
         except Exception as err:
             logging.error('%s: %s' % (filename, str(err)))
