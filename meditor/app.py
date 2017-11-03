@@ -92,20 +92,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.app_exec = os.path.realpath(sys.argv[0])
+        self._app_exec = os.path.realpath(sys.argv[0])
         if sys.platform == 'win32':
-            ext = os.path.splitext(self.app_exec)[1]
+            ext = os.path.splitext(self._app_exec)[1]
             if ext not in ['.py', '.exe']:
-                self.app_exec += '.exe'
-        logger.info('app name: %s' % self.app_exec)
+                self._app_exec += '.exe'
+        logger.info('app name: %s' % self._app_exec)
         self.settings = settings = QtCore.QSettings(
             __app_name__.lower(),
             'config'
         )
         # No support fromTheme function in Qt4.6
-        icon_path = os.path.join(__icon_path__, 'meditor-text-editor.ico')
+        self._icon = os.path.join(__icon_path__, 'meditor-text-editor.ico')
         logger.info('icon path: %s' % __icon_path__)
-        self.setWindowIcon(QtGui.QIcon(icon_path))
+        self.setWindowIcon(QtGui.QIcon(self._icon))
         self.setupMenu()
         self.setupToolbar()
         self.setupStatusBar()
@@ -251,6 +251,9 @@ class MainWindow(QtWidgets.QMainWindow):
         enableLexerAction.setChecked(value)
         enableLexerAction.triggered.connect(
             partial(self.onPreview, 'enablelexer'))
+
+        fileAssociationAction = QtWidgets.QAction(self.tr('File Associate'), self)
+        fileAssociationAction.triggered.connect(self.onFileAssociation)
         # view
         self.explorerAction = QtWidgets.QAction(self.tr('File explorer'),
                                             self,
@@ -420,6 +423,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.indentAction)
         menu.addAction(self.unindentAction)
         menu.addSeparator()
+        menu.addAction(fileAssociationAction)
         menu.addAction(enableLexerAction)
         menu.aboutToShow.connect(self.onEditMenuShow)
 
@@ -531,10 +535,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.preview(text, filename)
 
     def onNewWindow(self):
-        if sys.platform == 'win32' and self.app_exec.endswith('.py'):
-            subprocess.Popen(['python', self.app_exec])
+        if sys.platform == 'win32' and self._app_exec.endswith('.py'):
+            subprocess.Popen(['python', self._app_exec])
         else:
-            subprocess.Popen([self.app_exec])
+            subprocess.Popen([self._app_exec])
         return
 
     def onOpen(self):
@@ -752,6 +756,31 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.webview.findPrevious(self.findDialog.getFindText())
         return
 
+    def onFileAssociation(self):
+        if sys.platform == 'win32':
+            reg_base = 'HKEY_CURRENT_USER\Software\Classes'
+            settings = QtCore.QSettings(reg_base, QtCore.QSettings.NativeFormat)
+
+            for ext in ['.md', '.markdown', '.rst', '.rest']:
+                file_type = 'MarkupEditor%s' % ext
+                settings.setValue(
+                    '/%s/.' % ext,
+                    file_type)
+                settings.setValue(
+                    '/%s/OpenWithProgIds/%s' % (ext, file_type),
+                    '')
+
+                settings.setValue(
+                    '/%s/.' % file_type,
+                    'Markup Editor for %s' % ext[1:])
+                settings.setValue(
+                    '/%s/DefaultIcon/.' % file_type,
+                    self._icon)
+                settings.setValue(
+                    '/%s/shell/open/command/.' % file_type,
+                    '"%s" "%%1"' % self._app_exec)
+            settings.sync()
+
     def onViewMenuShow(self):
         self.explorerAction.setChecked(self.dock_explorer.isVisible())
         self.webviewAction.setChecked(self.dock_webview.isVisible())
@@ -845,10 +874,10 @@ class MainWindow(QtWidgets.QMainWindow):
         for help_path in help_paths:
             if os.path.exists(help_path):
                 break
-        if self.app_exec.endswith('.py'):
-            subprocess.Popen(['python', self.app_exec, help_path])
+        if self._app_exec.endswith('.py'):
+            subprocess.Popen(['python', self._app_exec, help_path])
         else:
-            subprocess.Popen([self.app_exec, help_path])
+            subprocess.Popen([self._app_exec, help_path])
         return
 
     def onAbout(self):
