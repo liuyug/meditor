@@ -417,6 +417,7 @@ class Workspace(QtWidgets.QTreeWidget):
         self.iconProvider = QtWidgets.QFileIconProvider()
 
         # self.setRootIsDecorated(False)
+        self.setExpandsOnDoubleClick(True)
 
         self.itemActivated.connect(self.onItemActivated)
         self.pathLoaded.connect(self.onPathLoaded)
@@ -481,15 +482,9 @@ class Workspace(QtWidgets.QTreeWidget):
         if item.type() == self.type_root:
             if item.childCount() == 0:
                 self.expandDir(item)
-            else:
-                self.expandItem(item)
         elif item.type() == self.type_folder:
             if item.childCount() == 0:
                 self.expandDir(item)
-            else:
-                self.expandItem(item)
-                # item.setExpanded(True)
-            print('expand item', item)
         else:
             path = os.path.join(item.data(0, self.role_path), item.text(0))
             self.loadFile(path)
@@ -589,18 +584,18 @@ class Workspace(QtWidgets.QTreeWidget):
 
     def addRoot(self, path, name):
         print('root', path, name)
-        root = QtWidgets.QTreeWidgetItem(self, self.type_root)
+        root = QtWidgets.QTreeWidgetItem(self.type_root)
         root.setText(0, name)
         root.setIcon(0, self.getFileIcon(path))
         root.setData(0, self.role_path, path)
         return root
 
-    def appendItem(self, parent, path, name):
+    def appendItem(self, path, name):
         print('append item', path, name)
         if os.path.isdir(os.path.join(path, name)):
-            child = QtWidgets.QTreeWidgetItem(parent, self.type_folder)
+            child = QtWidgets.QTreeWidgetItem(self.type_folder)
         else:
-            child = QtWidgets.QTreeWidgetItem(parent, self.type_file)
+            child = QtWidgets.QTreeWidgetItem(self.type_file)
             child.setFlags(child.flags() & ~QtCore.Qt.ItemIsDropEnabled)
         child.setText(0, name)
         child.setIcon(0, self.getFileIcon(os.path.join(path, name)))
@@ -621,11 +616,12 @@ class Workspace(QtWidgets.QTreeWidget):
         elif parent.type() == self.type_folder:
             path = os.path.join(parent.data(0, self.role_path), parent.text(0))
         dirs = sorted(os.listdir(path), key=pathkey)
+        children = []
         for d in dirs:
             if d.startswith('.'):
                 continue
-            self.appendItem(parent, path, d)
-        self.expandItem(parent)
+            children.append(self.appendItem(path, d))
+        parent.addChildren(children)
 
     def appendRootPath(self, path):
         if not os.path.exists(path):
@@ -635,10 +631,10 @@ class Workspace(QtWidgets.QTreeWidget):
 
         root_path = os.path.abspath(path)
         root_name = os.path.basename(root_path)
-
         root_item = self.addRoot(root_path, root_name)
 
         self.expandDir(root_item)
+        self.addTopLevelItem(root_item)
 
     def getDisplayName(self, name):
         """ directory display name """
@@ -680,7 +676,6 @@ class Workspace(QtWidgets.QTreeWidget):
         if filename:
             if os.path.exists(filename):
                 logger.debug('Loading file: %s', filename)
-                self.setRootPath(os.path.dirname(filename))
                 self.fileLoaded.emit(filename)
         return
 
