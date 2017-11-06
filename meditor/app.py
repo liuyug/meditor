@@ -151,10 +151,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # window state
         self.restoreGeometry(settings.value('geometry', type=QtCore.QByteArray))
         self.restoreState(settings.value('windowState', type=QtCore.QByteArray))
-        path = toUtf8(settings.value('explorer/rootPath', type=str))
-        if not os.path.exists(path):
-            path = os.path.expanduser('~')
-        # self.explorer.setRootPath(path)
+        value = toUtf8(settings.value('explorer/workspace', type=str))
+        for path in value.split(';'):
+            self.explorer.appendRootPath(path)
+
         self.setFont(QtGui.QFont('Monospace', 12))
         self.editor.emptyFile()
 
@@ -494,7 +494,8 @@ class MainWindow(QtWidgets.QMainWindow):
         settings = self.settings
         settings.setValue('geometry', self.saveGeometry())
         settings.setValue('windowState', self.saveState())
-        # settings.setValue('explorer/rootPath', self.explorer.getRootPath())
+        settings.setValue('explorer/workspace', ';'.join(
+            self.explorer.getRootPaths()))
         settings.sync()
         self.previewQuit = True
         requestPreview.set()
@@ -574,7 +575,7 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = QtWidgets.QFileDialog.getSaveFileName(
             self,
             self.tr('Save file as ...'),
-            self.explorer.getRootPath(),
+            self.explorer.getCurrentPath(),
             ''.join(FILTER),
         )
         if isinstance(filename, tuple):
@@ -598,7 +599,7 @@ class MainWindow(QtWidgets.QMainWindow):
             out_file = in_basename + '.html'
             out_html = QtWidgets.QFileDialog.getSaveFileName(
                 self, self.tr('export HTML as ...'),
-                os.path.join(self.explorer.getRootPath(), out_file),
+                os.path.join(self.explorer.getCurrentPath(), out_file),
                 "HTML files (*.html *.htm)",
             )
             if isinstance(out_html, tuple):

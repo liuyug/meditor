@@ -402,7 +402,6 @@ class Workspace(QtWidgets.QTreeWidget):
     role_path = QtCore.Qt.UserRole
 
     fileLoaded = QtCore.pyqtSignal('QString')
-    pathLoaded = QtCore.pyqtSignal('QString')
     fileDeleted = QtCore.pyqtSignal('QString')
     fileRenamed = QtCore.pyqtSignal('QString', 'QString')
     fileNew = QtCore.pyqtSignal('QString')
@@ -420,7 +419,7 @@ class Workspace(QtWidgets.QTreeWidget):
         self.setExpandsOnDoubleClick(True)
 
         self.itemActivated.connect(self.onItemActivated)
-        self.pathLoaded.connect(self.onPathLoaded)
+        # self.pathLoaded.connect(self.onPathLoaded)
         # popup menu
         newRstAction = QtWidgets.QAction(self.tr('reStructedText'), self)
         newRstAction.triggered.connect(partial(self.onNewFile, 'rst'))
@@ -487,24 +486,21 @@ class Workspace(QtWidgets.QTreeWidget):
                 self.expandDir(item)
         else:
             path = os.path.join(item.data(0, self.role_path), item.text(0))
-            self.loadFile(path)
-
-    def onPathLoaded(self, path):
-        pass
-        # self.setRootPath(path)
+            self.fileLoaded.emit(path)
 
     def onNewFile(self, label):
         self.fileNew.emit(label)
 
     def onNewDirectory(self):
-        newpath = self.newDirectory()
-        # if newpath:
-        #     self.appendItem(self.root_item, newpath)
+        root = self.getCurrentPath()
+        path = self.newDirectory(root)
+        item = self.currentItem()
+        item.addChild(self.createNode(root, path))
 
     def onRename(self):
         item = self.currentItem()
-        # if not item or item == self.root_item:
-        #     return
+        if item.type() == self.type_root:
+            return
         # filename = toUtf8(item.text(0))
         # newname = self.renamePath(filename)
         # if newname:
@@ -515,11 +511,13 @@ class Workspace(QtWidgets.QTreeWidget):
 
     def onDelete(self):
         item = self.currentItem()
-        # if not item or item == self.root_item:
-        #     return
-        # filename = toUtf8(item.text(0))
-        # if self.deletePath(filename):
-        #     self.root_item.removeChild(item)
+        if item.type() == self.type_root:
+            return
+        root = self.getCurrentPath()
+        path = os.path.join(root, item.text(0))
+        if self.deletePath(path):
+            parent = self.item.parent()
+            parent.removeChild(item)
 
     def onRefresh(self):
         pass
@@ -582,7 +580,7 @@ class Workspace(QtWidgets.QTreeWidget):
             data.append(item)
         return data
 
-    def addRoot(self, path, name):
+    def createRoot(self, path, name):
         print('root', path, name)
         root = QtWidgets.QTreeWidgetItem(self.type_root)
         root.setText(0, name)
@@ -590,7 +588,7 @@ class Workspace(QtWidgets.QTreeWidget):
         root.setData(0, self.role_path, path)
         return root
 
-    def appendItem(self, path, name):
+    def createNode(self, path, name):
         print('append item', path, name)
         if os.path.isdir(os.path.join(path, name)):
             child = QtWidgets.QTreeWidgetItem(self.type_folder)
@@ -620,7 +618,7 @@ class Workspace(QtWidgets.QTreeWidget):
         for d in dirs:
             if d.startswith('.'):
                 continue
-            children.append(self.appendItem(path, d))
+            children.append(self.createNode(path, d))
         parent.addChildren(children)
 
     def appendRootPath(self, path):
@@ -631,27 +629,10 @@ class Workspace(QtWidgets.QTreeWidget):
 
         root_path = os.path.abspath(path)
         root_name = os.path.basename(root_path)
-        root_item = self.addRoot(root_path, root_name)
+        root_item = self.createRoot(root_path, root_name)
 
         self.expandDir(root_item)
         self.addTopLevelItem(root_item)
-
-    def getDisplayName(self, name):
-        """ directory display name """
-        client_width = self.width() - self.padding_right
-        char_width = self.fontMetrics().width(' ')
-        disp_char_num = int(client_width / char_width) - 1
-        full_char = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ'
-        w = sum(east_asian_width(x) == 'W' or x in full_char for x in name)
-        char_length = len(name) + w
-        if (char_length - 3) > disp_char_num:
-            display_name = '<<<%s' % name[-disp_char_num + 4:]
-        else:
-            display_name = name
-        return display_name
-
-    # def getRootPath(self, name):
-    #     return self._workspace.get(name)
 
     def getFileIcon(self, path, style=None):
         if path == '/':
@@ -668,16 +649,6 @@ class Workspace(QtWidgets.QTreeWidget):
             else:
                 icon = self.iconProvider.icon(QtCore.QFileInfo(path))
         return icon
-
-    def loadFile(self, filename):
-        """
-        set root directory and sent signal to request load file.
-        """
-        if filename:
-            if os.path.exists(filename):
-                logger.debug('Loading file: %s', filename)
-                self.fileLoaded.emit(filename)
-        return
 
     def deletePath(self, filename):
         # path = os.path.join(self.root_path, filename)
@@ -702,22 +673,22 @@ class Workspace(QtWidgets.QTreeWidget):
         #                                    err)
         return False
 
-    def newDirectory(self):
-        # text, ok = QtWidgets.QInputDialog.getText(self,
-        #                                           self.tr('New directory'),
-        #                                           self.tr('Please input name:'))
-        # if ok:
-        #     filename = toUtf8(text)
-        #     path = os.path.join(self.root_path, filename)
-        #     if os.path.exists(path):
-        #         QtWidgets.QMessageBox.warning(self,
-        #                                       self.tr('File exists'),
-        #                                       self.tr('File "%s" has existed!') % (filename)
-        #                                       )
-        #     else:
-        #         os.mkdir(path)
-        #         return filename
-        return
+    def newDirectory(self, root):
+        value, ok = QtWidgets.QInputDialog.getText(
+            self,
+            self.tr('New directory'),
+            self.tr('Please input name:'))
+        if ok:
+            value = toUtf8(value)
+            path = os.path.join(root, value)
+            if os.path.exists(path):
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    self.tr('File exists'),
+                    self.tr('File "%s" has existed!') % (value))
+            else:
+                os.mkdir(path)
+                return value
 
     def renamePath(self, filename):
         # path = os.path.join(self.root_path, filename)
@@ -754,3 +725,18 @@ class Workspace(QtWidgets.QTreeWidget):
         if os.path.isfile(dest):
             self.fileRenamed.emit(src, dest)
         return dest
+
+    def getRootPaths(self):
+        root_paths = []
+        for index in range(self.topLevelItemCount()):
+            root = self.topLevelItem(index)
+            path = root.data(0, self.role_path)
+            root_paths.append(path)
+        return root_paths
+
+    def getCurrentPath(self):
+        item = self.currentItem()
+        path = item.data(0, self.role_path)
+        if item.type() == self.type_folder:
+            path = os.path.join(path, item.text(0))
+        return path
