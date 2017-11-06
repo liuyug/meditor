@@ -393,3 +393,369 @@ class Explorer(QtWidgets.QTreeWidget):
             if os.path.exists(path):
                 drivers.append(path)
         return drivers
+
+
+class Workspace(QtWidgets.QTreeWidget):
+    type_root = QtWidgets.QTreeWidgetItem.UserType
+    type_folder = type_root + 1
+    type_file = type_root + 2
+    role_path = QtCore.Qt.UserRole
+
+    fileLoaded = QtCore.pyqtSignal('QString')
+    pathLoaded = QtCore.pyqtSignal('QString')
+    fileDeleted = QtCore.pyqtSignal('QString')
+    fileRenamed = QtCore.pyqtSignal('QString', 'QString')
+    fileNew = QtCore.pyqtSignal('QString')
+
+    def __init__(self, parent, style=None):
+        super(Workspace, self).__init__(parent)
+        self.header().close()
+        self.padding_right = 32
+        # QStyle, such as QtWidgets.QStyleFactory.create('windows')
+        self.qstyle = style
+        # QT BUG, must keep reference or crash
+        self.iconProvider = QtWidgets.QFileIconProvider()
+
+        # self.setRootIsDecorated(False)
+
+        self.itemActivated.connect(self.onItemActivated)
+        self.pathLoaded.connect(self.onPathLoaded)
+        # popup menu
+        newRstAction = QtWidgets.QAction(self.tr('reStructedText'), self)
+        newRstAction.triggered.connect(partial(self.onNewFile, 'rst'))
+        newMdAction = QtWidgets.QAction(self.tr('Markdown'), self)
+        newMdAction.triggered.connect(partial(self.onNewFile, 'md'))
+
+        newdirectoryAction = QtWidgets.QAction(self.tr('New &directory'), self)
+        newdirectoryAction.triggered.connect(self.onNewDirectory)
+        self.renameAction = QtWidgets.QAction(self.tr('&Rename...'), self)
+        self.renameAction.triggered.connect(self.onRename)
+        self.deleteAction = QtWidgets.QAction(self.tr('Delete'), self)
+        self.deleteAction.triggered.connect(self.onDelete)
+        refreshAction = QtWidgets.QAction(self.tr('Refresh'), self)
+        refreshAction.triggered.connect(self.onRefresh)
+        explorerAction = QtWidgets.QAction(self.tr('Windows Explorer'), self)
+        explorerAction.triggered.connect(self.onWindowsExplorer)
+
+        self.popupMenu = QtWidgets.QMenu(self)
+        submenu = QtWidgets.QMenu(self.tr('New'), self.popupMenu)
+        submenu.addAction(newRstAction)
+        submenu.addAction(newMdAction)
+        self.popupMenu.addMenu(submenu)
+
+        self.popupMenu.addAction(newdirectoryAction)
+        self.popupMenu.addSeparator()
+        self.popupMenu.addAction(self.renameAction)
+        self.popupMenu.addAction(self.deleteAction)
+        self.popupMenu.addSeparator()
+        self.popupMenu.addAction(refreshAction)
+        self.popupMenu.addAction(explorerAction)
+        self.popupMenu.addSeparator()
+        # drag & drop
+        self.setDragEnabled(True)
+        self.setDropIndicatorShown(True)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
+
+    def contextMenuEvent(self, event):
+        if event.reason() == event.Mouse:
+            pos = event.globalPos()
+            item = self.itemAt(event.pos())
+        else:
+            pos = None
+            item = self.currentItem()
+            self.scrollToItem(item)
+        # if item is None:
+        #     item = self.root_item
+        #     self.scrollToItem(item)
+        if pos is None:
+            rect = self.visualItemRect(item)
+            pos = self.mapToGlobal(rect.center())
+        # self.renameAction.setEnabled(item != self.root_item)
+        # self.deleteAction.setEnabled(item != self.root_item)
+        self.popupMenu.popup(pos)
+
+    def onItemActivated(self, item, col):
+        if col > 0:
+            return
+        if item.type() == self.type_root:
+            if item.childCount() == 0:
+                self.expandDir(item)
+            else:
+                self.expandItem(item)
+        elif item.type() == self.type_folder:
+            if item.childCount() == 0:
+                self.expandDir(item)
+            else:
+                self.expandItem(item)
+                # item.setExpanded(True)
+            print('expand item', item)
+        else:
+            path = os.path.join(item.data(0, self.role_path), item.text(0))
+            self.loadFile(path)
+
+    def onPathLoaded(self, path):
+        pass
+        # self.setRootPath(path)
+
+    def onNewFile(self, label):
+        self.fileNew.emit(label)
+
+    def onNewDirectory(self):
+        newpath = self.newDirectory()
+        # if newpath:
+        #     self.appendItem(self.root_item, newpath)
+
+    def onRename(self):
+        item = self.currentItem()
+        # if not item or item == self.root_item:
+        #     return
+        # filename = toUtf8(item.text(0))
+        # newname = self.renamePath(filename)
+        # if newname:
+        #     if os.path.dirname(newname) == self.root_path:
+        #         item.setText(0, os.path.basename(newname))
+        #     else:
+        #         self.root_item.removeChild(item)
+
+    def onDelete(self):
+        item = self.currentItem()
+        # if not item or item == self.root_item:
+        #     return
+        # filename = toUtf8(item.text(0))
+        # if self.deletePath(filename):
+        #     self.root_item.removeChild(item)
+
+    def onRefresh(self):
+        pass
+        # self.setRootPath(self.root_path, True)
+
+    def onWindowsExplorer(self):
+        pass
+        # subprocess.Popen('explorer "%s"' % self.root_path, shell=True)
+
+    def dragMoveEvent(self, event):
+        super(Explorer, self).dragMoveEvent(event)
+        if (event.source() == self and
+                self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove):
+            item = self.itemAt(event.pos())
+            if item is None:
+                event.ignore()
+            elif item.flags() & QtCore.Qt.ItemIsDropEnabled:
+                event.accept()
+            else:
+                event.ignore()
+
+    def dropEvent(self, event):
+        # InternalMove mode will ignore function dropMimeData
+        if (event.source() == self and
+                (event.dropAction == QtCore.Qt.MoveAction or
+                 self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove)):
+            drop_item = self.itemAt(event.pos())
+            if drop_item is None:
+                return
+            if drop_item == self.root_item:
+                dest_dir = os.path.dirname(self.root_path)
+            else:
+                dest_dir = os.path.join(self.root_path, toUtf8(drop_item.text(0)))
+            mimeData = event.mimeData()
+            if mimeData.hasFormat('application/x-qabstractitemmodeldatalist'):
+                bytearray = mimeData.data('application/x-qabstractitemmodeldatalist')
+                for drag_item in self.decodeMimeData(bytearray):
+                    name = toUtf8(drag_item.text(0))
+                    oldpath = os.path.join(self.root_path, name)
+                    newpath = os.path.join(dest_dir, name)
+                    if self.movePath(oldpath, newpath):
+                        self.root_item.removeChild(drag_item)
+        else:
+            return super(Explorer, self).dropEvent(event)
+
+    def decodeMimeData(self, bytearray):
+        data = []
+        ds = QtCore.QDataStream(bytearray)
+        root_index = self.indexFromItem(self.root_item)
+        while not ds.atEnd():
+            row = ds.readInt32()
+            column = ds.readInt32()
+            index = root_index.child(row, column)
+            map_items = ds.readInt32()
+            for i in range(map_items):
+                ds.readInt32()    # QtCore.Qt.ItemDataRole(key)
+                value = QtCore.QVariant()
+                ds >> value
+            item = self.itemFromIndex(index)
+            data.append(item)
+        return data
+
+    def addRoot(self, path, name):
+        print('root', path, name)
+        root = QtWidgets.QTreeWidgetItem(self, self.type_root)
+        root.setText(0, name)
+        root.setIcon(0, self.getFileIcon(path))
+        root.setData(0, self.role_path, path)
+        return root
+
+    def appendItem(self, parent, path, name):
+        print('append item', path, name)
+        if os.path.isdir(os.path.join(path, name)):
+            child = QtWidgets.QTreeWidgetItem(parent, self.type_folder)
+        else:
+            child = QtWidgets.QTreeWidgetItem(parent, self.type_file)
+            child.setFlags(child.flags() & ~QtCore.Qt.ItemIsDropEnabled)
+        child.setText(0, name)
+        child.setIcon(0, self.getFileIcon(os.path.join(path, name)))
+        child.setData(0, self.role_path, path)
+        return child
+
+    def expandDir(self, parent):
+        def pathkey(key):
+            if os.path.isdir(os.path.join(path, key)):
+                prefix = '0_'
+            else:
+                prefix = '1_'
+            key = prefix + key
+            return key.lower()
+
+        if parent.type() == self.type_root:
+            path = parent.data(0, self.role_path)
+        elif parent.type() == self.type_folder:
+            path = os.path.join(parent.data(0, self.role_path), parent.text(0))
+        dirs = sorted(os.listdir(path), key=pathkey)
+        for d in dirs:
+            if d.startswith('.'):
+                continue
+            self.appendItem(parent, path, d)
+        self.expandItem(parent)
+
+    def appendRootPath(self, path):
+        if not os.path.exists(path):
+            return
+        if os.path.isfile(path):
+            path = os.path.dirname(path)
+
+        root_path = os.path.abspath(path)
+        root_name = os.path.basename(root_path)
+
+        root_item = self.addRoot(root_path, root_name)
+
+        self.expandDir(root_item)
+
+    def getDisplayName(self, name):
+        """ directory display name """
+        client_width = self.width() - self.padding_right
+        char_width = self.fontMetrics().width(' ')
+        disp_char_num = int(client_width / char_width) - 1
+        full_char = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ'
+        w = sum(east_asian_width(x) == 'W' or x in full_char for x in name)
+        char_length = len(name) + w
+        if (char_length - 3) > disp_char_num:
+            display_name = '<<<%s' % name[-disp_char_num + 4:]
+        else:
+            display_name = name
+        return display_name
+
+    # def getRootPath(self, name):
+    #     return self._workspace.get(name)
+
+    def getFileIcon(self, path, style=None):
+        if path == '/':
+            if self.qstyle:
+                icon = self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirOpenIcon)
+            else:
+                icon = self.iconProvider.icon(self.iconProvider.Folder)
+        else:
+            if os.path.isdir(path):
+                if self.qstyle:
+                    icon = self.qstyle.standardIcon(QtWidgets.QStyle.SP_DirIcon)
+                else:
+                    icon = self.iconProvider.icon(self.iconProvider.Folder)
+            else:
+                icon = self.iconProvider.icon(QtCore.QFileInfo(path))
+        return icon
+
+    def loadFile(self, filename):
+        """
+        set root directory and sent signal to request load file.
+        """
+        if filename:
+            if os.path.exists(filename):
+                logger.debug('Loading file: %s', filename)
+                self.setRootPath(os.path.dirname(filename))
+                self.fileLoaded.emit(filename)
+        return
+
+    def deletePath(self, filename):
+        # path = os.path.join(self.root_path, filename)
+        # if not os.path.exists(path):
+        #     return False
+        # ret = QtWidgets.QMessageBox.question(self,
+        #                                      self.tr('Delete'),
+        #                                      self.tr('Do you want to delete "%s"?') % (filename),
+        #                                      QtWidgets.QMessageBox.Yes,
+        #                                      QtWidgets.QMessageBox.No)
+        # if ret == QtWidgets.QMessageBox.Yes:
+        #     try:
+        #         if os.path.isdir(path):
+        #             shutil.rmtree(path)
+        #         else:
+        #             os.remove(path)
+        #             self.fileDeleted.emit(path)
+        #         return True
+        #     except OSError as err:
+        #         QtWidgets.QMessageBox.critical(self,
+        #                                    self.tr('Error'),
+        #                                    err)
+        return False
+
+    def newDirectory(self):
+        # text, ok = QtWidgets.QInputDialog.getText(self,
+        #                                           self.tr('New directory'),
+        #                                           self.tr('Please input name:'))
+        # if ok:
+        #     filename = toUtf8(text)
+        #     path = os.path.join(self.root_path, filename)
+        #     if os.path.exists(path):
+        #         QtWidgets.QMessageBox.warning(self,
+        #                                       self.tr('File exists'),
+        #                                       self.tr('File "%s" has existed!') % (filename)
+        #                                       )
+        #     else:
+        #         os.mkdir(path)
+        #         return filename
+        return
+
+    def renamePath(self, filename):
+        # path = os.path.join(self.root_path, filename)
+        # if not os.path.exists(path):
+        #     return
+        # text, ok = QtWidgets.QInputDialog.getText(self,
+        #                                           self.tr('Rename'),
+        #                                           self.tr('Please input new name:'),
+        #                                           QtWidgets.QLineEdit.Normal,
+        #                                           filename)
+        # if ok:
+        #     newname = toUtf8(text)
+        #     newpath = os.path.abspath(os.path.join(self.root_path, newname))
+        #     return self.movePath(path, newpath)
+        return
+
+    def movePath(self, src, dest):
+        if os.path.exists(dest):
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr('File exists'),
+                self.tr('File "%s" has existed!') % (os.path.basename(dest)),
+            )
+            return
+        try:
+            os.rename(src, dest)
+        except OSError as err:
+            QtWidgets.QMessageBox.critical(
+                self,
+                self.tr('Error'),
+                err,
+            )
+            return
+        if os.path.isfile(dest):
+            self.fileRenamed.emit(src, dest)
+        return dest

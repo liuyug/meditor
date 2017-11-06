@@ -125,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # left dock window
         self.dock_explorer = QtWidgets.QDockWidget(self.tr('Explorer'), self)
         self.dock_explorer.setObjectName('dock_explorer')
-        self.explorer = explorer.Explorer(self.dock_explorer)
+        self.explorer = explorer.Workspace(self.dock_explorer)
         self.dock_explorer.setWidget(self.explorer)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
         # right dock window
@@ -154,7 +154,7 @@ class MainWindow(QtWidgets.QMainWindow):
         path = toUtf8(settings.value('explorer/rootPath', type=str))
         if not os.path.exists(path):
             path = os.path.expanduser('~')
-        self.explorer.setRootPath(path)
+        # self.explorer.setRootPath(path)
         self.setFont(QtGui.QFont('Monospace', 12))
         self.editor.emptyFile()
 
@@ -494,7 +494,7 @@ class MainWindow(QtWidgets.QMainWindow):
         settings = self.settings
         settings.setValue('geometry', self.saveGeometry())
         settings.setValue('windowState', self.saveState())
-        settings.setValue('explorer/rootPath', self.explorer.getRootPath())
+        # settings.setValue('explorer/rootPath', self.explorer.getRootPath())
         settings.sync()
         self.previewQuit = True
         requestPreview.set()
@@ -586,7 +586,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.settings.value('preview/onsave', type=bool):
                 text = toUtf8(self.editor.getValue())
                 self.preview(text, filename)
-            self.explorer.setRootPath(os.path.dirname(filename), True)
+            # self.explorer.setRootPath(os.path.dirname(filename), True)
         return
 
     def onExport(self, label):
@@ -1001,9 +1001,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if not path:
             path = default_filename
             text = ''
-            self.explorer.setRootPath(os.path.dirname(path))
+            # self.explorer.setRootPath(os.path.dirname(path))
         else:
-            self.explorer.setRootPath(os.path.dirname(path))
+            # self.explorer.setRootPath(os.path.dirname(path))
+            self.explorer.appendRootPath(path)
             ext = os.path.splitext(path)[1].lower()
             if ext not in ALLOWED_LOADS:
                 return
