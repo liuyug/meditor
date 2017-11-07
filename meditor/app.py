@@ -184,6 +184,8 @@ class MainWindow(QtWidgets.QMainWindow):
         openAction = QtWidgets.QAction(self.tr('&Open'), self)
         openAction.setShortcut('Ctrl+O')
         openAction.triggered.connect(self.onOpen)
+        openWorkspaceAction = QtWidgets.QAction(self.tr('Open folder'), self)
+        openWorkspaceAction.triggered.connect(self.onOpenWorkspace)
         saveAction = QtWidgets.QAction(self.tr('&Save'), self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.triggered.connect(self.onSave)
@@ -392,6 +394,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addMenu(submenu)
         menu.addAction(newwindowAction)
         menu.addAction(openAction)
+        menu.addAction(openWorkspaceAction)
         menu.addSeparator()
         menu.addAction(saveAction)
         menu.addAction(saveAsAction)
@@ -545,22 +548,24 @@ class MainWindow(QtWidgets.QMainWindow):
     def onOpen(self):
         if not self.saveAndContinue():
             return
-        filename = QtWidgets.QFileDialog.getOpenFileName(
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, self.tr('Open a file'),
             filter=''.join(FILTER),
         )
-        # ???: return a tuple
-        if isinstance(filename, tuple):
-            filename = filename[0]
         if filename:
-            filename = toUtf8(filename)
             self.loadFile(filename)
-        return
+
+    def onOpenWorkspace(self):
+        if not self.saveAndContinue():
+            return
+        path = QtWidgets.QFileDialog.getExistingDirectory(
+            self, self.tr('Open a folder'), '',
+        )
+        if path:
+            self.explorer.appendRootPath(path)
 
     def onSave(self):
         filename = self.editor.getFileName()
-        if isinstance(filename, tuple):
-            filename = filename[0]
         basename, _ = os.path.splitext(filename)
         if basename == __default_basename__:
             self.onSaveAs()
@@ -572,23 +577,24 @@ class MainWindow(QtWidgets.QMainWindow):
         return
 
     def onSaveAs(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(
+        filename = self.editor.getFileName()
+        filename, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
             self,
             self.tr('Save file as ...'),
-            self.explorer.getCurrentPath(),
+            os.path.join(self.explorer.getCurrentPath(), filename),
             ''.join(FILTER),
         )
-        if isinstance(filename, tuple):
-            filename = filename[0]
         if filename:
-            filename = toUtf8(filename)
+            _, ext = os.path.splitext(filename)
+            if not ext:
+                ext = selected_filter.split('(')[1][1:4].strip()
+                filename = filename + ext
             self.editor.writeFile(filename)
             self.setWindowTitle('%s - %s' % (__app_name__, filename))
             if self.settings.value('preview/onsave', type=bool):
                 text = toUtf8(self.editor.getValue())
                 self.preview(text, filename)
-            # self.explorer.setRootPath(os.path.dirname(filename), True)
-        return
+            self.explorer.refreshPath(filename)
 
     def onExport(self, label):
         if not self.saveAndContinue():

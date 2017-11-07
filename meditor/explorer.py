@@ -471,8 +471,9 @@ class Workspace(QtWidgets.QTreeWidget):
         if pos is None:
             rect = self.visualItemRect(item)
             pos = self.mapToGlobal(rect.center())
-        # self.renameAction.setEnabled(item != self.root_item)
-        # self.deleteAction.setEnabled(item != self.root_item)
+        item = self.currentItem()
+        self.renameAction.setEnabled(bool(item) and item.type() != self.type_root)
+        self.deleteAction.setEnabled(bool(item))
         self.popupMenu.popup(pos)
 
     def onItemActivated(self, item, col):
@@ -492,40 +493,55 @@ class Workspace(QtWidgets.QTreeWidget):
         self.fileNew.emit(label)
 
     def onNewDirectory(self):
-        root = self.getCurrentPath()
-        path = self.newDirectory(root)
-        item = self.currentItem()
-        item.addChild(self.createNode(root, path))
+        path = self.getCurrentPath()
+        sub_path = self.doNewDirectory(path)
+        if sub_path:
+            item = self.currentItem()
+            if item.type() == self.type_file:
+                item = item.parent()
+            item.addChild(self.createNode(path, sub_path))
 
     def onRename(self):
         item = self.currentItem()
         if item.type() == self.type_root:
             return
-        # filename = toUtf8(item.text(0))
-        # newname = self.renamePath(filename)
-        # if newname:
-        #     if os.path.dirname(newname) == self.root_path:
-        #         item.setText(0, os.path.basename(newname))
-        #     else:
-        #         self.root_item.removeChild(item)
+        path = os.path.join(item.data(0, self.role_path), item.text(0))
+        newpath = self.doRenamePath(path)
+        if newpath:
+            if os.path.dirname(newpath) == os.path.dirname(path):
+                item.setText(0, os.path.basename(newpath))
+            elif newpath.startswith(os.path.dirname(path)):
+                parent = item.parent()
+                parent.takeChildren()
+                self.expandDir(parent)
+            else:
+                parent = item.parent()
+                parent.removeChild(item)
+                del item
 
     def onDelete(self):
         item = self.currentItem()
         if item.type() == self.type_root:
+            index = self.indexOfTopLevelItem(item)
+            self.takeTopLevelItem(index)
+            del item
             return
-        root = self.getCurrentPath()
-        path = os.path.join(root, item.text(0))
-        if self.deletePath(path):
-            parent = self.item.parent()
+        path = os.path.join(item.data(0, self.role_path), item.text(0))
+        if self.doDeletePath(path):
+            parent = item.parent()
             parent.removeChild(item)
+            del item
 
     def onRefresh(self):
-        pass
-        # self.setRootPath(self.root_path, True)
+        item = self.currentItem()
+        if item.type() == self.type_file:
+            item = item.parent()
+        item.takeChildren()
+        self.expandDir(item)
 
     def onWindowsExplorer(self):
-        pass
-        # subprocess.Popen('explorer "%s"' % self.root_path, shell=True)
+        path = self.getCurrentPath()
+        subprocess.Popen('explorer "%s"' % path, shell=True)
 
     def dragMoveEvent(self, event):
         super(Explorer, self).dragMoveEvent(event)
@@ -554,7 +570,7 @@ class Workspace(QtWidgets.QTreeWidget):
             mimeData = event.mimeData()
             if mimeData.hasFormat('application/x-qabstractitemmodeldatalist'):
                 bytearray = mimeData.data('application/x-qabstractitemmodeldatalist')
-                for drag_item in self.decodeMimeData(bytearray):
+                for drag_item in self._decodeMimeData(bytearray):
                     name = toUtf8(drag_item.text(0))
                     oldpath = os.path.join(self.root_path, name)
                     newpath = os.path.join(dest_dir, name)
@@ -563,7 +579,7 @@ class Workspace(QtWidgets.QTreeWidget):
         else:
             return super(Explorer, self).dropEvent(event)
 
-    def decodeMimeData(self, bytearray):
+    def _decodeMimeData(self, bytearray):
         data = []
         ds = QtCore.QDataStream(bytearray)
         root_index = self.indexFromItem(self.root_item)
@@ -581,7 +597,6 @@ class Workspace(QtWidgets.QTreeWidget):
         return data
 
     def createRoot(self, path, name):
-        print('root', path, name)
         root = QtWidgets.QTreeWidgetItem(self.type_root)
         root.setText(0, name)
         root.setIcon(0, self.getFileIcon(path))
@@ -589,7 +604,6 @@ class Workspace(QtWidgets.QTreeWidget):
         return root
 
     def createNode(self, path, name):
-        print('append item', path, name)
         if os.path.isdir(os.path.join(path, name)):
             child = QtWidgets.QTreeWidgetItem(self.type_folder)
         else:
@@ -650,30 +664,29 @@ class Workspace(QtWidgets.QTreeWidget):
                 icon = self.iconProvider.icon(QtCore.QFileInfo(path))
         return icon
 
-    def deletePath(self, filename):
-        # path = os.path.join(self.root_path, filename)
-        # if not os.path.exists(path):
-        #     return False
-        # ret = QtWidgets.QMessageBox.question(self,
-        #                                      self.tr('Delete'),
-        #                                      self.tr('Do you want to delete "%s"?') % (filename),
-        #                                      QtWidgets.QMessageBox.Yes,
-        #                                      QtWidgets.QMessageBox.No)
-        # if ret == QtWidgets.QMessageBox.Yes:
-        #     try:
-        #         if os.path.isdir(path):
-        #             shutil.rmtree(path)
-        #         else:
-        #             os.remove(path)
-        #             self.fileDeleted.emit(path)
-        #         return True
-        #     except OSError as err:
-        #         QtWidgets.QMessageBox.critical(self,
-        #                                    self.tr('Error'),
-        #                                    err)
+    def doDeletePath(self, path):
+        if not os.path.exists(path):
+            return False
+        ret = QtWidgets.QMessageBox.question(
+            self,
+            self.tr('Delete'),
+            self.tr('Do you want to delete "%s"?') % (os.path.basename(path)),
+            QtWidgets.QMessageBox.Yes,
+            QtWidgets.QMessageBox.No)
+        if ret == QtWidgets.QMessageBox.Yes:
+            try:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+                    self.fileDeleted.emit(path)
+                return True
+            except OSError as err:
+                QtWidgets.QMessageBox.critical(
+                    self, self.tr('Error'), err)
         return False
 
-    def newDirectory(self, root):
+    def doNewDirectory(self, root):
         value, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr('New directory'),
@@ -690,22 +703,20 @@ class Workspace(QtWidgets.QTreeWidget):
                 os.mkdir(path)
                 return value
 
-    def renamePath(self, filename):
-        # path = os.path.join(self.root_path, filename)
-        # if not os.path.exists(path):
-        #     return
-        # text, ok = QtWidgets.QInputDialog.getText(self,
-        #                                           self.tr('Rename'),
-        #                                           self.tr('Please input new name:'),
-        #                                           QtWidgets.QLineEdit.Normal,
-        #                                           filename)
-        # if ok:
-        #     newname = toUtf8(text)
-        #     newpath = os.path.abspath(os.path.join(self.root_path, newname))
-        #     return self.movePath(path, newpath)
-        return
+    def doRenamePath(self, path):
+        if not os.path.exists(path):
+            return
+        value, ok = QtWidgets.QInputDialog.getText(
+            self,
+            self.tr('Rename'),
+            self.tr('Please input new name:'),
+            QtWidgets.QLineEdit.Normal,
+            path)
+        if ok:
+            value = os.path.abspath(toUtf8(value))
+            return self.doMovePath(path, value)
 
-    def movePath(self, src, dest):
+    def doMovePath(self, src, dest):
         if os.path.exists(dest):
             QtWidgets.QMessageBox.warning(
                 self,
@@ -740,3 +751,6 @@ class Workspace(QtWidgets.QTreeWidget):
         if item.type() == self.type_folder:
             path = os.path.join(path, item.text(0))
         return path
+
+    def refreshPath(self, path):
+        self.onRefresh()
