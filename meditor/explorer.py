@@ -544,7 +544,7 @@ class Workspace(QtWidgets.QTreeWidget):
         subprocess.Popen('explorer "%s"' % path, shell=True)
 
     def dragMoveEvent(self, event):
-        super(Explorer, self).dragMoveEvent(event)
+        super(Workspace, self).dragMoveEvent(event)
         if (event.source() == self and
                 self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove):
             item = self.itemAt(event.pos())
@@ -563,41 +563,58 @@ class Workspace(QtWidgets.QTreeWidget):
             drop_item = self.itemAt(event.pos())
             if drop_item is None:
                 return
-            if drop_item == self.root_item:
-                dest_dir = os.path.dirname(self.root_path)
+            if drop_item.type() == self.type_file:
+                drop_item = drop_item.parent()
+            if drop_item.type() == self.type_folder:
+                drop_path = os.path.join(
+                    drop_item.data(0, self.role_path), drop_item.text(0))
             else:
-                dest_dir = os.path.join(self.root_path, toUtf8(drop_item.text(0)))
+                drop_path = drop_item.data(0, self.role_path)
             mimeData = event.mimeData()
             if mimeData.hasFormat('application/x-qabstractitemmodeldatalist'):
                 bytearray = mimeData.data('application/x-qabstractitemmodeldatalist')
                 for drag_item in self._decodeMimeData(bytearray):
-                    name = toUtf8(drag_item.text(0))
-                    oldpath = os.path.join(self.root_path, name)
-                    newpath = os.path.join(dest_dir, name)
-                    if self.movePath(oldpath, newpath):
-                        self.root_item.removeChild(drag_item)
+                    oldpath = os.path.join(
+                        drag_item.data(0, self.role_path), drag_item.text(0))
+                    newpath = os.path.join(drop_path, drag_item.text(0))
+                    if self.doMovePath(oldpath, newpath):
+                        parent = drag_item.parent()
+                        parent.removeChild(drag_item)
+                        drag_item.setData(0, self.role_path, drop_path)
+                        drop_item.addChild(drag_item)
         else:
-            return super(Explorer, self).dropEvent(event)
+            return super(Workspace, self).dropEvent(event)
 
     def _decodeMimeData(self, bytearray):
         data = []
         ds = QtCore.QDataStream(bytearray)
-        root_index = self.indexFromItem(self.root_item)
         while not ds.atEnd():
-            row = ds.readInt32()
-            column = ds.readInt32()
-            index = root_index.child(row, column)
+            ds.readInt32()  # row
+            ds.readInt32()  # column
             map_items = ds.readInt32()
+            data_item = {}
             for i in range(map_items):
-                ds.readInt32()    # QtCore.Qt.ItemDataRole(key)
+                key = ds.readInt32()
                 value = QtCore.QVariant()
                 ds >> value
-            item = self.itemFromIndex(index)
-            data.append(item)
+                data_item[QtCore.Qt.ItemDataRole(key)] = value
+            items = self.findItems(
+                data_item[QtCore.Qt.DisplayRole].value(),
+                QtCore.Qt.MatchExactly | QtCore.Qt.MatchRecursive)
+            for item in items:
+                if item.data(0, self.role_path) == data_item[self.role_path]:
+                    data.append(item)
+                    break
         return data
+
+    def dropMimeData(self, parent, index, data, action):
+        # don't call?
+        print(parent, index, data, action)
+        return False
 
     def createRoot(self, path, name):
         root = QtWidgets.QTreeWidgetItem(self.type_root)
+        root.setFlags(root.flags() & ~QtCore.Qt.ItemIsDragEnabled)
         root.setText(0, name)
         root.setIcon(0, self.getFileIcon(path))
         root.setData(0, self.role_path, path)
@@ -608,7 +625,6 @@ class Workspace(QtWidgets.QTreeWidget):
             child = QtWidgets.QTreeWidgetItem(self.type_folder)
         else:
             child = QtWidgets.QTreeWidgetItem(self.type_file)
-            child.setFlags(child.flags() & ~QtCore.Qt.ItemIsDropEnabled)
         child.setText(0, name)
         child.setIcon(0, self.getFileIcon(os.path.join(path, name)))
         child.setData(0, self.role_path, path)
