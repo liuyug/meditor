@@ -2,9 +2,10 @@ language: python
 python:
     - "3.5"
 install:
+    - pip install -r requirements.txt
+    - bash ui.sh
     - bash math.sh
     - bash themes.sh
     - pip install .
-    - pip install -r requirements.txt
 script:
     - meditor
