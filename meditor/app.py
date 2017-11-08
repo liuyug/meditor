@@ -1008,9 +1008,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not path:
             path = default_filename
             text = ''
-            # self.explorer.setRootPath(os.path.dirname(path))
         else:
-            # self.explorer.setRootPath(os.path.dirname(path))
             self.explorer.appendRootPath(path)
             ext = os.path.splitext(path)[1].lower()
             if ext not in ALLOWED_LOADS:
@@ -1077,22 +1075,20 @@ def main():
     global logger
     logger = logging.getLogger(__name__)
 
-    logger.info('=== rsteditor begin ===')
+    logger.info('=== %s v%s begin ===' % (__app_name__, __app_version__))
     logger.debug(args)
     logger.info('Log: %s' % LOG_FILENAME)
     logger.info('app  data path: ' + __data_path__)
     logger.info('home data path: ' + __home_data_path__)
+
     qt_path = os.path.join(os.path.dirname(QtCore.__file__))
     QtWidgets.QApplication.addLibraryPath(qt_path)
-    # qt default
-    QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'plugins'))
     # for pyinstaller
-    QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'qt5_plugins'))
-    QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5', 'Qt', 'plugins'))
-    rstfile = toUtf8(os.path.realpath(args.rstfile)) if args.rstfile else None
+    QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5'))
+
+    rstfile = toUtf8(os.path.abspath(args.rstfile)) if args.rstfile else None
     QtWidgets.QApplication.setStyle(args.style)
-    if sys.platform == 'win32':
-        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     app = QtWidgets.QApplication(sys.argv)
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow()
