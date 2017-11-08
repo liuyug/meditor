@@ -42,11 +42,11 @@ Screen Shot
 ===========
 .. image:: screenshot.png
 
-.. |version| image:: https://img.shields.io/pypi/v/meditor.png
+.. |version| image:: https://img.shields.io/pypi/v/meditor.svg
    :target: https://pypi.python.org/pypi/meditor
    :alt: Version
 
-.. |download| image:: https://img.shields.io/pypi/dm/meditor.png
+.. |download| image:: https://img.shields.io/github/downloads/liuyug/meditor/total.svg
    :target: https://pypi.python.org/pypi/meditor
    :alt: Downloads
 
