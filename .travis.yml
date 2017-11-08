@@ -2,7 +2,6 @@ language: python
 python:
     - "3.5"
 install:
-    - bash ui.sh
     - bash math.sh
     - bash themes.sh
     - pip install .
