@@ -9,3 +9,4 @@ install:
     - pip install .
 script:
     - meditor
+# It don't run with GUI Application. It always build failure.

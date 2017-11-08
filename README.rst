@@ -26,11 +26,43 @@ Install
 =======
 in Linux::
 
+    # download source
+    git clone https://github.com/liuyug/meditor.git
+    cd meditor
+
+    # for Virtualenv
+    virtualenv ../virtualenv
+    # on Linux
+    source ../virtualenv/bin/activate
+    # on Window cmd
+    ../virtualenv/scripts/activate
+    # on Window PowerShell
+    Set-ExecutionPolicy -Scope CurrentUser  RemoteSigned
+    ../virtualenv/scripts/activate
+
+    # check version
+    python --version
+    pip --version
+
+    # install 3rd packages
+    pip install -r requirements.txt
+    # prepre data files
+    bash ui.sh
+    bash math.sh
+    bash themes.sh
+    # install meditor
+    pip install .
+
+    # update latest meditor
     pip3 install meditor
 
 or install it in user directory::
 
     pip3 install meditor --user
+
+.. note::
+
+    `Travis <travis-ci.org>`_ don't run with GUI application. It always build failure.
 
 HTML theme
 ===========
