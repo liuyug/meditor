@@ -57,17 +57,19 @@ cd docutils-solarized
 git archive --format tar master | tar xv -C $rst_share_theme/docutils-solarized
 (
 cd $rst_share_theme/docutils-solarized
-python docutils_solarized_invert.py docutils_solarized_light.css docutils_solarized_dark.css
 cat > theme.json <<EOF
 {
     "solarized-light": {
         "stylesheet_path":"docutils_solarized_light.css",
         "syntax-highlight": "short"
-    },
+    }
+    /*
+    # python2 docutils_solarized_invert.py docutils_solarized_light.css docutils_solarized_dark.css
     "solarized-dark": {
         "stylesheet_path":"docutils_solarized_dark.css",
         "syntax-highlight": "short"
     }
+    */
 }
 EOF
 )
