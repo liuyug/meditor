@@ -5,6 +5,6 @@ install:
     - pip install .
     - pip install -r requirements.txt
 script:
-    ui.sh
-    math.sh
-    themes.sh
+    - ui.sh
+    - math.sh
+    - themes.sh
