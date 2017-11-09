@@ -1,11 +1,10 @@
-recursive-include meditor *
 recursive-include win32 *
-recursive-exclude meditor *.pyc
 include MANIFEST.in
 include README.rst
-include requirement.txt
+include requirements.txt
 include screenshot.png
 include setup.py
+include run.py
 include themes.sh
 include ui.sh
 include demo.sh

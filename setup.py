@@ -3,7 +3,7 @@
 
 import os
 import fnmatch
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.install import install
 
 from meditor import __app_name__
@@ -60,19 +60,17 @@ setup(
     author_email='liuyug@gmail.com',
     url='https://github.com/liuyug/meditor.git',
     license='GPLv3',
-    description='Editor for ReStructedText and Markdown',
+    description='Editor for reStructedText and Markdown',
     long_description=long_description,
+    keywords='reStructedText Markdown editor preview',
+    python_requires='>=3',
     platforms=['noarch'],
-    packages=[
-        'meditor',
-        'meditor.scilib',
-    ],
-    include_package_data=True,
+    packages=find_packages(),
     data_files=[
         ('share/applications', ['meditor.desktop']),
     ] + get_data_files('share', 'meditor/share', '*'),
     entry_points={
-        'console_scripts': [
+        'gui_scripts': [
             'meditor = meditor.app:main',
         ],
     },
