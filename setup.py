@@ -77,5 +77,14 @@ setup(
     cmdclass={
         'install': install_desktop,
     },
+    install_requires=[
+        'six',
+        'pygments',
+        'PyQt5',
+        'QScintilla',
+        'docutils',
+        'markdown',
+        'python-markdown-math',
+    ],
     zip_safe=False,
 )
