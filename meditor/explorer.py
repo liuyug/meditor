@@ -82,9 +82,6 @@ class Workspace(QtWidgets.QTreeWidget):
             pos = None
             item = self.currentItem()
             self.scrollToItem(item)
-        # if item is None:
-        #     item = self.root_item
-        #     self.scrollToItem(item)
         if pos is None:
             rect = self.visualItemRect(item)
             pos = self.mapToGlobal(rect.center())
@@ -120,41 +117,44 @@ class Workspace(QtWidgets.QTreeWidget):
 
     def onRename(self):
         item = self.currentItem()
-        if item.type() == self.type_root:
-            return
-        path = os.path.join(item.data(0, self.role_path), item.text(0))
-        newpath = self.doRenamePath(path)
-        if newpath:
-            if os.path.dirname(newpath) == os.path.dirname(path):
-                item.setText(0, os.path.basename(newpath))
-            elif newpath.startswith(os.path.dirname(path)):
-                parent = item.parent()
-                parent.takeChildren()
-                self.expandDir(parent)
-            else:
+        if item:
+            if item.type() == self.type_root:
+                return
+            path = os.path.join(item.data(0, self.role_path), item.text(0))
+            newpath = self.doRenamePath(path)
+            if newpath:
+                if os.path.dirname(newpath) == os.path.dirname(path):
+                    item.setText(0, os.path.basename(newpath))
+                elif newpath.startswith(os.path.dirname(path)):
+                    parent = item.parent()
+                    parent.takeChildren()
+                    self.expandDir(parent)
+                else:
+                    parent = item.parent()
+                    parent.removeChild(item)
+                    del item
+
+    def onDelete(self):
+        item = self.currentItem()
+        if item:
+            if item.type() == self.type_root:
+                index = self.indexOfTopLevelItem(item)
+                self.takeTopLevelItem(index)
+                del item
+                return
+            path = os.path.join(item.data(0, self.role_path), item.text(0))
+            if self.doDeletePath(path):
                 parent = item.parent()
                 parent.removeChild(item)
                 del item
 
-    def onDelete(self):
-        item = self.currentItem()
-        if item.type() == self.type_root:
-            index = self.indexOfTopLevelItem(item)
-            self.takeTopLevelItem(index)
-            del item
-            return
-        path = os.path.join(item.data(0, self.role_path), item.text(0))
-        if self.doDeletePath(path):
-            parent = item.parent()
-            parent.removeChild(item)
-            del item
-
     def onRefresh(self):
         item = self.currentItem()
-        if item.type() == self.type_file:
-            item = item.parent()
-        item.takeChildren()
-        self.expandDir(item)
+        if item:
+            if item.type() == self.type_file:
+                item = item.parent()
+            item.takeChildren()
+            self.expandDir(item)
 
     def onWindowsExplorer(self):
         path = self.getCurrentPath()
