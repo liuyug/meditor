@@ -74,7 +74,7 @@ Screen Shot
 ===========
 .. image:: screenshot.png
 
-.. |version| image:: https://img.shields.io/pypi/v/meditor.svg
+.. |version| image:: 	https://img.shields.io/github/release/qubyte/rubidium.svg
    :target: https://pypi.python.org/pypi/meditor
    :alt: Version
 
