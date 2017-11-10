@@ -26,6 +26,10 @@ Install
 =======
 in Linux::
 
+    pip3 install meditor --user
+
+install with download from github::
+
     # download source
     git clone https://github.com/liuyug/meditor.git
     cd meditor
@@ -51,18 +55,8 @@ in Linux::
     bash math.sh
     bash themes.sh
     # install meditor
-    pip install .
+    python3 setup.py install
 
-    # update latest meditor
-    pip3 install meditor
-
-or install it in user directory::
-
-    pip3 install meditor --user
-
-.. note::
-
-    `Travis <travis-ci.org>`_ don't run with GUI application. It always build failure.
 
 HTML theme
 ===========
