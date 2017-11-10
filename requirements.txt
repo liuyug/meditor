@@ -1,10 +1,6 @@
-six
-pygments
-# For win32, add PATH
-# C:\Python35-32\Lib\site-packages\PyQt5\Qt\bin
 PyQt5
-sip
 QScintilla
+pygments
 
 # markup text
 docutils

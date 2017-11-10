@@ -27,6 +27,14 @@ StartupNotify=true
 with open('README.rst') as f:
     long_description = f.read()
 
+requirements = []
+with open('requirements.txt') as f:
+    for line in f.readlines():
+        line.strip()
+        if line.startswith('#'):
+            continue
+        requirements.append(line)
+
 
 class install_desktop(install):
     def run(self):
@@ -77,14 +85,6 @@ setup(
     cmdclass={
         'install': install_desktop,
     },
-    install_requires=[
-        'six',
-        'pygments',
-        'PyQt5',
-        'QScintilla',
-        'docutils',
-        'markdown',
-        'python-markdown-math',
-    ],
+    install_requires=requirements,
     zip_safe=False,
 )

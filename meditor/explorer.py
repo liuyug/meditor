@@ -385,9 +385,12 @@ class Workspace(QtWidgets.QTreeWidget):
 
     def getCurrentPath(self):
         item = self.currentItem()
-        path = item.data(0, self.role_path)
-        if item.type() == self.type_folder:
-            path = os.path.join(path, item.text(0))
+        if item:
+            path = item.data(0, self.role_path)
+            if item.type() == self.type_folder:
+                path = os.path.join(path, item.text(0))
+        else:
+            path = ''
         return path
 
     def refreshPath(self, path):
