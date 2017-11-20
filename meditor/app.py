@@ -787,6 +787,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     '/%s/shell/open/command/.' % file_type,
                     '"%s" "%%1"' % self._app_exec)
             settings.sync()
+            # Notify system that change a file association.
+            from ctypes import windll
+            SHCNE_ASSOCCHANGED = 0x08000000
+            SHCNF_IDLIST = 0
+            windll.shell32.SHChangeNotify(
+                SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None)
 
     def onViewMenuShow(self):
         self.explorerAction.setChecked(self.dock_explorer.isVisible())
