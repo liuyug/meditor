@@ -256,6 +256,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         fileAssociationAction = QtWidgets.QAction(self.tr('File Associate'), self)
         fileAssociationAction.triggered.connect(self.onFileAssociation)
+        fileAssociationAction.setEnabled(sys.platform == 'win32')
         # view
         self.explorerAction = QtWidgets.QAction(self.tr('File explorer'),
                                             self,
@@ -764,35 +765,34 @@ class MainWindow(QtWidgets.QMainWindow):
         return
 
     def onFileAssociation(self):
-        if sys.platform == 'win32':
-            reg_base = 'HKEY_CURRENT_USER\Software\Classes'
-            settings = QtCore.QSettings(reg_base, QtCore.QSettings.NativeFormat)
+        reg_base = 'HKEY_CURRENT_USER\Software\Classes'
+        settings = QtCore.QSettings(reg_base, QtCore.QSettings.NativeFormat)
 
-            for ext in ['.md', '.markdown', '.rst', '.rest']:
-                file_type = 'MarkupEditor%s' % ext
-                settings.setValue(
-                    '/%s/.' % ext,
-                    file_type)
-                settings.setValue(
-                    '/%s/OpenWithProgIds/%s' % (ext, file_type),
-                    '')
+        for ext in ['.md', '.markdown', '.rst', '.rest']:
+            file_type = 'MarkupEditor%s' % ext
+            settings.setValue(
+                '/%s/.' % ext,
+                file_type)
+            settings.setValue(
+                '/%s/OpenWithProgIds/%s' % (ext, file_type),
+                '')
 
-                settings.setValue(
-                    '/%s/.' % file_type,
-                    'Markup Editor for %s' % ext[1:])
-                settings.setValue(
-                    '/%s/DefaultIcon/.' % file_type,
-                    self._icon)
-                settings.setValue(
-                    '/%s/shell/open/command/.' % file_type,
-                    '"%s" "%%1"' % self._app_exec)
-            settings.sync()
-            # Notify system that change a file association.
-            from ctypes import windll
-            SHCNE_ASSOCCHANGED = 0x08000000
-            SHCNF_IDLIST = 0
-            windll.shell32.SHChangeNotify(
-                SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None)
+            settings.setValue(
+                '/%s/.' % file_type,
+                'Markup Editor for %s' % ext[1:])
+            settings.setValue(
+                '/%s/DefaultIcon/.' % file_type,
+                self._icon)
+            settings.setValue(
+                '/%s/shell/open/command/.' % file_type,
+                '"%s" "%%1"' % self._app_exec)
+        settings.sync()
+        # Notify system that change a file association.
+        from ctypes import windll
+        SHCNE_ASSOCCHANGED = 0x08000000
+        SHCNF_IDLIST = 0
+        windll.shell32.SHChangeNotify(
+            SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None)
 
     def onViewMenuShow(self):
         self.explorerAction.setChecked(self.dock_explorer.isVisible())
