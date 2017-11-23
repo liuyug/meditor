@@ -1,11 +1,12 @@
 
+import sys
 import time
 import os.path
 import codecs
 import logging
 
 from PyQt5 import QtGui, QtCore, QtWidgets
-from PyQt5.Qsci import QsciScintilla, QsciPrinter, \
+from PyQt5.Qsci import QSCINTILLA_VERSION, QsciScintilla, QsciPrinter, \
     QsciLexerPython, QsciLexerHTML, QsciLexerBash, QsciLexerMarkdown
 
 from .scilib import QsciLexerRest, _SciImSupport, QsciLexerDefault
@@ -195,7 +196,34 @@ class Editor(QsciScintilla):
         self.setCursorPosition(0, 0)
         self.setModified(False)
         self.encodingChange.emit('UTF-8')
-        self.eolChange.emit(eol_description[self.eolMode()])
+        self.setDefaultEolMode()
+
+    def _qsciEolModeFromOs(self):
+        if sys.platform == 'win32':
+            return QsciScintilla.EolWindows
+        if sys.platform == 'linux':
+            return QsciScintilla.EolUnix
+        else:
+            return QsciScintilla.EolMac
+
+    def _qsciEolModeFromLine(self, line):
+        if line.endswith('\r\n'):
+            return QsciScintilla.EolWindows
+        elif line.endswith('\r'):
+            return QsciScintilla.EolMac
+        elif line.endswith('\n'):
+            return QsciScintilla.EolUnix
+        else:
+            return self._qsciEolModeFromOs()
+
+    def setDefaultEolMode(self):
+        if self.lines():
+            mode = self._qsciEolModeFromLine(unicode(self.text(0)))
+        else:
+            mode = self._qsciEolModeFromOs()
+        self.setEolMode(mode)
+        self.eolChange.emit(eol_description[mode])
+        return mode
 
     def indentLines(self, inc):
         if inc:
@@ -429,6 +457,14 @@ class Editor(QsciScintilla):
         else:
             # PyQt5.Qsci
             pass
+
+    def getVersion(self):
+        version = '%s.%s.%s' % (
+            QSCINTILLA_VERSION >> 16 & 0xff,
+            QSCINTILLA_VERSION >> 8 & 0xff,
+            QSCINTILLA_VERSION & 0xff,
+        )
+        return version
 
 
 class CodeViewer(Editor):

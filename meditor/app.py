@@ -901,6 +901,8 @@ class MainWindow(QtWidgets.QMainWindow):
         text += self.tr('Config path: %s\n') % (__home_data_path__)
         text += self.tr('Application path: %s\n') % (__data_path__)
         text += self.tr('Editor lexer: %s\n') % self.editor.cur_lexer.__module__
+        text += self.tr('\n')
+        text += self.tr('QScintilla: %s\n') % self.editor.getVersion()
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
