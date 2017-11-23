@@ -507,12 +507,13 @@ class MainWindow(QtWidgets.QMainWindow):
         logger.info('=== rsteditor end ===')
 
     def onStatusChange(self, status, value):
+        length = max(len(value) + 2, 8)
         if status == 'lexer':
-            self.statusLexer.setText(value)
+            self.statusLexer.setText(value.center(length, ' '))
         elif status == 'encoding':
-            self.statusEncoding.setText(value)
+            self.statusEncoding.setText(value.center(length, ' '))
         elif status == 'eol':
-            self.statusEol.setText(value)
+            self.statusEol.setText(value.center(length, ' '))
 
     def onNew(self, ext, path=None):
         if not self.saveAndContinue():

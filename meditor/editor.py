@@ -62,7 +62,6 @@ class Editor(QsciScintilla):
         self.setEdgeMode(QsciScintilla.EdgeLine)
         self.setEdgeColumn(self.edgeColumn)
         self.setWrapMode(QsciScintilla.WrapCharacter)
-        self.setEolMode(QsciScintilla.EolUnix)
         self.setUtf8(True)
         self.setFont(QtGui.QFont('Monospace', 12))
         self.copy_available = False
@@ -218,7 +217,7 @@ class Editor(QsciScintilla):
 
     def setDefaultEolMode(self):
         if self.lines():
-            mode = self._qsciEolModeFromLine(unicode(self.text(0)))
+            mode = self._qsciEolModeFromLine(self.text(0))
         else:
             mode = self._qsciEolModeFromOs()
         self.setEolMode(mode)
