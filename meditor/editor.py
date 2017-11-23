@@ -48,6 +48,7 @@ class Editor(QsciScintilla):
     _imsupport = None
     _case_sensitive = False
     _whole_word = False
+    _encoding = ''
 
     def __init__(self, parent):
         super(Editor, self).__init__(parent)
@@ -194,7 +195,7 @@ class Editor(QsciScintilla):
         self.setText(toUtf8(text))
         self.setCursorPosition(0, 0)
         self.setModified(False)
-        self.encodingChange.emit('UTF-8')
+        self.encodingChange.emit(self._encoding.upper())
         self.setDefaultEolMode()
 
     def _qsciEolModeFromOs(self):
@@ -243,37 +244,39 @@ class Editor(QsciScintilla):
                 action(line)
             self.pauseLexer(False)
 
-    def readFile(self, filename):
+    def readFile(self, filename, encoding=None):
         try:
-            encoding = 'utf-8'
             with open(filename, 'rb') as f:
-                head = f.read(min(32, os.path.getsize(filename)))
-                if head.startswith(codecs.BOM_UTF8):
-                    encoding = 'utf-8-sig'
-                elif head.startswith(codecs.BOM_UTF16):
-                    encoding = 'utf-16'
-                elif head.startswith(codecs.BOM_UTF32):
-                    encoding = 'utf-32'
-            with open(filename, 'rU', encoding=encoding) as f:
-                text = f.read()
+                data = f.read()
+                if not encoding:
+                    if data.startswith(codecs.BOM_UTF8):
+                        encoding = 'utf-8-sig'
+                    elif data.startswith(codecs.BOM_UTF16):
+                        encoding = 'utf-16'
+                    elif data.startswith(codecs.BOM_UTF32):
+                        encoding = 'utf-32'
+                    else:
+                        encoding = 'utf8'
+            text = data.decode(encoding)
         except Exception as err:
             logging.error('%s: %s' % (filename, str(err)))
-            logging.error('Load again with default encoding...')
-            with open(filename, 'rU') as f:
-                text = f.read()
+            encoding = sys.getfilesystemencoding()
+            logging.error('Load again with default encoding (%s)...' % encoding)
+            text = data.decode(encoding)
+        self._encoding = encoding
         self.setValue(text)
         self.setFileName(filename)
         return True
 
     def writeFile(self, filename=None):
-        text = toUtf8(self.getValue())
+        text = self.getValue()
         if filename is None:
             filename = self.getFileName()
         else:
             self.setFileName(filename)
         if filename:
             with open(filename, 'wb') as f:
-                f.write(text.encode('utf-8'))
+                f.write(text.encode(self._encoding))
                 self.setModified(False)
                 return True
         return False
