@@ -165,8 +165,8 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     block_tokens = None
     inline_tokens = None
 
-    def __init__(self, *args, **kwargs):
-        super(QsciLexerRest, self).__init__(*args, **kwargs)
+    def __init__(self, parent=0):
+        super(QsciLexerRest, self).__init__(parent)
         self.setDefaultColor(QtGui.QColor('#000000'))
         self.setDefaultPaper(QtGui.QColor('#ffffff'))
         self.setDefaultFont(QtGui.QFont('Monospace', 12))
@@ -196,19 +196,6 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
 
     def clear(self):
         self.styled_text.clear()
-
-    def getStyleAt(self, pos):
-        return self.editor().SendScintilla(Qsci.QsciScintilla.SCI_GETSTYLEAT, pos)
-
-    def getTextRange(self, start, end):
-        if not self.editor():
-            return ''
-        bs_line, _ = self.editor().lineIndexFromPosition(start)
-        be_line, _ = self.editor().lineIndexFromPosition(end)
-        text = []
-        for x in range(bs_line, be_line):
-            text.append(self.editor().text(x))
-        return toUtf8(''.join(text))
 
     def getStylingPosition(self, start, end):
         """
@@ -314,21 +301,39 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                     self.setStyling(m_end - m_start, self.styles[key])
 
     def styleText(self, start, end):
+        """start and end is based bytes """
         if not self.editor():
             return
         if self.editor()._pauseLexer:
             self.editor()._lexerStart = min(start, self.editor()._lexerStart)
             self.editor()._lexerEnd = max(end, self.editor()._lexerEnd)
             return
-        logger.debug('%s %s %s' % ('=' * 35, 'style begin', '=' * 35))
-        s_start, s_end = self.getStylingPosition(start, end)
-        logger.debug('** Fix styled range from (%s,%s) to (%s,%s) **' % (
-            start, end, s_start, s_end))
-        self.do_StylingText(s_start, s_end)
-        self.do_InlineStylingText(s_start, s_end)
-        # tell to end styling
-        self.startStyling(self.editor().length())
-        logger.debug('%s %s %s' % ('=' * 35, 'style end', '=' * 35))
+        #  logger.debug('%s %s %s' % ('=' * 35, 'style begin', '=' * 35))
+        #  s_start, s_end = self.getStylingPosition(start, end)
+        #  logger.debug('** Fix styled range from (%s,%s) to (%s,%s) **' % (
+        #      start, end, s_start, s_end))
+        #  self.do_StylingText(s_start, s_end)
+        #  self.do_InlineStylingText(s_start, s_end)
+        #  # tell to end styling
+        #  self.startStyling(self.editor().length())
+        #  logger.debug('%s %s %s' % ('=' * 35, 'style end', '=' * 35))
+
+        self.startStyling(start)
+
+        # line, index = self.editor().lineIndexFromPosition(start)
+
+        text = self.parent().text()
+        print('text length:', len(text), text)
+        text = self.parent().getTextRange(start, end)
+        print('text range length:', len(text), text)
+
+        style_text = text[start:end]
+        print('style text:', start, end, style_text)
+        pre_style = self.parent().getStyleAt(max(start - 1, 0))
+        suf_style = self.parent().getStyleAt(min(end + 1, self.parent().length()))
+        print('pre/suf style:', pre_style, suf_style)
+        # based bytes
+        self.setStyling(len(bytearray(text, 'utf-8')), self.styles['string'])
 
     def defaultStyle(self):
         return self.styles['string']

@@ -137,6 +137,25 @@ class Editor(QsciScintilla):
             self.input_count = 0
         return
 
+    def getCharAt(self, pos):
+        return self.SendScintilla(QsciScintilla.SCI_GETCHARAT, pos)
+
+    def getStyleAt(self, pos):
+        return self.SendScintilla(QsciScintilla.SCI_GETSTYLEAT, pos)
+
+    def getTextLength(self):
+        """This message returns the length of the document."""
+        return self.SendScintilla(QsciScintilla.SCI_GETTEXTLENGTH)
+
+    def getTextRange(self, start, end):
+        """qsci do not support QsciScintilla.SCI_GETTEXTRANGE"""
+        start_line, start_idx = self.editor().lineIndexFromPosition(start)
+        end_line, end_idx = self.editor().lineIndexFromPosition(end)
+        text = []
+        for x in range(bs_line, be_line):
+            text.append(self.editor().text(x))
+        return toUtf8(''.join(text))
+
     def getPrinter(self, resolution):
         return QsciPrinter(resolution)
 
