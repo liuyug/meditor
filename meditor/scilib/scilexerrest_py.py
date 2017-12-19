@@ -235,7 +235,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             del self.styled_text[k]
         return (new_start, new_end)
 
-    def do_StylingText(self, start, end):
+    def do_StylingText2(self, start, end):
         """
         To support non-latin character, function 'positionFromLineIndex'
         will be called for difference length between latin and non-latin.
@@ -246,6 +246,51 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         m_start = start
         offset = 0
         self.startStyling(start)
+        while offset < len(text):
+            mo = None
+            for key, tok in self.block_tokens:
+                mo = tok.match(text, offset)
+                if mo:
+                    break
+            assert mo, repr(text[offset:])
+            m_string = text[offset:mo.end()]
+            line_fix = m_string.count('\n')
+            end_line = line + line_fix
+            if line_fix > 0:    # calculate length in last line
+                end_index = 0
+            else:
+                end_index = index + len(m_string)
+            m_end = self.editor().positionFromLineIndex(end_line, end_index)
+            message = '%s(%s,%s): %s' % (key, m_start, m_end, repr(m_string))
+            logger.debug(message)
+            if (m_end - m_start) > 0:
+                self.setStyling(m_end - m_start, self.styles[key])
+                self.styled_text[m_start] = {
+                    'length': m_end - m_start,
+                    'style': key,
+                }
+            else:
+                logger.error('*** !!! length < 0 !!! ***')
+                logger.debug('Error: match %s from %s(%s,%s) to %s(%s,%s)' % (
+                    repr(m_string),
+                    m_start, line, index,
+                    m_end, end_line, end_index,
+                ))
+            # next position
+            m_start = m_end
+            line = end_line
+            index = end_index
+            offset = mo.end()
+
+    def do_StylingText(self, text, start, end):
+        """
+        To support non-latin character, function 'positionFromLineIndex'
+        will be called for difference length between latin and non-latin.
+        """
+        logger.debug('styling text: %s', repr(text))
+        line, index = self.editor().lineIndexFromPosition(start)
+        m_start = start
+        offset = 0
         while offset < len(text):
             mo = None
             for key, tok in self.block_tokens:
@@ -317,23 +362,31 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         #  # tell to end styling
         #  self.startStyling(self.editor().length())
         #  logger.debug('%s %s %s' % ('=' * 35, 'style end', '=' * 35))
-
-        self.startStyling(start)
-
-        # line, index = self.editor().lineIndexFromPosition(start)
-
-        text = self.parent().text()
-        print('text length:', len(text), text)
-        text = self.parent().getTextRange(start, end)
-        print('text range length:', len(text), text)
-
-        style_text = text[start:end]
-        print('style text:', start, end, style_text)
-        pre_style = self.parent().getStyleAt(max(start - 1, 0))
-        suf_style = self.parent().getStyleAt(min(end + 1, self.parent().length()))
+        pos = max(start - 1, 0)
+        pre_style = self.parent().getStyleAt(pos)
+        while pos > 0:
+            if self.parent().getStyleAt(pos) != pre_style:
+                pos += 1
+                break
+            pos -= 1
+        fix_start = pos
+        pos = min(end + 1, self.parent().length())
+        suf_style = self.parent().getStyleAt(pos)
+        while pos < self.parent().length():
+            if self.parent().getStyleAt(pos) != suf_style:
+                pos -= 1
+                break
+            pos += 1
+        fix_end = pos
         print('pre/suf style:', pre_style, suf_style)
+
+        self.startStyling(fix_start)
+        text = self.parent().getTextRange(fix_start, fix_end)
+        print('range text:', start, end)
+        print('fix range text:', fix_start, fix_end, text)
+        self.do_StylingText(text, fix_start, fix_end)
         # based bytes
-        self.setStyling(len(bytearray(text, 'utf-8')), self.styles['string'])
+        # self.setStyling(len(bytearray(text, 'utf-8')), self.styles['string'])
 
     def defaultStyle(self):
         return self.styles['string']

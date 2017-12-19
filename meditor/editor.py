@@ -149,12 +149,8 @@ class Editor(QsciScintilla):
 
     def getTextRange(self, start, end):
         """qsci do not support QsciScintilla.SCI_GETTEXTRANGE"""
-        start_line, start_idx = self.editor().lineIndexFromPosition(start)
-        end_line, end_idx = self.editor().lineIndexFromPosition(end)
-        text = []
-        for x in range(bs_line, be_line):
-            text.append(self.editor().text(x))
-        return toUtf8(''.join(text))
+        byte_array = self.text().encode('utf8')
+        return (byte_array[start:end]).decode('utf8')
 
     def getPrinter(self, resolution):
         return QsciPrinter(resolution)
