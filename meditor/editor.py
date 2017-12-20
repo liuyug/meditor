@@ -273,11 +273,12 @@ class Editor(QsciScintilla):
                     else:
                         encoding = 'utf8'
             text = data.decode(encoding)
-        except Exception as err:
-            logging.error('%s: %s' % (filename, str(err)))
+        except Exception:
             encoding = sys.getfilesystemencoding()
-            logging.error('Load again with default encoding (%s)...' % encoding)
+            logging.error('%s: %s' % (filename, encoding))
             text = data.decode(encoding)
+        text = text.replace('\r\n', '\n')
+        text = text.replace('\r', '\n')
         self._encoding = encoding
         self.setValue(text)
         self.setFileName(filename)

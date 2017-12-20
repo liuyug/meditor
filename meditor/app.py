@@ -60,6 +60,7 @@ def previewWorker(self):
         if self.previewQuit:
             logger.debug('Preview exit')
             break
+        requestPreview.clear()
         logger.debug('Preview %s', self.previewPath)
         ext = os.path.splitext(self.previewPath)[1].lower()
         if not self.previewText:
@@ -77,7 +78,6 @@ def previewWorker(self):
         else:
             self.previewPath = 'error'
         self.previewSignal.emit()
-        requestPreview.clear()
     return
 
 
@@ -492,19 +492,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, event):
         if self.saveAndContinue():
+            settings = self.settings
+            settings.setValue('geometry', self.saveGeometry())
+            settings.setValue('windowState', self.saveState())
+            settings.setValue('explorer/workspace', ';'.join(
+                self.explorer.getRootPaths()))
+            settings.sync()
+            self.previewQuit = True
+            requestPreview.set()
+            self.previewWorker.join()
+            logger.info('=== rsteditor end ===')
             event.accept()
         else:
             event.ignore()
-        settings = self.settings
-        settings.setValue('geometry', self.saveGeometry())
-        settings.setValue('windowState', self.saveState())
-        settings.setValue('explorer/workspace', ';'.join(
-            self.explorer.getRootPaths()))
-        settings.sync()
-        self.previewQuit = True
-        requestPreview.set()
-        self.previewWorker.join()
-        logger.info('=== rsteditor end ===')
 
     def onStatusChange(self, status, value):
         length = max(len(value) + 2, 8)
@@ -962,13 +962,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.move(qr.topLeft())
 
     def preview(self, text, path):
-        if not requestPreview.is_set():
+        if requestPreview.is_set():
+            logger.debug('Preview is working..., ignore')
+        else:
             self.previewText = text
             self.previewPath = path
             requestPreview.set()
-        else:
-            logger.debug('Preview is working...')
-        return
 
     def previewCurrentText(self):
         text = toUtf8(self.editor.getValue())

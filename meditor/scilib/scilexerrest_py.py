@@ -71,6 +71,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         'target1': 14,
         'target2': 14,
         'directive': 0,
+        'directive2': 0,
         'in_directive': 15,
         'in_emphasis': 16,
         'in_strong': 17,
@@ -116,6 +117,8 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     }
     token_regex = [
         # block markup
+        ('literal3',    r'''^.{2} code:{2}.*\n{2}( +).+\n(\n*|\1.*\n)*\n'''),
+        ('directive2',  r'''^\.{2} +[\-\w]+:{2}.*\n{2}( +).+\n(\n*|\1.*\n)*\n'''),
         ('directive',   r'''^\.{2} +[\-\w]+:{2}.*\n'''),
         ('comment',     r'''^\.{2} +[\-\w].*\n(\n* .*\n)*\n'''),
         # end with \n
@@ -128,9 +131,10 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         ('definition',  r'''^\w.*\n( +).+\n(\n*\1.+\n)*(\w.*\n( +).+\n(\n*\1.+\n)*)*\n'''),
         ('field',       r'''^:[ \w\-]+:.*\n(\n* .+\n)*(:[ \w\-]+:.*\n(\n* .+\n)*)*\n'''),
         ('option',      r'''^[\-/]+\w[^\n/\\]+\n(\n* +.*\n)*([\-/]+\w.+\n(\n* +.*\n)*)*\n'''),
+
         ('literal1',    r''':{2}\n{2}( +).+\n(\n*\1.+\n)*\n'''),
         ('literal2',    r'''^>.*\n(>.*\n)*\n'''),
-        ('literal3',    r'''^.{2} code:{2}.*\n{2}( +).+\n(\1.+\n)*\n'''),
+
         ('quote',       r'''^( {2,})\w.+\n(\n*\1\w.+\n)*\n'''),
         ('line',        r'''^ *\|( +.+)?\n( {2,}.*\n)*( *\|( +.+)?\n( {2,}.*\n)*)*\n'''),
         ('doctest',     r'''^>{3} .+\n'''),
@@ -287,9 +291,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         To support non-latin character, function 'positionFromLineIndex'
         will be called for difference length between latin and non-latin.
         """
-        logger.debug('styling text: %s', repr(text))
-        line, index = self.editor().lineIndexFromPosition(start)
-        m_start = start
+        self.startStyling(start)
         offset = 0
         while offset < len(text):
             mo = None
@@ -298,33 +300,11 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                 if mo:
                     break
             assert mo, repr(text[offset:])
+            # !! must match a style
             m_string = text[offset:mo.end()]
-            line_fix = m_string.count('\n')
-            end_line = line + line_fix
-            if line_fix > 0:    # calculate length in last line
-                end_index = 0
-            else:
-                end_index = index + len(m_string)
-            m_end = self.editor().positionFromLineIndex(end_line, end_index)
-            message = '%s(%s,%s): %s' % (key, m_start, m_end, repr(m_string))
-            logger.debug(message)
-            if (m_end - m_start) > 0:
-                self.setStyling(m_end - m_start, self.styles[key])
-                self.styled_text[m_start] = {
-                    'length': m_end - m_start,
-                    'style': key,
-                }
-            else:
-                logger.error('*** !!! length < 0 !!! ***')
-                logger.debug('Error: match %s from %s(%s,%s) to %s(%s,%s)' % (
-                    repr(m_string),
-                    m_start, line, index,
-                    m_end, end_line, end_index,
-                ))
-            # next position
-            m_start = m_end
-            line = end_line
-            index = end_index
+            length = len(m_string.encode('utf8'))
+            print('match', key, length, repr(m_string))
+            self.setStyling(length, self.styles[key])
             offset = mo.end()
 
     def do_InlineStylingText(self, start, end):
@@ -353,15 +333,6 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             self.editor()._lexerStart = min(start, self.editor()._lexerStart)
             self.editor()._lexerEnd = max(end, self.editor()._lexerEnd)
             return
-        #  logger.debug('%s %s %s' % ('=' * 35, 'style begin', '=' * 35))
-        #  s_start, s_end = self.getStylingPosition(start, end)
-        #  logger.debug('** Fix styled range from (%s,%s) to (%s,%s) **' % (
-        #      start, end, s_start, s_end))
-        #  self.do_StylingText(s_start, s_end)
-        #  self.do_InlineStylingText(s_start, s_end)
-        #  # tell to end styling
-        #  self.startStyling(self.editor().length())
-        #  logger.debug('%s %s %s' % ('=' * 35, 'style end', '=' * 35))
         pos = max(start - 1, 0)
         pre_style = self.parent().getStyleAt(pos)
         while pos > 0:
@@ -378,15 +349,14 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                 break
             pos += 1
         fix_end = pos
+        logger.debug('styling'.center(40, '-'))
+        print('style'.center(40, '-'))
         print('pre/suf style:', pre_style, suf_style)
-
-        self.startStyling(fix_start)
-        text = self.parent().getTextRange(fix_start, fix_end)
-        print('range text:', start, end)
-        print('fix range text:', fix_start, fix_end, text)
-        self.do_StylingText(text, fix_start, fix_end)
-        # based bytes
-        # self.setStyling(len(bytearray(text, 'utf-8')), self.styles['string'])
+        text = self.parent().getTextRange(start, end)
+        fix_text = self.parent().getTextRange(fix_start, fix_end)
+        print('range text:', start, end, repr(text))
+        print('fix range text:', fix_start, fix_end, repr(fix_text))
+        self.do_StylingText(fix_text, fix_start, fix_end)
 
     def defaultStyle(self):
         return self.styles['string']
