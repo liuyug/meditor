@@ -491,13 +491,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().showMessage(self.tr('Ready'))
 
     def closeEvent(self, event):
+        settings = self.settings
+        settings.setValue('geometry', self.saveGeometry())
+        settings.setValue('windowState', self.saveState())
+        settings.setValue('explorer/workspace', ';'.join(
+            self.explorer.getRootPaths()))
+        settings.sync()
+
         if self.saveAndContinue():
-            settings = self.settings
-            settings.setValue('geometry', self.saveGeometry())
-            settings.setValue('windowState', self.saveState())
-            settings.setValue('explorer/workspace', ';'.join(
-                self.explorer.getRootPaths()))
-            settings.sync()
             self.previewQuit = True
             requestPreview.set()
             self.previewWorker.join()

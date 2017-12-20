@@ -286,11 +286,15 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             index = end_index
             offset = mo.end()
 
-    def do_StylingText(self, text, start, end):
+    def do_StylingText(self, start, end):
         """
         To support non-latin character, function 'positionFromLineIndex'
         will be called for difference length between latin and non-latin.
         """
+        text = self.parent().text(start, end)
+        byte_text = self.parent().bytes(start, end)
+        print('text:', len(text), repr(text))
+        print('byte:', len(byte_text), repr(byte_text))
         self.startStyling(start)
         offset = 0
         while offset < len(text):
@@ -352,11 +356,11 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         logger.debug('styling'.center(40, '-'))
         print('style'.center(40, '-'))
         print('pre/suf style:', pre_style, suf_style)
-        text = self.parent().getTextRange(start, end)
-        fix_text = self.parent().getTextRange(fix_start, fix_end)
+        text = self.parent().text(start, end)
+        fix_text = self.parent().text(fix_start, fix_end)
         print('range text:', start, end, repr(text))
         print('fix range text:', fix_start, fix_end, repr(fix_text))
-        self.do_StylingText(fix_text, fix_start, fix_end)
+        self.do_StylingText(fix_start, fix_end)
 
     def defaultStyle(self):
         return self.styles['string']
