@@ -57,28 +57,34 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         'enumerated': 4,
         'definition': 5,
         'field': 0,
-        'in_field': 6,
         'option': 7,
-        'literal1': 8,
+        'literal': 8,
         'literal2': 8,
         'literal3': 8,
         'line': 9,
+        'line2': 9,
         'quote': 10,
         'doctest': 11,
+        'table': 12,
         'table1': 12,
         'table2': 12,
         'footnote': 13,
+        'target': 14,
         'target1': 14,
         'target2': 14,
         'directive': 0,
-        'directive2': 0,
+    }
+    inline_styles = {
+        'in_field': 6,
         'in_directive': 15,
         'in_emphasis': 16,
         'in_strong': 17,
         'in_literal': 18,
+        'in_url': 19,
         'in_url1': 19,
         'in_url2': 19,
         'in_url3': 19,
+        'in_link': 20,
         'in_link1': 20,
         'in_link2': 20,
         'in_footnote': 21,
@@ -116,34 +122,30 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         25: 'back:#ef2929',
     }
     token_regex = [
-        # block markup
-        ('literal3',    r'''^.{2} code:{2}.*\n{2}( +).+\n(\n*|\1.*\n)*\n'''),
-        ('directive2',  r'''^\.{2} +[\-\w]+:{2}.*\n{2}( +).+\n(\n*|\1.*\n)*\n'''),
-        ('directive',   r'''^\.{2} +[\-\w]+:{2}.*\n'''),
-        ('comment',     r'''^\.{2} +[\-\w].*\n(\n* .*\n)*\n'''),
-        # end with \n
         ('title',       r'''^([=`'"~^_*+#-]+)\n.+\n\1\n'''),
-        # end with \n
         ('section',     r'''^\w.*\n[=`'"~^_*+#-]+\n'''),
         ('transition',  r'''^\n[=`'"~^_*+#-]{4,}\n\n'''),
-        ('bullet',      r'''^( *[\-+*] +).+\n(\n* {2,}.+\n)*(\n*\1.+\n)*\n'''),
-        ('enumerated',  r'''^( *\(?)\w+([.)] +)\S.*\n(\n* {2,}.+\n)*(\n*\1\w+\2\S.*\n)*\n'''),
-        ('definition',  r'''^\w.*\n( +).+\n(\n*\1.+\n)*(\w.*\n( +).+\n(\n*\1.+\n)*)*\n'''),
-        ('field',       r'''^:[ \w\-]+:.*\n(\n* .+\n)*(:[ \w\-]+:.*\n(\n* .+\n)*)*\n'''),
-        ('option',      r'''^[\-/]+\w[^\n/\\]+\n(\n* +.*\n)*([\-/]+\w.+\n(\n* +.*\n)*)*\n'''),
-
-        ('literal1',    r''':{2}\n{2}( +).+\n(\n*\1.+\n)*\n'''),
+        ('bullet',      r'''^[\-+*] +.+(\n+ {2,}.+)*\n'''),
+        ('enumerated',  r'''^(\(?(#|\w+)[.)] +)\S.*(\n+ {2,}.+)*\n'''),
+        ('field',       r'''^:[ \w\-]+:.*(\n+ +.*)*\n'''),
+        ('option',      r'''^[\-/]+\w[^\n]+(\n+ +.*)*\n'''),
         ('literal2',    r'''^>.*\n(>.*\n)*\n'''),
-
-        ('quote',       r'''^( {2,})\w.+\n(\n*\1\w.+\n)*\n'''),
-        ('line',        r'''^ *\|( +.+)?\n( {2,}.*\n)*( *\|( +.+)?\n( {2,}.*\n)*)*\n'''),
-        ('doctest',     r'''^>{3} .+\n'''),
+        ('line',        r'''^\|.*(\n .*)*\n'''),
+        ('line2',       r'''^( +\|).*\n'''),
+        ('quote',       r'''^( {2,})\w.+(\n+\1.+)*\n\n'''),
+        ('definition',  r'''^\w.*\n +.*(\n+ +.*)*\n'''),
+        ('doctest',     r'''^>>> .+\n'''),
         ('table1',      r'''^( *)[\-=+]{2,}\n(\1[\|+].+\n)+\n'''),
         ('table2',      r'''^( *)[\-=]{2,} [\-= ]+\n(\1.+\n)+\n'''),
-        ('footnote',    r'''^\.{2} \[[^\]]+\] .+\n(\n* {3,}.+\n)*\n'''),
-        ('target1',     r'''^\.{2} _[^:]+:( .+)*\n'''),
-        ('target2',     r'''^_{2} .+\n'''),
+
+        ('literal3',    r'''^\.\. +code::.*(\n+ {2,}.+)*\n\n'''),
+        ('directive',   r'''^\.\. +[\-\w]+::.*(\n+ {2,}.+)*\n'''),
+        ('footnote',    r'''^\.\. \[[^\]]+\] .+(\n+ {3,}.+)*\n'''),
+        ('target1',     r'''^\.\. _[^:]+: .*\n'''),
+        ('comment',     r'''^\.\. +[\-\w].*(\n+ {2,}.+)*\n'''),
+        ('target2',     r'''^__ .+\n'''),
         # ^ only match from line beginning
+        ('literal',     r'''::\n(\n+ +.*)+\n'''),
         ('newline',     r'''\n+'''),
         ('colon',       r''':+'''),
         ('string',      r'''[^:\n]+'''),
@@ -174,6 +176,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         self.setDefaultPaper(QtGui.QColor('#ffffff'))
         self.setDefaultFont(QtGui.QFont('Monospace', 12))
         self.rstyles = dict(zip(*(self.styles.values(), self.styles.keys())))
+        self.inline_rstyles = dict(zip(*(self.inline_styles.values(), self.inline_styles.keys())))
         self.block_tokens = []
         self.inline_tokens = []
         for key, regex in self.token_regex:
@@ -193,7 +196,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         return 'reStructedText'
 
     def description(self, style):
-        return self.rstyles.get(style, '')
+        return self.rstyles.get(style) or self.inline_rstyles.get(style)
 
     def do_StylingText(self, start, end):
         text = self.parent().text(start, end)
@@ -207,7 +210,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                     break
             assert mo, repr(text[offset:])
             # !! must match a style
-            m_string = text[offset:mo.end()]
+            m_string = mo.group(0)
             length = len(m_string.encode('utf8'))
             logger.debug('match: %s, %s, %s' % (key, length, repr(m_string)))
             self.setStyling(length, self.styles[key])
@@ -217,20 +220,20 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     def do_InlineStylingText(self, start, end):
         start_line, _ = self.editor().lineIndexFromPosition(start)
         end_line, _ = self.editor().lineIndexFromPosition(end)
-        for x in range(start_line, end_line):
+        for x in range(start_line, end_line + 1):
             pos = self.editor().positionFromLineIndex(x, 0)
-            if self.parent().getStyleAt(pos) == self.styles['literal1']:
+            if self.parent().getStyleAt(pos) == self.styles['literal']:
                 continue
             text = self.editor().text(x)
             for key, tok in self.inline_tokens:
                 mo_list = tok.finditer(text)
                 for mo in mo_list:
-                    m_string = text[mo.start(1):mo.end(1)]
+                    m_string = mo.group(1)
                     length = len(m_string.encode('utf8'))
                     m_start = self.editor().positionFromLineIndex(x, mo.start(1))
                     logger.debug('inline match: %s, %s, %s' % (key, length, repr(m_string)))
                     self.startStyling(m_start)
-                    self.setStyling(length, self.styles[key])
+                    self.setStyling(length, self.inline_styles[key])
 
     def styleText(self, start, end):
         """start and end is based bytes """
@@ -243,7 +246,8 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         pos = max(start - 1, 0)
         pre_style = self.parent().getStyleAt(pos)
         while pos > 0:
-            if self.parent().getStyleAt(pos) != pre_style:
+            style = self.parent().getStyleAt(pos)
+            if style not in self.inline_rstyles and style != pre_style:
                 pos += 1
                 break
             pos -= 1
@@ -251,7 +255,8 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         pos = min(end + 1, self.parent().length())
         suf_style = self.parent().getStyleAt(pos)
         while pos < self.parent().length():
-            if self.parent().getStyleAt(pos) != suf_style:
+            style = self.parent().getStyleAt(pos)
+            if style not in self.inline_rstyles and style != suf_style:
                 pos -= 1
                 break
             pos += 1

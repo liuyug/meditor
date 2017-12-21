@@ -61,7 +61,7 @@ def previewWorker(self):
             logger.debug('Preview exit')
             break
         requestPreview.clear()
-        logger.debug('Preview %s', self.previewPath)
+        logger.debug('Preview %s' % self.previewPath)
         ext = os.path.splitext(self.previewPath)[1].lower()
         if not self.previewText:
             self.previewHtml = ''
