@@ -155,6 +155,8 @@ class MainWindow(QtWidgets.QMainWindow):
             editor.newFile('.rst')
             title, tab_title = self.createTitle(editor.getFileName(), editor.isModified())
             self.tabWidgets.addTab(editor, tab_title)
+        self.onTabChanged(self.tabWidgets.currentIndex())
+
         self.setFont(QtGui.QFont('Monospace', 12))
 
         value = settings.value('editor/enableLexer', True, type=bool)
@@ -496,6 +498,7 @@ class MainWindow(QtWidgets.QMainWindow):
         editor.eolChange.connect(partial(self.onStatusChange, 'eol'))
         editor.verticalScrollBar().valueChanged.connect(self.onValueChanged)
         editor.lineInputed.connect(self.onInputPreview)
+        editor.modificationChanged.connect(self.onEditorModified)
         return editor
 
     def closeEvent(self, event):
@@ -956,6 +959,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.webview.scrollRatioPage(dy, editor_vmax)
         return
 
+    def onEditorModified(self, value):
+        editor = self.tabWidgets.currentWidget()
+        if not editor:
+            return
+        title, tab_title = self.createTitle(editor.getFileName(), editor.isModified())
+        self.tabWidgets.setTabText(self.tabWidgets.currentIndex(), tab_title)
+        self.setWindowTitle(title)
+
     def onInputPreview(self):
         if self.settings.value('preview/oninput', type=bool):
             text = toUtf8(self.editor().getValue())
@@ -1077,13 +1088,6 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_title = ('*' if modified else '') + filename
         title = __app_name__ + ' - ' + ('*' if modified else '') + filepath
         return title, tab_title
-
-    def getOpenedFiles(self):
-        opens = []
-        for x in range(self.tabWidgets.count()):
-            editor = self.tabWidgets.widget(x)
-            opens.append(editor.getFileName())
-        return opens
 
 
 def main():

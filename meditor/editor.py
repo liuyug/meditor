@@ -45,7 +45,7 @@ class Editor(QsciScintilla):
     _imsupport = None
     _case_sensitive = False
     _whole_word = False
-    _file_encoding = ''
+    _file_encoding = 'utf8'
     _modified = False
 
     def __init__(self, parent=None):
@@ -186,16 +186,16 @@ class Editor(QsciScintilla):
         self.enable_lexer = enable
         self.setStyle(self.filename)
 
-    def getValue(self):
-        """ get all text """
-        return self.text()
-
     def setModified(self, m):
         super(Editor, self).setModified(m)
         self._modified = m
 
     def isModified(self):
         return super(Editor, self).isModified() or self._modified
+
+    def getValue(self):
+        """ get all text """
+        return self.text()
 
     def setValue(self, text):
         """
@@ -206,7 +206,8 @@ class Editor(QsciScintilla):
         self.setCursorPosition(0, 0)
         self.setModified(False)
         self.encodingChange.emit(self._file_encoding.upper())
-        self.setDefaultEolMode()
+        self.setEolMode(self._qsciEolModeFromLine(self.text(0)))
+        self.eolChange.emit(EOL_DESCRIPTION[self.eolMode()])
 
     def _qsciEolModeFromOs(self):
         if sys.platform == 'win32':
@@ -225,15 +226,6 @@ class Editor(QsciScintilla):
             return QsciScintilla.EolUnix
         else:
             return self._qsciEolModeFromOs()
-
-    def setDefaultEolMode(self):
-        if self.lines():
-            mode = self._qsciEolModeFromLine(self.text(0))
-        else:
-            mode = self._qsciEolModeFromOs()
-        self.setEolMode(mode)
-        self.eolChange.emit(EOL_DESCRIPTION[mode])
-        return mode
 
     def indentLines(self, inc):
         if inc:
@@ -272,8 +264,6 @@ class Editor(QsciScintilla):
             encoding = sys.getfilesystemencoding()
             logging.error('%s: %s' % (filename, encoding))
             text = data.decode(encoding)
-        text = text.replace('\r\n', '\n')
-        text = text.replace('\r', '\n')
         self._file_encoding = encoding
         self.setValue(text)
         self.setFileName(filename)
@@ -315,6 +305,7 @@ class Editor(QsciScintilla):
                 with open(skeleton, 'r', encoding='utf-8') as f:
                     text = f.read()
                 break
+        self._file_encoding = 'utf8'
         self.setValue(text)
         self.setFileName(filepath)
 
