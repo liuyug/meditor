@@ -12,8 +12,8 @@ from PyQt5.Qsci import QSCINTILLA_VERSION, QsciScintilla, QsciPrinter, \
 from .scilib import QsciLexerRest, _SciImSupport, QsciLexerDefault
 
 from .util import toUtf8
-from . import __home_data_path__, __data_path__, globalvars
-
+from . import __home_data_path__, __data_path__, __default_basename__, \
+    globalvars
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +49,9 @@ class Editor(QsciScintilla):
     _case_sensitive = False
     _whole_word = False
     _encoding = ''
+    _modified = False
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super(Editor, self).__init__(parent)
         self.lexers = {}
         self.setMarginType(0, QsciScintilla.NumberMargin)
@@ -193,12 +194,19 @@ class Editor(QsciScintilla):
         """ get all text """
         return self.text()
 
+    def setModified(self, m):
+        super(Editor, self).setModified(m)
+        self._modified = m
+
+    def isModified(self):
+        return super(Editor, self).isModified() or self._modified
+
     def setValue(self, text):
         """
         set utf8 text
         modified state is false
         """
-        self.setText(toUtf8(text))
+        self.setText(text)
         self.setCursorPosition(0, 0)
         self.setModified(False)
         self.encodingChange.emit(self._encoding.upper())
@@ -287,6 +295,32 @@ class Editor(QsciScintilla):
                 self.setModified(False)
                 return True
         return False
+
+    def newFile(self, filepath):
+        """filepath:
+        1. /dir/filename.ext
+        2. filename.ext
+        3. .ext
+        """
+        dir_name = os.path.dirname(filepath)
+        base_name = os.path.basename(filepath)
+        base_name, ext = os.path.splitext(base_name)
+        if not ext:
+            ext = base_name
+            base_name = __default_basename__
+        filepath = os.path.join(dir_name, base_name + ext)
+        skeletons = [
+            os.path.join(__home_data_path__, 'template', 'skeleton%s' % ext),
+            os.path.join(__data_path__, 'template', 'skeleton%s' % ext),
+        ]
+        text = ''
+        for skeleton in skeletons:
+            if os.path.exists(skeleton):
+                with open(skeleton, 'r', encoding='utf-8') as f:
+                    text = f.read()
+                break
+        self.setValue(text)
+        self.setFileName(filepath)
 
     def emptyFile(self):
         self.clear()
@@ -478,7 +512,7 @@ class Editor(QsciScintilla):
 
 class CodeViewer(Editor):
     """ code viewer, readonly """
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super(CodeViewer, self).__init__(parent)
         self.setReadOnly(True)
 

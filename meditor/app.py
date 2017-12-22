@@ -20,7 +20,7 @@ from . import __data_path__
 from . import __icon_path__
 from . import __home_data_path__
 from . import pygments_styles
-from . import editor
+from .editor import Editor, CodeViewer
 from . import webview
 from . import explorer
 from . import output
@@ -112,16 +112,14 @@ class MainWindow(QtWidgets.QMainWindow):
         # main window
         self.findDialog = FindReplaceDialog(self)
 
-        self.editor = editor.Editor(self)
-        self.editor.setObjectName('editor')
-        self.editor.encodingChange.connect(
-            partial(self.onStatusChange, 'encoding'))
-        self.editor.lexerChange.connect(
-            partial(self.onStatusChange, 'lexer'))
-        self.editor.eolChange.connect(
-            partial(self.onStatusChange, 'eol'))
+        self.tabWidgets = QtWidgets.QTabWidget(self)
+        self.tabWidgets.setMovable(True)
+        self.tabWidgets.setTabsClosable(True)
+        self.tabWidgets.setDocumentMode(True)
+        self.tabWidgets.currentChanged.connect(self.onTabChanged)
+        self.tabWidgets.tabCloseRequested.connect(self.onTabCloseRequested)
+        self.setCentralWidget(self.tabWidgets)
 
-        self.setCentralWidget(self.editor)
         # left dock window
         self.dock_explorer = QtWidgets.QDockWidget(self.tr('Explorer'), self)
         self.dock_explorer.setObjectName('dock_explorer')
@@ -136,7 +134,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
         self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code viewer'), self)
         self.dock_codeview.setObjectName('dock_codeview')
-        self.codeview = editor.CodeViewer(self.dock_codeview)
+        self.codeview = CodeViewer(self.dock_codeview)
         self.dock_codeview.setWidget(self.codeview)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
         # event
@@ -145,21 +143,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self.explorer.fileNew.connect(self.onNew)
         self.explorer.fileRenamed.connect(self.onFileRenamed)
         self.explorer.fileDeleted.connect(self.onFileDeleted)
-        self.editor.verticalScrollBar().valueChanged.connect(
-            self.onValueChanged)
-        self.editor.lineInputed.connect(self.onInputPreview)
         # window state
         self.restoreGeometry(settings.value('geometry', type=QtCore.QByteArray))
         self.restoreState(settings.value('windowState', type=QtCore.QByteArray))
-        value = toUtf8(settings.value('explorer/workspace', type=str))
+        value = settings.value('explorer/workspace', type=str)
         for path in value.split(';'):
             self.explorer.appendRootPath(path)
-
+        value = settings.value('editor/opened_files', type=str)
+        for filepath in value.split(';'):
+            if not os.path.exists(filepath):
+                continue
+            editor = self.setupNewEditor()
+            editor.readFile(filepath)
+            title, tab_title = self.createTitle(filepath, editor.isModified())
+            self.tabWidgets.addTab(editor, tab_title)
+        if self.tabWidgets.count() == 0:
+            editor = self.setupNewEditor()
+            editor.newFile('.rst')
+            title, tab_title = self.createTitle(editor.getFileName(), editor.isModified())
+            self.tabWidgets.addTab(editor, tab_title)
         self.setFont(QtGui.QFont('Monospace', 12))
-        self.editor.emptyFile()
 
         value = settings.value('editor/enableLexer', True, type=bool)
-        self.editor.enableLexer(value)
+        self.editor().enableLexer(value)
         self.previewWorker = threading.Thread(target=previewWorker,
                                               args=(self,))
         self.previewSignal.connect(self.previewDisplay)
@@ -173,10 +179,10 @@ class MainWindow(QtWidgets.QMainWindow):
         newRstAction = QtWidgets.QAction(
             self.tr('reStructedText'), self)
         newRstAction.setShortcut('Ctrl+N')
-        newRstAction.triggered.connect(partial(self.onNew, 'rst'))
+        newRstAction.triggered.connect(partial(self.onNew, '.rst'))
 
         newMdAction = QtWidgets.QAction(self.tr('Markdown'), self)
-        newMdAction.triggered.connect(partial(self.onNew, 'md'))
+        newMdAction.triggered.connect(partial(self.onNew, '.md'))
 
         newwindowAction = QtWidgets.QAction(self.tr('New &window'), self)
         newwindowAction.setShortcut('Ctrl+W')
@@ -490,22 +496,53 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.statusBar().showMessage(self.tr('Ready'))
 
+    def setupNewEditor(self):
+        editor = Editor()
+        editor.encodingChange.connect(partial(self.onStatusChange, 'encoding'))
+        editor.lexerChange.connect(partial(self.onStatusChange, 'lexer'))
+        editor.eolChange.connect(partial(self.onStatusChange, 'eol'))
+        editor.verticalScrollBar().valueChanged.connect(self.onValueChanged)
+        editor.lineInputed.connect(self.onInputPreview)
+        return editor
+
     def closeEvent(self, event):
+        opens = []
+        for x in range(self.tabWidgets.count()):
+            editor = self.tabWidgets.widget(x)
+            opens.append(editor.getFileName())
+            if not self.saveAndContinue(editor, preview=False):
+                event.ignore()
+                return
+
         settings = self.settings
         settings.setValue('geometry', self.saveGeometry())
         settings.setValue('windowState', self.saveState())
         settings.setValue('explorer/workspace', ';'.join(
             self.explorer.getRootPaths()))
+        settings.setValue('editor/opened_files', ';'.join(opens))
         settings.sync()
 
-        if self.saveAndContinue():
-            self.previewQuit = True
-            requestPreview.set()
-            self.previewWorker.join()
-            logger.info('=== rsteditor end ===')
-            event.accept()
-        else:
-            event.ignore()
+        self.previewQuit = True
+        requestPreview.set()
+        self.previewWorker.join()
+        logger.info('=== rsteditor end ===')
+        event.accept()
+
+    def onTabChanged(self, index):
+        editor = self.tabWidgets.widget(index)
+        filepath = editor.getFileName()
+        title, _ = self.createTitle(filepath, editor.isModified())
+        self.setWindowTitle(title)
+        text = editor.getValue()
+        self.preview(text, filepath)
+
+    def onTabCloseRequested(self, index):
+        if self.tabWidgets.count() == 1:
+            return
+        editor = self.tabWidgets.widget(index)
+        if self.saveAndContinue(editor, preview=False):
+            self.tabWidgets.removeTab(index)
+            del editor
 
     def onStatusChange(self, status, value):
         length = max(len(value) + 2, 8)
@@ -516,30 +553,16 @@ class MainWindow(QtWidgets.QMainWindow):
         elif status == 'eol':
             self.statusEol.setText(value.center(length, ' '))
 
-    def onNew(self, ext, path=None):
-        if not self.saveAndContinue():
-            return
-        if path:
-            filename = path
-        else:
-            filename = '%s.%s' % (__default_basename__, ext)
-
-        self.setWindowTitle('%s - %s' % (__app_name__, filename))
-        ext = os.path.splitext(filename)[1].lower()
-        text = ''
-        skeletons = [
-            os.path.join(__home_data_path__, 'template', 'skeleton%s' % ext),
-            os.path.join(__data_path__, 'template', 'skeleton%s' % ext),
-        ]
-        for skeleton in skeletons:
-            if os.path.exists(skeleton):
-                with open(skeleton, 'r', encoding='utf-8') as f:
-                    text = f.read()
-                break
-        self.editor.setValue(text)
-        self.editor.setFileName(filename)
-        self.editor.setFocus()
-        self.preview(text, filename)
+    def onNew(self, ext):
+        editor = self.setupNewEditor()
+        editor.newFile(ext)
+        filepath = editor.getFileName()
+        title, tab_title = self.createTitle(filepath, editor.isModified())
+        text = editor.getValue()
+        self.tabWidgets.insertTab(0, editor, tab_title)
+        self.tabWidgets.setCurrentWidget(editor)
+        self.setWindowTitle(title)
+        self.preview(text, filepath)
 
     def onNewWindow(self):
         if sys.platform == 'win32' and self._app_exec.endswith('.py'):
@@ -549,8 +572,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return
 
     def onOpen(self):
-        if not self.saveAndContinue():
-            return
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, self.tr('Open a file'),
             filter=''.join(FILTER),
@@ -559,32 +580,44 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def onOpenWorkspace(self):
-        if not self.saveAndContinue():
-            return
         path = QtWidgets.QFileDialog.getExistingDirectory(
             self, self.tr('Open a folder'), '',
         )
         if path:
             self.explorer.appendRootPath(path)
 
-    def onSave(self):
-        filename = self.editor.getFileName()
+    def onSave(self, editor=None, preview=True):
+        if not editor:
+            editor = self.tabWidgets.currentWidget()
+        filepath = editor.getFileName()
+        dir_name = os.path.dirname(filepath)
+        filename = os.path.basename(filepath)
         basename, _ = os.path.splitext(filename)
-        if basename == __default_basename__:
-            self.onSaveAs()
+        if not dir_name and basename == __default_basename__:
+            self.onSaveAs(editor=editor, preview=preview)
         else:
-            self.editor.writeFile()
-            if self.settings.value('preview/onsave', type=bool):
-                text = toUtf8(self.editor.getValue())
-                self.preview(text, filename)
+            editor.writeFile()
+            if preview:
+                title, tab_title = self.createTitle(filepath, editor.isModified())
+                self.setWindowTitle(title)
+                self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
+                if self.settings.value('preview/onsave', type=bool):
+                    text = editor.getValue()
+                    self.preview(text, filename)
         return
 
-    def onSaveAs(self):
-        filename = self.editor.getFileName()
+    def onSaveAs(self, editor=None, preview=True):
+        if not editor:
+            editor = self.tabWidgets.currentWidget()
+        filepath = editor.getFileName()
+        dir_name = os.path.dirname(filepath)
+        if not dir_name:
+            dir_name = self.explorer.getCurrentPath()
+        filename = os.path.basename(filepath)
         filename, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
             self,
             self.tr('Save file as ...'),
-            os.path.join(self.explorer.getCurrentPath(), filename),
+            os.path.join(dir_name, filename),
             ''.join(FILTER),
         )
         if filename:
@@ -593,18 +626,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 ext = selected_filter.split('(')[1][1:4].strip()
                 filename = filename + ext
             self.editor.writeFile(filename)
-            self.setWindowTitle('%s - %s' % (__app_name__, filename))
-            if self.settings.value('preview/onsave', type=bool):
-                text = toUtf8(self.editor.getValue())
-                self.preview(text, filename)
-            self.explorer.refreshPath(filename)
+            if preview:
+                title, tab_title = self.createTitle(filepath, editor.isModified())
+                self.setWindowTitle(title)
+                self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
+                if self.settings.value('preview/onsave', type=bool):
+                    text = editor.getValue()
+                    self.preview(text, filename)
+                self.explorer.refreshPath(filename)
 
     def onExport(self, label):
-        if not self.saveAndContinue():
-            return
         if label == 'html':
             in_basename, in_ext = os.path.splitext(
-                os.path.basename(self.editor.getFileName()))
+                os.path.basename(self.editor().getFileName()))
             out_file = in_basename + '.html'
             out_html = QtWidgets.QFileDialog.getSaveFileName(
                 self, self.tr('export HTML as ...'),
@@ -619,23 +653,23 @@ class MainWindow(QtWidgets.QMainWindow):
                 if out_ext.lower() not in ['.html', '.htm']:
                     out_html += '.html'
                 if in_ext.lower() in ['.rst', '.rest']:
-                    output.rst2html(self.editor.getFileName(),
+                    output.rst2html(self.editor().getFileName(),
                                     out_html,
                                     theme=self.rst_theme)
                 elif in_ext.lower() in ['.md', '.markdown']:
-                    output.md2html(self.editor.getFileName(),
+                    output.md2html(self.editor().getFileName(),
                                 out_html,
                                 theme=self.md_theme)
         elif label == 'pdf':
             self.webview.onExportToPdf()
 
     def onPrintPreview(self):
-        if self.editor.hasFocus():
-            printer = self.editor.getPrinter(
+        if self.editor().hasFocus():
+            printer = self.editor().getPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.editor
         elif self.codeview.hasFocus():
-            printer = self.editor.getPrinter(
+            printer = self.editor().getPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.codeview
         elif self.webview.hasFocus():
@@ -652,12 +686,12 @@ class MainWindow(QtWidgets.QMainWindow):
         preview.exec_()
 
     def onPrint(self):
-        if self.editor.hasFocus():
-            printer = self.editor.getPrinter(
+        if self.editor().hasFocus():
+            printer = self.editor().getPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.editor
         elif self.codeview.hasFocus():
-            printer = self.editor.getPrinter(
+            printer = self.editor().getPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.codeview
         elif self.webview.hasFocus():
@@ -685,20 +719,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self.findnextAction.setEnabled(True)
             self.findprevAction.setEnabled(True)
             self.replacenextAction.setEnabled(False)
-        elif self.editor.hasFocus():
-            self.undoAction.setEnabled(self.editor.isUndoAvailable())
-            self.redoAction.setEnabled(self.editor.isRedoAvailable())
-            self.cutAction.setEnabled(self.editor.isCopyAvailable())
-            self.copyAction.setEnabled(self.editor.isCopyAvailable())
-            self.pasteAction.setEnabled(self.editor.isPasteAvailable())
-            self.deleteAction.setEnabled(self.editor.isCopyAvailable())
+        elif self.editor().hasFocus():
+            self.undoAction.setEnabled(self.editor().isUndoAvailable())
+            self.redoAction.setEnabled(self.editor().isRedoAvailable())
+            self.cutAction.setEnabled(self.editor().isCopyAvailable())
+            self.copyAction.setEnabled(self.editor().isCopyAvailable())
+            self.pasteAction.setEnabled(self.editor().isPasteAvailable())
+            self.deleteAction.setEnabled(self.editor().isCopyAvailable())
             self.selectallAction.setEnabled(True)
             self.findAction.setEnabled(True)
             self.findnextAction.setEnabled(True)
             self.findprevAction.setEnabled(True)
             self.replacenextAction.setEnabled(True)
-            self.indentAction.setEnabled(self.editor.hasSelectedText())
-            self.unindentAction.setEnabled(self.editor.hasSelectedText())
+            self.indentAction.setEnabled(self.editor().hasSelectedText())
+            self.unindentAction.setEnabled(self.editor().hasSelectedText())
         elif self.webview.hasFocus():
             self.undoAction.setEnabled(False)
             self.redoAction.setEnabled(False)
@@ -724,35 +758,35 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.codeview.findNext(self.findDialog.getFindText())
             elif label == 'findprev':
                 self.codeview.findPrevious(self.findDialog.getFindText())
-        elif self.editor.hasFocus():
+        elif self.editor().hasFocus():
             if label == 'undo':
-                self.editor.undo()
+                self.editor().undo()
             elif label == 'redo':
-                self.editor.redo()
+                self.editor().redo()
             elif label == 'cut':
-                self.editor.cut()
+                self.editor().cut()
             elif label == 'copy':
-                self.editor.copy()
+                self.editor().copy()
             elif label == 'paste':
-                self.editor.paste()
+                self.editor().paste()
             elif label == 'delete':
-                self.editor.delete()
+                self.editor().delete()
             elif label == 'selectall':
-                self.editor.selectAll()
+                self.editor().selectAll()
             elif label == 'find':
-                self.editor.find(self.findDialog)
+                self.editor().find(self.findDialog)
             elif label == 'findnext':
-                self.editor.findNext(self.findDialog.getFindText())
+                self.editor().findNext(self.findDialog.getFindText())
             elif label == 'findprev':
-                self.editor.findPrevious(self.findDialog.getFindText())
+                self.editor().findPrevious(self.findDialog.getFindText())
             elif label == 'replacenext':
-                self.editor.replaceNext(
+                self.editor().replaceNext(
                     self.findDialog.getFindText(),
                     self.findDialog.getReplaceText())
             elif label == 'indent':
-                self.editor.indentLines(True)
+                self.editor().indentLines(True)
             elif label == 'unindent':
-                self.editor.indentLines(False)
+                self.editor().indentLines(False)
         elif self.webview.hasFocus():
             if label == 'copy':
                 self.webview.triggerPageAction(self.webview.page().Copy)
@@ -824,7 +858,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.settings.setValue('preview/sync', checked)
         elif label == 'enablelexer':
             self.settings.setValue('editor/enableLexer', checked)
-            self.editor.enableLexer(checked)
+            self.editor().enableLexer(checked)
         return
 
     def onRstThemeChanged(self, label, checked):
@@ -902,59 +936,55 @@ class MainWindow(QtWidgets.QMainWindow):
         text += self.tr('Platform: %s\n') % (sys.platform)
         text += self.tr('Config path: %s\n') % (__home_data_path__)
         text += self.tr('Application path: %s\n') % (__data_path__)
-        text += self.tr('Editor lexer: %s\n') % self.editor.cur_lexer.__module__
+        text += self.tr('Editor lexer: %s\n') % self.editor().cur_lexer.__module__
         text += self.tr('\n')
-        text += self.tr('QScintilla: %s\n') % self.editor.getVersion()
+        text += self.tr('QScintilla: %s\n') % self.editor().getVersion()
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
-        if not self.saveAndContinue():
-            return
-        path = toUtf8(path)
+        path = path
         if not os.path.exists(path):
             return
         ext = os.path.splitext(path)[1].lower()
         if ext in ALLOWED_LOADS:
-            text = None
-            if self.editor.readFile(path):
-                self.editor.setFocus()
-                self.setWindowTitle('%s - %s' % (__app_name__, path))
-                text = toUtf8(self.editor.getValue())
-                self.preview(text, path)
+            self.loadFile(path)
         else:
             subprocess.Popen(path, shell=True)
         return
 
     def onValueChanged(self, value):
         if self.settings.value('preview/sync', type=bool):
-            dy = self.editor.getVScrollValue()
-            editor_vmax = self.editor.getVScrollMaximum()
+            dy = self.editor().getVScrollValue()
+            editor_vmax = self.editor().getVScrollMaximum()
             if editor_vmax:
                 self.webview.scrollRatioPage(dy, editor_vmax)
         return
 
     def onInputPreview(self):
         if self.settings.value('preview/oninput', type=bool):
-            text = toUtf8(self.editor.getValue())
-            self.preview(text, self.editor.getFileName())
+            text = toUtf8(self.editor().getValue())
+            self.preview(text, self.editor().getFileName())
         return
 
     def onFileRenamed(self, old_name, new_name):
-        filename = self.editor.getFileName()
+        filename = self.editor().getFileName()
         if toUtf8(old_name) == filename:
-            self.editor.setFileName(toUtf8(new_name))
+            self.editor().setFileName(toUtf8(new_name))
             self.setWindowTitle('%s - %s' % (__app_name__, toUtf8(new_name)))
 
     def onFileDeleted(self, name):
-        filename = self.editor.getFileName()
+        filename = self.editor().getFileName()
         if toUtf8(name) == filename:
             default_filename = '%s.rst' % __default_basename__
-            self.editor.emptyFile()
+            self.editor().emptyFile()
             self.setWindowTitle('%s - %s' % (
                 __app_name__,
                 default_filename)
             )
             self.preview('', default_filename)
+
+    def editor(self):
+        return self.tabWidgets.currentWidget()
 
     def moveCenter(self):
         qr = self.frameGeometry()
@@ -971,26 +1001,27 @@ class MainWindow(QtWidgets.QMainWindow):
             requestPreview.set()
 
     def previewCurrentText(self):
-        text = toUtf8(self.editor.getValue())
-        self.preview(text, self.editor.getFileName())
+        text = toUtf8(self.editor().getValue())
+        self.preview(text, self.editor().getFileName())
 
     def previewDisplay(self):
         self.webview.setHtml(self.previewHtml, self.previewPath)
         self.codeview.setValue(self.previewHtml)
         self.codeview.setFileName(self.previewPath + '.html')
-        dy = self.editor.getVScrollValue()
-        editor_vmax = self.editor.getVScrollMaximum()
+        dy = self.editor().getVScrollValue()
+        editor_vmax = self.editor().getVScrollMaximum()
         if editor_vmax:
             self.webview.scrollRatioPage(dy, editor_vmax)
-        self.editor.setFocus()
+        self.editor().setFocus()
 
-    def saveAndContinue(self):
-        if self.editor.isModified():
+    def saveAndContinue(self, editor, preview=False):
+        if editor.isModified():
+            filepath = editor.getFileName()
             msgBox = QtWidgets.QMessageBox(self)
             msgBox.setIcon(QtWidgets.QMessageBox.Question)
             msgBox.setText(self.tr('The document has been modified.'))
             msgBox.setInformativeText(
-                self.tr('Do you want to save your changes?')
+                self.tr('Do you want to save your changes?\n%s' % filepath)
             )
             msgBox.setStandardButtons(
                 QtWidgets.QMessageBox.Save |
@@ -1002,7 +1033,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if ret == QtWidgets.QMessageBox.Cancel:
                 return False
             if ret == QtWidgets.QMessageBox.Save:
-                self.onSave()
+                self.onSave(editor=editor, preview=preview)
         return True
 
     def loadFile(self, path):
@@ -1013,34 +1044,51 @@ class MainWindow(QtWidgets.QMainWindow):
             file exist, load file
             not exist, create new file
         """
-        default_filename = '%s.rst' % __default_basename__
+        editor = None
         if not path:
-            path = default_filename
-            text = ''
+            editor = self.setupNewEditor()
+            editor.newFile('.rst')
+            filepath = editor.getFileName()
+            _, tab_title = self.createTitle(filepath, editor.isModified())
+            self.tabWidgets.insertTab(0, editor, tab_title)
         else:
-            self.explorer.appendRootPath(path)
+            path = os.path.abspath(path)
             ext = os.path.splitext(path)[1].lower()
             if ext not in ALLOWED_LOADS:
                 return
-            if os.path.exists(path):
-                logger.debug('Loading file: %s', path)
-                if self.editor.readFile(path):
-                    text = toUtf8(self.editor.getValue())
-            else:
-                logger.debug('Creating file: %s', path)
-                skeleton = os.path.join(__home_data_path__,
-                                        'template',
-                                        'skeleton%s' % ext)
-                if os.path.exists(skeleton):
-                    with open(skeleton, 'r', encoding='utf-8') as f:
-                        text = f.read()
+            bfound = False
+            for x in range(self.tabWidgets.count()):
+                editor = self.tabWidgets.widget(x)
+                if path == editor.getFileName():
+                    bfound = True
+                    break
+            if not bfound:
+                editor = self.setupNewEditor()
+                if os.path.exists(path):
+                    logger.debug('Loading file: %s', path)
+                    editor.readFile(path)
                 else:
-                    text = ''
-        self.editor.setValue(text)
-        self.editor.setFileName(path)
-        self.setWindowTitle('%s - %s' % (__app_name__, path))
-        self.editor.setFocus()
-        self.preview(text, path)
+                    logger.debug('Creating file: %s', path)
+                    editor.newFile(path)
+                filepath = editor.getFileName()
+                _, tab_title = self.createTitle(filepath, editor.isModified())
+                self.tabWidgets.insertTab(0, editor, tab_title)
+            self.explorer.appendRootPath(path)
+
+        self.tabWidgets.setCurrentWidget(editor)
+
+    def createTitle(self, filepath, modified):
+        filename = os.path.basename(filepath)
+        tab_title = ('*' if modified else '') + filename
+        title = __app_name__ + ' - ' + ('*' if modified else '') + filepath
+        return title, tab_title
+
+    def getOpenedFiles(self):
+        opens = []
+        for x in range(self.tabWidgets.count()):
+            editor = self.tabWidgets.widget(x)
+            opens.append(editor.getFileName())
+        return opens
 
 
 def main():
@@ -1095,13 +1143,13 @@ def main():
     # for pyinstaller
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5'))
 
-    rstfile = toUtf8(os.path.abspath(args.rstfile)) if args.rstfile else None
     QtWidgets.QApplication.setStyle(args.style)
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     app = QtWidgets.QApplication(sys.argv)
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow()
-    win.loadFile(rstfile)
+    if args.rstfile:
+        win.loadFile(os.path.abspath(args.rstfile))
     win.show()
     sys.exit(app.exec_())
 
