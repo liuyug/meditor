@@ -2,6 +2,7 @@
 # -*- encoding:utf-8 -*-
 
 import os
+import os.path
 import sys
 import subprocess
 import logging
@@ -21,6 +22,7 @@ from . import __icon_path__
 from . import __home_data_path__
 from . import pygments_styles
 from .editor import Editor, CodeViewer
+from .scilib import EXTENSION_LEXER
 from . import webview
 from . import explorer
 from . import output
@@ -28,15 +30,6 @@ from . import globalvars
 from .util import toUtf8, toBytes, download, unzip
 from .findreplace import FindReplaceDialog
 
-
-ALLOWED_LOADS = ['.rst', '.rest',
-                 '.md', '.markdown',
-                 '.html', '.htm',
-                 '.txt',
-                 '.c', '.cpp', '.h',
-                 '.sh',
-                 '.py'
-                 ]
 
 FILTER = [
     'All support files (*.rst *.md *.txt);;',
@@ -73,7 +66,7 @@ def previewWorker(self):
                                                   theme=self.md_theme)
         elif ext in ['.html', '.htm']:
             self.previewHtml = self.previewText
-        elif ext in ALLOWED_LOADS:
+        elif ext in EXTENSION_LEXER:
             self.previewHtml = '<html><strong>Do not support preview.</strong></html>'
         else:
             self.previewPath = 'error'
@@ -535,6 +528,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle(title)
         text = editor.getValue()
         self.preview(text, filepath)
+        for status, value in editor.getStatus().items():
+            self.onStatusChange(status, value)
 
     def onTabCloseRequested(self, index):
         if self.tabWidgets.count() == 1:
@@ -578,6 +573,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         if filename:
             self.loadFile(filename)
+            self.explorer.appendRootPath(os.path.dirname(filename))
 
     def onOpenWorkspace(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(
@@ -946,7 +942,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not os.path.exists(path):
             return
         ext = os.path.splitext(path)[1].lower()
-        if ext in ALLOWED_LOADS:
+        if ext in EXTENSION_LEXER:
             self.loadFile(path)
         else:
             subprocess.Popen(path, shell=True)
@@ -1054,7 +1050,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             path = os.path.abspath(path)
             ext = os.path.splitext(path)[1].lower()
-            if ext not in ALLOWED_LOADS:
+            if ext not in EXTENSION_LEXER:
                 return
             bfound = False
             for x in range(self.tabWidgets.count()):
@@ -1073,7 +1069,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 filepath = editor.getFileName()
                 _, tab_title = self.createTitle(filepath, editor.isModified())
                 self.tabWidgets.insertTab(0, editor, tab_title)
-            self.explorer.appendRootPath(path)
 
         self.tabWidgets.setCurrentWidget(editor)
 

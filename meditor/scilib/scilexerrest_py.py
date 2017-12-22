@@ -1,8 +1,10 @@
 import re
+import os.path
 import logging
 
 from PyQt5 import Qsci, QtGui, QtCore
 
+from .. import __home_data_path__, __data_path__, globalvars
 from ..util import toUtf8
 
 logger = logging.getLogger(__name__)
@@ -170,7 +172,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     block_tokens = None
     inline_tokens = None
 
-    def __init__(self, parent=0):
+    def __init__(self, parent=None):
         super(QsciLexerRest, self).__init__(parent)
         self.setDefaultColor(QtGui.QColor('#000000'))
         self.setDefaultPaper(QtGui.QColor('#ffffff'))
@@ -190,7 +192,19 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                     regex,
                     re.UNICODE | re.MULTILINE | re.IGNORECASE,
                 )))
-        return
+        self.setDebugLevel(globalvars.logging_level)
+        rst_prop_files = [
+            os.path.join(__home_data_path__, 'rst.properties'),
+            os.path.join(__data_path__, 'rst.properties'),
+        ]
+        for rst_prop_file in rst_prop_files:
+            if os.path.exists(rst_prop_file):
+                break
+        if os.path.exists(rst_prop_file):
+            logger.debug('Loading %s', rst_prop_file)
+            self.readConfig(rst_prop_file)
+        else:
+            logger.info('Not found %s', rst_prop_file)
 
     def language(self):
         return 'reStructedText'

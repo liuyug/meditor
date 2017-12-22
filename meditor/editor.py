@@ -6,18 +6,16 @@ import codecs
 import logging
 
 from PyQt5 import QtGui, QtCore, QtWidgets
-from PyQt5.Qsci import QSCINTILLA_VERSION, QsciScintilla, QsciPrinter, \
-    QsciLexerPython, QsciLexerHTML, QsciLexerBash, QsciLexerMarkdown
+from PyQt5.Qsci import QSCINTILLA_VERSION, QsciScintilla, QsciPrinter
 
-from .scilib import QsciLexerRest, _SciImSupport, QsciLexerDefault
+from .scilib import _SciImSupport, EXTENSION_LEXER
 
 from .util import toUtf8
-from . import __home_data_path__, __data_path__, __default_basename__, \
-    globalvars
+from . import __home_data_path__, __data_path__, __default_basename__
 
 logger = logging.getLogger(__name__)
 
-eol_description = {
+EOL_DESCRIPTION = {
     QsciScintilla.EolWindows: 'CR+LF',
     QsciScintilla.EolUnix: 'LF',
     QsciScintilla.EolMac: 'CR',
@@ -40,7 +38,6 @@ class Editor(QsciScintilla):
     find_forward = True
     tabWidth = 4
     edgeColumn = 78
-    lexers = None
     cur_lexer = None
     _pauseLexer = False
     _lexerStart = 0
@@ -48,12 +45,11 @@ class Editor(QsciScintilla):
     _imsupport = None
     _case_sensitive = False
     _whole_word = False
-    _encoding = ''
+    _file_encoding = ''
     _modified = False
 
     def __init__(self, parent=None):
         super(Editor, self).__init__(parent)
-        self.lexers = {}
         self.setMarginType(0, QsciScintilla.NumberMargin)
         self.setMarginWidth(0, 30)
         self.setMarginWidth(1, 5)
@@ -209,7 +205,7 @@ class Editor(QsciScintilla):
         self.setText(text)
         self.setCursorPosition(0, 0)
         self.setModified(False)
-        self.encodingChange.emit(self._encoding.upper())
+        self.encodingChange.emit(self._file_encoding.upper())
         self.setDefaultEolMode()
 
     def _qsciEolModeFromOs(self):
@@ -236,7 +232,7 @@ class Editor(QsciScintilla):
         else:
             mode = self._qsciEolModeFromOs()
         self.setEolMode(mode)
-        self.eolChange.emit(eol_description[mode])
+        self.eolChange.emit(EOL_DESCRIPTION[mode])
         return mode
 
     def indentLines(self, inc):
@@ -278,7 +274,7 @@ class Editor(QsciScintilla):
             text = data.decode(encoding)
         text = text.replace('\r\n', '\n')
         text = text.replace('\r', '\n')
-        self._encoding = encoding
+        self._file_encoding = encoding
         self.setValue(text)
         self.setFileName(filename)
         return True
@@ -291,7 +287,7 @@ class Editor(QsciScintilla):
             self.setFileName(filename)
         if filename:
             with open(filename, 'wb') as f:
-                f.write(text.encode(self._encoding))
+                f.write(text.encode(self._file_encoding))
                 self.setModified(False)
                 return True
         return False
@@ -321,6 +317,14 @@ class Editor(QsciScintilla):
                 break
         self.setValue(text)
         self.setFileName(filepath)
+
+    def getStatus(self):
+        status = {
+            'encoding': self._file_encoding.upper(),
+            'eol': EOL_DESCRIPTION[self.eolMode()],
+            'language': self.lexer().language(),
+        }
+        return status
 
     def emptyFile(self):
         self.clear()
@@ -427,60 +431,12 @@ class Editor(QsciScintilla):
         lexer = None
         t1 = time.clock()
         if filename:
-            ext = os.path.splitext(filename)[1].lower()
-            if ext in ['.html', '.htm']:
-                ext = 'html'
-                lexer = self.lexers.get(ext)
-                if not lexer:
-                    lexer = QsciLexerHTML(self)
-                    lexer.setFont(QtGui.QFont('Monospace', 12))
-                    self.lexers[ext] = lexer
-            elif ext in ['.py']:
-                ext = 'python'
-                lexer = self.lexers.get(ext)
-                if not lexer:
-                    lexer = QsciLexerPython(self)
-                    lexer.setFont(QtGui.QFont('Monospace', 12))
-                    self.lexers[ext] = lexer
-            elif ext in ['.sh']:
-                ext = 'bash'
-                lexer = self.lexers.get(ext)
-                if not lexer:
-                    lexer = QsciLexerBash(self)
-                    lexer.setFont(QtGui.QFont('Monospace', 12))
-                    self.lexers[ext] = lexer
-            elif ext in ['.md', '.markdown']:
-                ext = 'markdown'
-                lexer = self.lexers.get(ext)
-                if not lexer:
-                    lexer = QsciLexerMarkdown(self)
-                    lexer.setFont(QtGui.QFont('Monospace', 12))
-                    self.lexers[ext] = lexer
-            elif ext in ['.rst', '.rest']:
-                ext = 'reStructedText'
-                lexer = self.lexers.get(ext)
-                if not lexer:
-                    lexer = QsciLexerRest(self)
-                    lexer.setDebugLevel(globalvars.logging_level)
-                    rst_prop_files = [
-                        os.path.join(__home_data_path__, 'rst.properties'),
-                        os.path.join(__data_path__, 'rst.properties'),
-                    ]
-                    for rst_prop_file in rst_prop_files:
-                        if os.path.exists(rst_prop_file):
-                            break
-                    if os.path.exists(rst_prop_file):
-                        logger.debug('Loading %s', rst_prop_file)
-                        lexer.readConfig(rst_prop_file)
-                    else:
-                        logger.info('Not found %s', rst_prop_file)
-                    self.lexers[ext] = lexer
-            else:
-                ext = 'default'
-                lexer = self.lexers.get(ext)
-                if not lexer:
-                    lexer = QsciLexerDefault(self)
-                    self.lexers[ext] = lexer
+            _, ext = os.path.splitext(filename)
+            ext = ext.lower()
+            LexerClass = EXTENSION_LEXER.get(ext)
+            lexer = LexerClass(self)
+            if lexer.language() not in ['reStructedText', 'Default']:
+                lexer.setFont(QtGui.QFont('Monospace', 12))
         self.setLexer(lexer)
         if lexer:
             self.lexerChange.emit(lexer.language())
