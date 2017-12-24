@@ -663,20 +663,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.webview.onExportToPdf()
 
     def onPrintPreview(self):
-        if self.editor().hasFocus():
-            printer = self.editor().getPrinter(
-                QtPrintSupport.QPrinter.HighResolution)
-            widget = self.editor
-        elif self.codeview.hasFocus():
-            printer = self.editor().getPrinter(
-                QtPrintSupport.QPrinter.HighResolution)
+        if self.codeview.hasFocus():
+            printer = self.codeview.getPrinter(
+                QtPrintSupport.QPrinter.ScreenResolution)
             widget = self.codeview
         elif self.webview.hasFocus():
             printer = QtPrintSupport.QPrinter(
-                QtPrintSupport.QPrinter.HighResolution)
+                QtPrintSupport.QPrinter.ScreenResolution)
             widget = self.webview
         else:
-            return
+            printer = self.editor().getPrinter(
+                QtPrintSupport.QPrinter.ScreenResolution)
+            widget = self.editor()
         printer.setPageSize(QtPrintSupport.QPrinter.A4)
         printer.setPageOrientation(QtGui.QPageLayout.Portrait)
         printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
@@ -685,12 +683,8 @@ class MainWindow(QtWidgets.QMainWindow):
         preview.exec_()
 
     def onPrint(self):
-        if self.editor().hasFocus():
-            printer = self.editor().getPrinter(
-                QtPrintSupport.QPrinter.HighResolution)
-            widget = self.editor
-        elif self.codeview.hasFocus():
-            printer = self.editor().getPrinter(
+        if self.codeview.hasFocus():
+            printer = self.codeview.getPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.codeview
         elif self.webview.hasFocus():
@@ -698,7 +692,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.webview
         else:
-            return
+            printer = self.editor().getPrinter(
+                QtPrintSupport.QPrinter.HighResolution)
+            widget = self.editor()
         printer.setPageSize(QtPrintSupport.QPrinter.A4)
         printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
         printDialog = QtPrintSupport.QPrintDialog(printer, widget)
