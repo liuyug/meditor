@@ -143,12 +143,12 @@ class Workspace(QtWidgets.QTreeWidget):
                 index = self.indexOfTopLevelItem(item)
                 self.takeTopLevelItem(index)
                 del item
-                return
-            path = os.path.join(item.data(0, self.role_path), item.text(0))
-            if self.doDeletePath(path):
-                parent = item.parent()
-                parent.removeChild(item)
-                del item
+            else:
+                path = os.path.join(item.data(0, self.role_path), item.text(0))
+                if self.doDeletePath(path):
+                    parent = item.parent()
+                    parent.removeChild(item)
+                    del item
 
     def onRefresh(self):
         item = self.currentItem()

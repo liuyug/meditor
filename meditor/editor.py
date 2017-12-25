@@ -271,10 +271,10 @@ class Editor(QsciScintilla):
 
     def writeFile(self, filename=None):
         text = self.getValue()
-        if filename is None:
-            filename = self.getFileName()
-        else:
+        if filename:
             self.setFileName(filename)
+        else:
+            filename = self.getFileName()
         if filename:
             with open(filename, 'wb') as f:
                 f.write(text.encode(self._file_encoding))

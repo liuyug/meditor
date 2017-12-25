@@ -505,7 +505,9 @@ class MainWindow(QtWidgets.QMainWindow):
         opens = []
         for x in range(self.tabWidgets.count()):
             editor = self.tabWidgets.widget(x)
-            opens.append(editor.getFileName())
+            filepath = editor.getFileName()
+            if os.path.dirname(filepath):
+                opens.append(filepath)
             if not self.saveAndContinue(editor, preview=False):
                 event.ignore()
                 return
@@ -526,6 +528,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onTabChanged(self, index):
         editor = self.tabWidgets.widget(index)
+        if not editor:
+            return
         filepath = editor.getFileName()
         title, _ = self.createTitle(filepath, editor.isModified())
         self.setWindowTitle(title)
@@ -613,26 +617,27 @@ class MainWindow(QtWidgets.QMainWindow):
         if not dir_name:
             dir_name = self.explorer.getCurrentPath()
         filename = os.path.basename(filepath)
-        filename, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
+        new_filepath, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
             self,
             self.tr('Save file as ...'),
             os.path.join(dir_name, filename),
             ''.join(FILTER),
         )
-        if filename:
-            _, ext = os.path.splitext(filename)
+        if new_filepath:
+            new_filepath = os.path.abspath(new_filepath)
+            _, ext = os.path.splitext(new_filepath)
             if not ext:
                 ext = selected_filter.split('(')[1][1:4].strip()
-                filename = filename + ext
-            self.editor.writeFile(filename)
+                new_filepath = new_filepath + ext
+            editor.writeFile(new_filepath)
             if preview:
-                title, tab_title = self.createTitle(filepath, editor.isModified())
+                title, tab_title = self.createTitle(new_filepath, editor.isModified())
                 self.setWindowTitle(title)
                 self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
                 if self.settings.value('preview/onsave', type=bool):
                     text = editor.getValue()
-                    self.preview(text, filename)
-                self.explorer.refreshPath(filename)
+                    self.preview(text, new_filepath)
+                self.explorer.refreshPath(new_filepath)
 
     def onExport(self, label):
         if label == 'html':
@@ -975,16 +980,19 @@ class MainWindow(QtWidgets.QMainWindow):
             self.editor().setFileName(toUtf8(new_name))
             self.setWindowTitle('%s - %s' % (__app_name__, toUtf8(new_name)))
 
-    def onFileDeleted(self, name):
-        filename = self.editor().getFileName()
-        if toUtf8(name) == filename:
-            default_filename = '%s.rst' % __default_basename__
-            self.editor().emptyFile()
-            self.setWindowTitle('%s - %s' % (
-                __app_name__,
-                default_filename)
-            )
-            self.preview('', default_filename)
+    def onFileDeleted(self, path):
+        print('delete', path)
+        for x in range(self.tabWidgets.count()):
+            editor = self.tabWidgets.widget(x)
+            print(x, editor)
+            print(editor.getFileName())
+            if path == editor.getFileName():
+                print('remove', editor)
+                self.tabWidgets.removeTab(x)
+                del editor
+                break
+        if self.tabWidgets.count() == 0:
+            self.onNew('.rst')
 
     def editor(self):
         return self.tabWidgets.currentWidget()
