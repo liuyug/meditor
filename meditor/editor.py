@@ -50,8 +50,11 @@ class Editor(QsciScintilla):
 
     def __init__(self, parent=None):
         super(Editor, self).__init__(parent)
+        font = QtGui.QFont('Monospace', 12)
+        fontmetrics = QtGui.QFontMetrics(font)
+        self.setMarginsFont(font)
         self.setMarginType(0, QsciScintilla.NumberMargin)
-        self.setMarginWidth(0, 30)
+        self.setMarginWidth(0, fontmetrics.width('0000'))
         self.setMarginWidth(1, 5)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
