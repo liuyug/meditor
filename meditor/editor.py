@@ -61,7 +61,6 @@ class Editor(QsciScintilla):
         self.setEdgeColumn(self.edgeColumn)
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setUtf8(True)
-        self.setFont(QtGui.QFont('Monospace', 12))
         self.copy_available = False
         self.copyAvailable.connect(self.setCopyAvailable)
         self.inputMethodEventCount = 0

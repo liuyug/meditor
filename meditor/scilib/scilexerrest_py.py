@@ -5,7 +5,6 @@ import logging
 from PyQt5 import Qsci, QtGui, QtCore
 
 from .. import __home_data_path__, __data_path__, globalvars
-from ..util import toUtf8
 
 logger = logging.getLogger(__name__)
 
@@ -329,11 +328,8 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
 
     def readConfig(self, rst_prop_file):
         prop_settings = QtCore.QSettings(rst_prop_file, QtCore.QSettings.IniFormat)
-        for num in range(0, len(self.properties)):
-            value = toUtf8(prop_settings.value(
-                'style.%s.%s' % (self.language(), num),
-                type=str,
-            ))
+        for num in range(len(self.properties)):
+            value = prop_settings.value('style.rst.%s' % num, type=str,)
             if not value:
                 continue
             if isinstance(value, str):
