@@ -539,12 +539,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.onStatusChange(status, value)
 
     def onTabCloseRequested(self, index):
-        if self.tabWidgets.count() == 1:
-            return
         editor = self.tabWidgets.widget(index)
         if self.saveAndContinue(editor, preview=False):
             self.tabWidgets.removeTab(index)
             del editor
+        if self.tabWidgets.count() == 0:
+            self.onNew('.rst')
 
     def onStatusChange(self, status, value):
         length = max(len(value) + 2, 8)
@@ -981,13 +981,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setWindowTitle('%s - %s' % (__app_name__, toUtf8(new_name)))
 
     def onFileDeleted(self, path):
-        print('delete', path)
         for x in range(self.tabWidgets.count()):
             editor = self.tabWidgets.widget(x)
-            print(x, editor)
-            print(editor.getFileName())
             if path == editor.getFileName():
-                print('remove', editor)
                 self.tabWidgets.removeTab(x)
                 del editor
                 break
