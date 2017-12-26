@@ -344,7 +344,6 @@ class Editor(QsciScintilla):
         self._whole_word = finddialog.isWholeWord()
 
     def findNext(self, text):
-        line, index = self.getCursorPosition()
         bfind = self.findFirst(
             text,
             False,  # re
@@ -352,7 +351,7 @@ class Editor(QsciScintilla):
             self._whole_word,       # wo
             True,   # wrap
             True,   # forward
-            line, index
+            -1, -1  # from current cursor position
         )
         if not bfind:
             QtWidgets.QMessageBox.information(
@@ -371,8 +370,8 @@ class Editor(QsciScintilla):
             self._case_sensitive,   # cs
             self._whole_word,       # wo
             True,   # wrap
-            False,   # forward
-            line, index
+            False,  # forward
+            line, index,
         )
         if not bfind:
             QtWidgets.QMessageBox.information(
@@ -382,16 +381,17 @@ class Editor(QsciScintilla):
             )
         return
 
-    def replaceNext(self, text1, text2):
+    def replaceNext(self, text, text2):
         line, index = self.getCursorPosition()
+        index -= len(text)
         bfind = self.findFirst(
-            text1,
+            text,
             False,  # re
             self._case_sensitive,   # cs
             self._whole_word,       # wo
             True,   # wrap
             True,   # forward
-            line, index
+            line, index,
         )
         if bfind:
             self.replace(text2)
@@ -399,22 +399,23 @@ class Editor(QsciScintilla):
             QtWidgets.QMessageBox.information(
                 self,
                 self.tr('Replace'),
-                self.tr('Not found "%s"') % (text1),
+                self.tr('Not found "%s"') % (text),
             )
         return
 
-    def replaceAll(self, text1, text2):
+    def replaceAll(self, text, text2):
         bfind = True
         while bfind:
-            line, index = self.getCursorPosition()
+            # line, index = self.getCursorPosition()
             bfind = self.findFirst(
-                text1,
+                text,
                 False,  # re
                 self._case_sensitive,   # cs
                 self._whole_word,       # wo
                 True,   # wrap
                 True,   # forward
-                line, index
+                -1, -1,
+                # line, index
             )
             if bfind:
                 self.replace(text2)
