@@ -480,6 +480,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setupStatusBar(self):
         # status bar
+        self.statusCursor = QtWidgets.QLabel('Cursor', self)
+        self.statusBar().addPermanentWidget(self.statusCursor)
+
         self.statusEncoding = QtWidgets.QLabel('ASCII', self)
         self.statusBar().addPermanentWidget(self.statusEncoding)
 
@@ -496,6 +499,7 @@ class MainWindow(QtWidgets.QMainWindow):
         editor.encodingChange.connect(partial(self.onStatusChange, 'encoding'))
         editor.lexerChange.connect(partial(self.onStatusChange, 'lexer'))
         editor.eolChange.connect(partial(self.onStatusChange, 'eol'))
+        editor.cursorChange.connect(partial(self.onStatusChange, 'cursor'))
         editor.verticalScrollBar().valueChanged.connect(self.onValueChanged)
         editor.lineInputed.connect(self.onInputPreview)
         editor.modificationChanged.connect(self.onEditorModified)
@@ -554,6 +558,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.statusEncoding.setText(value.center(length, ' '))
         elif status == 'eol':
             self.statusEol.setText(value.center(length, ' '))
+        elif status == 'cursor':
+            self.statusCursor.setText(value.center(length, ' '))
 
     def onNew(self, ext):
         editor = self.setupNewEditor()
@@ -959,6 +965,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if editor_vmax:
                 self.webview.scrollRatioPage(dy, editor_vmax)
         return
+
+    def onEditorCursor(self, line, index):
+        text = 'Ln %s Col %s' % (line, index)
+        self.onStatusChange('cursor', text)
 
     def onEditorModified(self, value):
         editor = self.tabWidgets.currentWidget()

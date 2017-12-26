@@ -29,8 +29,8 @@ class Editor(QsciScintilla):
     lineInputed = QtCore.pyqtSignal()
     encodingChange = QtCore.pyqtSignal('QString')
     lexerChange = QtCore.pyqtSignal('QString')
-    positionChange = QtCore.pyqtSignal('int', 'int')
     eolChange = QtCore.pyqtSignal('QString')
+    cursorChange = QtCore.pyqtSignal('QString')
     enable_lexer = True
     filename = None
     input_count = 0
@@ -65,9 +65,10 @@ class Editor(QsciScintilla):
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setUtf8(True)
         self.copy_available = False
-        self.copyAvailable.connect(self.setCopyAvailable)
+        self.copyAvailable.connect(self.onCopyAvailable)
         self.inputMethodEventCount = 0
         self._imsupport = _SciImSupport(self)
+        self.cursorPositionChanged.connect(self.onCursorPositionChanged)
 
     def inputMethodQuery(self, query):
         if query == QtCore.Qt.ImMicroFocus:
@@ -152,8 +153,12 @@ class Editor(QsciScintilla):
         if event.reason() == event.Mouse:
             super(Editor, self).contextMenuEvent(event)
 
-    def setCopyAvailable(self, yes):
+    def onCopyAvailable(self, yes):
         self.copy_available = yes
+
+    def onCursorPositionChanged(self, line, index):
+        cursor = 'Ln %s/%s Col %s/80' % (line + 1, self.lines(), index + 1)
+        self.cursorChange.emit(cursor)
 
     def isCopyAvailable(self):
         return self.copy_available
@@ -312,10 +317,14 @@ class Editor(QsciScintilla):
         self.setFileName(filepath)
 
     def getStatus(self):
+        lines = self.lines()
+        line, index = self.getCursorPosition()
+        cursor = 'Ln %s/%s Col %s/80' % (line + 1, lines, index + 1)
         status = {
             'encoding': self._file_encoding.upper(),
             'eol': EOL_DESCRIPTION[self.eolMode()],
             'language': self.lexer().language(),
+            'cursor': cursor,
         }
         return status
 
