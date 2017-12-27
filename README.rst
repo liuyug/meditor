@@ -19,8 +19,9 @@ Feature
 + Synchronize scroll with preview window
 + File system explorer
 + Customized widnow layout
-+ reStructuredText Template to reduce extra work
++ Customized template
 + Customized HTML css
++ Multiple editor windows
 
 Install
 =======
@@ -44,29 +45,34 @@ install with download from github::
     Set-ExecutionPolicy -Scope CurrentUser  RemoteSigned
     ../virtualenv/scripts/activate
 
-    # check version
+    # check version, above 3.5
     python --version
     pip --version
 
     # install 3rd packages
     pip install -r requirements.txt
     # prepre data files
+    # ui window
     bash ui.sh
+    # fetch reStructedText documents
+    bash docs.sh
+    # for Simple MathJax
     bash math.sh
+    # for preview themes
     bash themes.sh
     # install meditor
-    python3 setup.py install
+    python3 setup.py install . --user
 
 
-HTML theme
-===========
-get theme::
-
-    bash themes.sh
 
 Screen Shot
 ===========
 .. image:: screenshot.png
+    :width: 1024
+.. image:: screenshot_rst.png
+    :width: 1024
+.. image:: screenshot_md.png
+    :width: 1024
 
 .. |version| image:: 	https://img.shields.io/github/release/liuyug/meditor.svg
    :target: https://pypi.python.org/pypi/meditor
