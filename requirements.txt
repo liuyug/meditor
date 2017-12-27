@@ -1,8 +1,8 @@
 PyQt5
 QScintilla
-pygments
+Pygments
 
 # markup text
 docutils
-markdown
+Markdown
 python-markdown-math
