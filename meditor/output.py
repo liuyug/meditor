@@ -4,7 +4,7 @@ import json
 from collections import OrderedDict
 
 import markdown
-import mdx_math
+import mdx_mathjax
 
 try:
     from docutils.core import publish_string
@@ -210,7 +210,7 @@ def md2htmlcode(markup_file, theme=None, settings={}):
         'markdown.extensions.smarty',
         'markdown.extensions.toc',
         'markdown.extensions.wikilinks',
-        mdx_math.MathExtension(),
+        mdx_mathjax.MathJaxExtension(),
     ]
     try:
         overrides = {}

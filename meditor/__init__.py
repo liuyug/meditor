@@ -3,7 +3,7 @@ import os.path
 from collections import OrderedDict
 
 __app_name__ = 'MEditor'
-__app_version__ = '0.2.10.9'
+__app_version__ = '0.2.10.11'
 __default_basename__ = 'unknown'
 
 prefixs = [

@@ -5,4 +5,4 @@ Pygments
 # markup text
 docutils
 Markdown
-python-markdown-math
+python-markdown-mathjax
