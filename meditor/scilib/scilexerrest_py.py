@@ -206,7 +206,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             logger.info('Not found %s', rst_prop_file)
 
     def language(self):
-        return 'reStructedText'
+        return 'reStructuredText'
 
     def description(self, style):
         return self.rstyles.get(style) or self.inline_rstyles.get(style)

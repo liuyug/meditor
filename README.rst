@@ -11,7 +11,7 @@ Markup Editor is a editor for reStructuredText and Markdown.
 
 Feature
 =======
-+ support Markdown and reStructedText
++ support Markdown and reStructuredText
 + Syntax Highlight for reStructuredText
 + support MathJax
 + HTML Preview
