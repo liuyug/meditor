@@ -14,13 +14,9 @@ from functools import partial
 from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from pygments.formatters import get_formatter_by_name
 
-from . import __app_name__
-from . import __app_version__
-from . import __default_basename__
-from . import __data_path__
-from . import __icon_path__
-from . import __home_data_path__
-from . import pygments_styles
+from . import __app_name__, __app_version__, __default_basename__, \
+    __data_path__, __home_data_path__, __icon_path__, __mathjax_full_path__, \
+    pygments_styles
 from .editor import Editor, CodeViewer
 from .scilib import EXTENSION_LEXER
 from . import webview
@@ -378,8 +374,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr('Install MathJax'), self)
         self.mathjaxAction.triggered.connect(
             partial(self.onMathJax, 'install'))
-        self.mathjaxAction.setEnabled(not os.path.exists(os.path.join(
-            __home_data_path__, 'MathJax-master', 'MathJax.js')))
+        self.mathjaxAction.setEnabled(not os.path.exists(__mathjax_full_path__))
         # help
         helpAction = QtWidgets.QAction(self.tr('&Help'), self)
         helpAction.triggered.connect(self.onHelp)
@@ -920,6 +915,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 dlg.setLabelText('Uncompress MathJax...')
                 success = unzip(dest_file, __home_data_path__, dlg)
                 self.mathjaxAction.setEnabled(success)
+                os.remove(dest_file)
 
     def onHelp(self):
         help_paths = [

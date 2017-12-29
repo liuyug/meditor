@@ -38,3 +38,6 @@ try:
         pygments_styles[k] = v.split('::')[1]
 except:
     pass
+
+__mathjax_full_path__ = os.path.join(__home_data_path__, 'MathJax-master', 'MathJax.js')
+__mathjax_min_path__ = os.path.join(__data_path__, 'math', 'MathJax.min.js')

@@ -15,7 +15,8 @@ try:
 except:
     raise Exception('Please install docutils firstly')
 
-from . import __data_path__, __home_data_path__
+from . import __data_path__, __home_data_path__, \
+    __mathjax_full_path__, __mathjax_min_path__
 
 logger = logging.getLogger(__name__)
 
@@ -243,15 +244,11 @@ def md2htmlcode(markup_file, theme=None, settings={}):
     head.append('<meta charset="UTF-8" />')
     mathjax = settings.get('mathjax')
     if not mathjax:
-        mathjax_path = os.path.join(
-            __home_data_path__, 'MathJax-master', 'MathJax.js')
-        if os.path.exists(mathjax_path):
-            mathjax_path += '?config=TeX-MML-AM_CHTML'
+        if os.path.exists(__mathjax_full_path__):
+            mathjax_path = __mathjax_full_path__ + '?config=TeX-MML-AM_CHTML'
         else:
-            mathjax_path = os.path.join(
-                __data_path__, 'math', 'MathJax.min.js')
-        if mathjax_path:
-            mathjax = """<script type="text/javascript" src="file:///%s"></script>""" % mathjax_path
+            mathjax_path = __mathjax_min_path__
+        mathjax = """<script type="text/javascript" src="file:///%s"></script>""" % mathjax_path
     if mathjax:
         head.append(mathjax)
     head.append('<style type="text/css">')
