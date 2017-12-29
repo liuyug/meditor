@@ -353,7 +353,7 @@ class Workspace(QtWidgets.QTreeWidget):
             QtWidgets.QLineEdit.Normal,
             path)
         if ok:
-            value = os.path.abspath(toUtf8(value))
+            value = os.path.abspath(value)
             return self.doMovePath(path, value)
 
     def doMovePath(self, src, dest):

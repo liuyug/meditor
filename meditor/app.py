@@ -981,10 +981,15 @@ class MainWindow(QtWidgets.QMainWindow):
         return
 
     def onFileRenamed(self, old_name, new_name):
-        filename = self.editor().getFileName()
-        if toUtf8(old_name) == filename:
-            self.editor().setFileName(toUtf8(new_name))
-            self.setWindowTitle('%s - %s' % (__app_name__, toUtf8(new_name)))
+        for x in range(self.tabWidgets.count()):
+            editor = self.tabWidgets.widget(x)
+            if old_name == editor.getFileName():
+                editor.setFileName(new_name)
+                title, tab_title = self.createTitle(new_name, editor.isModified())
+                self.tabWidgets.setTabText(x, tab_title)
+                if x == self.tabWidgets.currentIndex():
+                    self.setWindowTitle(title)
+                break
 
     def onFileDeleted(self, path):
         for x in range(self.tabWidgets.count()):
