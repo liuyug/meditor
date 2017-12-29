@@ -13,7 +13,8 @@
 ;General
 !define PRODUCT_NAME "Markup Editor"
 ;!define PRODUCT_VER "x.x.x.x"
-!define SHORTCUT_NAME "meditor.lnk"
+!define SHORTCUT_APP_NAME "${PRODUCT_NAME}.lnk"
+!define SHORTCUT_UNINSTALL_NAME "${PRODUCT_NAME} Uninstall.lnk"
 !define EXEC_NAME "meditor.exe"
 !define EXEC_ICON "$INSTDIR\share\pixmaps\meditor-text-editor.ico"
 ;
@@ -85,12 +86,12 @@ SectionEnd
 ; Optional section (can be disabled by the user)
 Section "Start menu"
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${SHORTCUT_NAME}" "$INSTDIR\${EXEC_NAME}" "" "${EXEC_ICON}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${SHORTCUT_APP_NAME}" "$INSTDIR\${EXEC_NAME}" "" "${EXEC_ICON}"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${SHORTCUT_UNINSTALL_NAME}" "$INSTDIR\Uninstall.exe"
 SectionEnd
 
 Section "Shortcut desktop"
-  CreateShortCut "$DESKTOP\${SHORTCUT_NAME}" "$INSTDIR\${EXEC_NAME}" "" "${EXEC_ICON}"
+  CreateShortCut "$DESKTOP\${SHORTCUT_APP_NAME}" "$INSTDIR\${EXEC_NAME}" "" "${EXEC_ICON}"
 SectionEnd
 
 ;--------------------------------
@@ -103,9 +104,9 @@ Section "Uninstall"
 
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\*.*"
-  Delete "$SMSTARTUP\${SHORTCUT_NAME}"
-  Delete "$DESKTOP\${SHORTCUT_NAME}"
-  Delete "$QUICKLAUNCH\${SHORTCUT_NAME}"
+  Delete "$SMSTARTUP\${SHORTCUT_APP_NAME}"
+  Delete "$DESKTOP\${SHORTCUT_APP_NAME}"
+  Delete "$QUICKLAUNCH\${SHORTCUT_APP_NAME}"
   ; Remove directories used
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
   RMDir "$INSTDIR"
