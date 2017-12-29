@@ -109,6 +109,8 @@ def rst2htmlcode(rst_text, theme='restructedtext', settings={}):
     output = None
     try:
         overrides = {}
+        if os.path.exists(__mathjax_full_path__):
+            overrides['math_output'] = ' '.join(['MathJax', __mathjax_full_path__])
         overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme))
@@ -128,6 +130,10 @@ def rst2html(rst_file, filename, theme='restructedtext', settings={}):
     output = None
     try:
         overrides = {}
+        overrides['math_output'] = ' '.join([
+            'MathJax',
+            'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js'
+        ])
         overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme))
