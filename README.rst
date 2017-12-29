@@ -67,11 +67,13 @@ install with download from github::
 
 Screen Shot
 ===========
+check screenshot directory to view more Themes
+
 .. image:: screenshot.png
     :width: 1024
-.. image:: screenshot_rst.png
+.. image:: screenshot/screenshot_rst_solarized_light.png
     :width: 1024
-.. image:: screenshot_md.png
+.. image:: screenshot/screenshot_md_infoq.png
     :width: 1024
 
 .. |version| image:: 	https://img.shields.io/github/release/liuyug/meditor.svg
