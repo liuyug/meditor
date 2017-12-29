@@ -31,7 +31,7 @@ def get_rst_themes():
     result: { 'theme': theme_dict, ... }
     """
     themes_dirs = [
-        os.path.join(__home_data_path__, 'themes', 'reSturctedText'),
+        os.path.join(__home_data_path__, 'themes', 'reStructuredText'),
         os.path.join(__data_path__, 'themes', 'reStructuredText'),
     ]
     themes = OrderedDict()
@@ -76,7 +76,7 @@ def get_theme_settings(theme):
         stylesheet['stylesheet_path'] = pygments_path
         stylesheet['syntax_highlight'] = 'short'
     # docutils default theme
-    if theme == 'default':
+    if not theme or theme == 'default':
         return stylesheet
 
     # third part theme
@@ -105,7 +105,7 @@ def get_theme_settings(theme):
     return stylesheet
 
 
-def rst2htmlcode(rst_text, theme='restructedtext', settings={}):
+def rst2htmlcode(rst_text, theme=None, settings={}):
     output = None
     try:
         overrides = {}
@@ -126,7 +126,7 @@ def rst2htmlcode(rst_text, theme='restructedtext', settings={}):
     return output
 
 
-def rst2html(rst_file, filename, theme='restructedtext', settings={}):
+def rst2html(rst_file, filename, theme=None, settings={}):
     output = None
     try:
         overrides = {}
@@ -152,7 +152,7 @@ def rst2html(rst_file, filename, theme='restructedtext', settings={}):
     return output
 
 
-def rst2odt(rst_file, filename, theme='restructedtext', settings={}):
+def rst2odt(rst_file, filename, theme=None, settings={}):
     output = None
     try:
         overrides = {}
