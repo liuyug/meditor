@@ -54,7 +54,7 @@ install with download from github::
     # prepre data files
     # ui window
     bash ui.sh
-    # fetch reStructedText documents
+    # fetch reStructuredText documents
     bash docs.sh
     # for Simple MathJax
     bash math.sh

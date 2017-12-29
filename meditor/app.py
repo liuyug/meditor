@@ -29,7 +29,7 @@ from .findreplace import FindReplaceDialog
 
 FILTER = [
     'All support files (*.rst *.md *.txt);;',
-    'reStructedText files (*.rst *.rest);;',
+    'reStructuredText files (*.rst *.rest);;',
     'Markdown files (*.md *.markdown);;',
     'Text files (*.txt)',
 ]
@@ -168,7 +168,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # action
         # file
         newRstAction = QtWidgets.QAction(
-            self.tr('reStructedText'), self)
+            self.tr('reStructuredText'), self)
         newRstAction.setShortcut('Ctrl+N')
         newRstAction.triggered.connect(partial(self.onNew, '.rst'))
 
@@ -441,7 +441,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(previewsyncAction)
 
         menu = menubar.addMenu(self.tr('&Theme'))
-        submenu = QtWidgets.QMenu(self.tr('&reStructedText'), menu)
+        submenu = QtWidgets.QMenu(self.tr('&reStructuredText'), menu)
         for act in rstThemeGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
@@ -877,7 +877,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.settings.setValue('pygments', label)
         pygments_rst_path = os.path.join(
-            __home_data_path__, 'themes', 'reStructedText',
+            __home_data_path__, 'themes', 'reStructuredText',
             'pygments.css')
 
         pygments_md_path = os.path.join(

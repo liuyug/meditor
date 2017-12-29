@@ -38,7 +38,7 @@ class Workspace(QtWidgets.QTreeWidget):
         self.itemActivated.connect(self.onItemActivated)
         # self.pathLoaded.connect(self.onPathLoaded)
         # popup menu
-        newRstAction = QtWidgets.QAction(self.tr('reStructedText'), self)
+        newRstAction = QtWidgets.QAction(self.tr('reStructuredText'), self)
         newRstAction.triggered.connect(partial(self.onNewFile, '.rst'))
         newMdAction = QtWidgets.QAction(self.tr('Markdown'), self)
         newMdAction.triggered.connect(partial(self.onNewFile, '.md'))

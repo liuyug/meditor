@@ -22,7 +22,7 @@ __home_data_path__ = os.path.join(
     os.path.expanduser('~'), '.config', __app_name__.lower())
 
 os.makedirs(
-    os.path.join(__home_data_path__, 'themes', 'reStructedText'),
+    os.path.join(__home_data_path__, 'themes', 'reStructuredText'),
     exist_ok=True)
 os.makedirs(
     os.path.join(__home_data_path__, 'themes', 'Markdown'),

@@ -13,7 +13,7 @@ from meditor import __app_version__
 desktop = """[Desktop Entry]
 Version=%s
 Name=Markup Editor
-Comment=Editor for reStructedText and Markdown
+Comment=Editor for reStructuredText and Markdown
 Exec=meditor
 MimeType=text/plain;
 Icon=meditor-text-editor
@@ -68,9 +68,9 @@ setup(
     author_email='liuyug@gmail.com',
     url='https://github.com/liuyug/meditor.git',
     license='GPLv3',
-    description='Editor for reStructedText and Markdown',
+    description='Editor for reStructuredText and Markdown',
     long_description=long_description,
-    keywords='reStructedText Markdown editor preview',
+    keywords='reStructuredText Markdown editor preview',
     python_requires='>=3',
     platforms=['noarch'],
     packages=find_packages(),

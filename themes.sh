@@ -4,20 +4,20 @@ set -e
 set -x
 
 
-echo "Get reStructedText themes..."
+echo "Get reStructuredText themes..."
 share_theme="`pwd`/meditor/share/meditor/themes"
 
-mkdir -p themes/reStructedText
+mkdir -p themes/reStructuredText
 mkdir -p themes/Markdown
 
-rst_share_theme="$share_theme/reStructedText"
+rst_share_theme="$share_theme/reStructuredText"
 md_share_theme="$share_theme/Markdown"
 mkdir -p $rst_share_theme
 mkdir -p $md_share_theme
 
-# reStructedText Themes
+# reStructuredText Themes
 (
-cd themes/reStructedText
+cd themes/reStructuredText
 
 # Rykka/rhythm.css
 rm -rf $rst_share_theme/rhythm.css
@@ -91,7 +91,7 @@ fi
 )
 )
 
-# reStructedText end
+# reStructuredText end
 )
 
 

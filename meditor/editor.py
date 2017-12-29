@@ -438,7 +438,7 @@ class Editor(QsciScintilla):
             ext = ext.lower()
             LexerClass = EXTENSION_LEXER.get(ext)
             lexer = LexerClass(self)
-            if lexer.language() not in ['reStructedText', 'Default']:
+            if lexer.language() not in ['reStructuredText', 'Default']:
                 lexer.setFont(QtGui.QFont('Monospace', 12))
         self.setLexer(lexer)
         if lexer:

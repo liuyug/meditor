@@ -32,7 +32,7 @@ def get_rst_themes():
     """
     themes_dirs = [
         os.path.join(__home_data_path__, 'themes', 'reSturctedText'),
-        os.path.join(__data_path__, 'themes', 'reStructedText'),
+        os.path.join(__data_path__, 'themes', 'reStructuredText'),
     ]
     themes = OrderedDict()
     for themes_dir in themes_dirs:
@@ -71,7 +71,7 @@ def get_theme_settings(theme):
         os.path.join(docutils_theme_path, 'html5_polyglot'),
     ]
 
-    pygments_path = os.path.join(__home_data_path__, 'themes', 'reStructedText', 'pygments.css')
+    pygments_path = os.path.join(__home_data_path__, 'themes', 'reStructuredText', 'pygments.css')
     if os.path.exists(pygments_path):
         stylesheet['stylesheet_path'] = pygments_path
         stylesheet['syntax_highlight'] = 'short'
@@ -98,7 +98,7 @@ def get_theme_settings(theme):
         old_path = styles['template']
         new_path = os.path.abspath(
             os.path.join(__home_data_path__,
-                         'themes', 'reStructedText',
+                         'themes', 'reStructuredText',
                          theme,
                          old_path))
         stylesheet['template'] = new_path
