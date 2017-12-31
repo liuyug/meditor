@@ -124,29 +124,29 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     }
     token_regex = [
         ('title',       r'''^([=`'"~^_*+#-]+)(\r\n?|\n).+\2\1\2'''),
-        ('section',     r'''^\w.*(\r\n?|\n)[=`'"~^_*+#-]+\1'''),
-        ('transition',  r'''^(\r\n?|\n)[=`'"~^_*+#-]{4,}\1\1'''),
-        ('bullet',      r'''^[\-+*] +.+([\r\n]+ {2,}.+)*(\r\n?|\n)'''),
-        ('enumerated',  r'''^(\(?(#|\w+)[.)] +)\S.*([\r\n]+ {2,}.+)*(\r\n?|\n)'''),
-        ('field',       r'''^:[ \w\-]+:.*([\r\n]+ +.*)*(\r\n?|\n)'''),
-        ('option',      r'''^[\-/]+\w[^\r\n]+([\r\n]+ +.*)*(\r\n?|\n)'''),
-        ('line',        r'''^\| .*((\r\n?|\n) .*)*(\r\n?|\n)'''),
-        ('line2',       r'''^( +\|) .*(\r\n?|\n)'''),
-        ('quote',       r'''^( {2,})\w.+([\r\n]+\1.+)*(\r\n?|\n)'''),
-        ('definition',  r'''^\w.*(\r\n?|\n) +.*([\r\n]+ +.*)*\1'''),
-        ('doctest',     r'''^>>> .+(\r\n?|\n)'''),
-        ('table1',      r'''^( *)[\-=+]{2,}((\r\n?|\n)\1[\|+].+)+(\r\n?|\n){2}'''),
-        ('table2',      r'''^( *)[\-=]{2,} [\-= ]+((\r\n?|\n)\1.+)+(\r\n?|\n){2}'''),
+        ('section',     r'''^\w.*(\r\n?|\n)[=`'"~^_*+#-]+(\1|$)'''),
+        ('transition',  r'''^(\r\n?|\n)[=`'"~^_*+#-]{4,}\1(\1|$)'''),
+        ('bullet',      r'''^[\-+*] +.+([\r\n]+ {2,}.+)*(\r\n?|\n|$)'''),
+        ('enumerated',  r'''^(\(?(#|\w+)[.)] +)\S.*([\r\n]+ {2,}.+)*(\r\n?|\n|$)'''),
+        ('field',       r'''^:[ \w\-]+:.*([\r\n]+ +.*)*(\r\n?|\n|$)'''),
+        ('option',      r'''^[\-/]+\w[^\r\n]+([\r\n]+ +.*)*(\r\n?|\n|$)'''),
+        ('line',        r'''^\| .*((\r\n?|\n) .*)*(\r\n?|\n|$)'''),
+        ('line2',       r'''^( +\|) .*(\r\n?|\n|$)'''),
+        ('quote',       r'''^( {2,})\w.+([\r\n]+\1.+)*(\r\n?|\n|$)'''),
+        ('definition',  r'''^\w.*(\r\n?|\n) +.*([\r\n]+ +.*)*(\1|$)'''),
+        ('doctest',     r'''^>>> .+(\r\n?|\n|$)'''),
+        ('table1',      r'''^( *)[\-=+]{2,}((\r\n?|\n)\1[\|+].+)+(\r\n?|\n)(\r\n?|\n|$)'''),
+        ('table2',      r'''^( *)[\-=]{2,} [\-= ]+((\r\n?|\n)\1.+)+(\r\n?|\n)(\r\n?|\n|$)'''),
 
-        ('literal3',    r'''^\.\. +code::.*([\r\n]+ {2,}.+)*(\r\n?|\n){2}'''),
-        ('directive',   r'''^\.\. +[\-\w]+::.*([\r\n]+ {2,}.+)*(\r\n?|\n)'''),
-        ('footnote',    r'''^\.\. \[[^\]]+\] .+([\r\n]+ {3,}.+)*(\r\n?|\n)'''),
-        ('target1',     r'''^\.\. _[^:]+: .*(\r\n?|\n)'''),
-        ('comment',     r'''^\.\. +[\-\w].*([\r\n]+ {2,}.+)*(\r\n?|\n)'''),
-        ('target2',     r'''^__ .+(\r\n?|\n)'''),
+        ('literal3',    r'''^\.\. +code::.*([\r\n]+ {2,}.+)*(\r\n?|\n)(\2|$)'''),
+        ('directive',   r'''^\.\. +[\-\w]+::.*([\r\n]+ {2,}.+)*(\r\n?|\n|$)'''),
+        ('footnote',    r'''^\.\. \[[^\]]+\] .+([\r\n]+ {3,}.+)*(\r\n?|\n|$)'''),
+        ('target1',     r'''^\.\. _[^:]+: .*(\r\n?|\n|$)'''),
+        ('comment',     r'''^\.\. +[\-\w].*([\r\n]+ {2,}.+)*(\r\n?|\n|$)'''),
+        ('target2',     r'''^__ .+(\r\n?|\n|$)'''),
         # ^ only match from line beginning
-        ('literal',     r'''::(\r\n?|\n)([\r\n]+ +.*)+\1{2}'''),
-        ('literal2',    r'''::(\r\n?|\n)([\r\n]+>+.*)+\1{2}'''),
+        ('literal',     r'''::(\r\n?|\n)([\r\n]+ +.*)+\1(\1|$)'''),
+        ('literal2',    r'''::(\r\n?|\n)([\r\n]+>+.*)+\1(\1|$)'''),
         ('newline',     r'''[\r\n]+'''),
         ('colon',       r''':+'''),
         ('string',      r'''[^:\r\n]+'''),
@@ -216,16 +216,17 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         self.startStyling(start)
         offset = 0
         while offset < len(text):
+            # logger.debug('try match: %s %s' % (offset, repr(text[offset:])))
             mo = None
             for key, tok in self.block_tokens:
                 mo = tok.match(text, offset)
                 if mo:
                     break
-            assert mo, repr(text[offset:])
+            assert mo, text[offset:]
             # !! must match a style
             m_string = mo.group(0)
             length = len(m_string.encode('utf8'))
-            logger.debug('match: %s, %s, %s' % (key, length, repr(m_string)))
+            logger.debug('match: %s, %s, %s' % (key, length, m_string))
             self.setStyling(length, self.styles[key])
             offset = mo.end()
         self.do_InlineStylingText(start, end)
@@ -256,29 +257,35 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             self.editor()._lexerStart = min(start, self.editor()._lexerStart)
             self.editor()._lexerEnd = max(end, self.editor()._lexerEnd)
             return
+        logger.debug('styling'.center(70, '-'))
         pos = max(start - 1, 0)
         pre_style = self.parent().getStyleAt(pos)
+        logger.debug('prev style: %s' % self.rstyles.get(pre_style) or self.inline_rstyles.get(pre_style))
         while pos > 0:
+            char = self.parent().getCharAt(pos)
             style = self.parent().getStyleAt(pos)
-            if style not in self.inline_rstyles and style != pre_style:
+            if char == ord('\n') and style != pre_style:
                 pos += 1
                 break
             pos -= 1
         fix_start = pos
+        # fix all text style
+        # pos = self.parent().length()
         pos = min(end + 1, self.parent().length())
         suf_style = self.parent().getStyleAt(pos)
+        logger.debug('next style: %s' % self.rstyles.get(suf_style) or self.inline_rstyles.get(suf_style))
         while pos < self.parent().length():
+            char = self.parent().getCharAt(pos)
             style = self.parent().getStyleAt(pos)
-            if style not in self.inline_rstyles and style != suf_style:
+            if char == ord('\n') and style != suf_style:
                 pos -= 1
                 break
             pos += 1
         fix_end = pos
-        logger.debug('styling'.center(40, '-'))
         text = self.parent().text(start, end)
         fix_text = self.parent().text(fix_start, fix_end)
-        logger.debug('text: %s %s %s' % (start, end, repr(text)))
-        logger.debug('fix range text: %s %s %s' % (fix_start, fix_end, repr(fix_text)))
+        logger.debug('text: %s %s %s' % (start, end, text))
+        logger.debug('fix range text: %s %s %s' % (fix_start, fix_end, fix_text))
         self.do_StylingText(fix_start, fix_end)
 
     def defaultStyle(self):
