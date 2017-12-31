@@ -269,18 +269,18 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                 break
             pos -= 1
         fix_start = pos
-        # fix all text style
-        # pos = self.parent().length()
-        pos = min(end + 1, self.parent().length())
-        suf_style = self.parent().getStyleAt(pos)
-        logger.debug('next style: %s' % self.rstyles.get(suf_style) or self.inline_rstyles.get(suf_style))
-        while pos < self.parent().length():
-            char = self.parent().getCharAt(pos)
-            style = self.parent().getStyleAt(pos)
-            if char == ord('\n') and style != suf_style:
-                pos -= 1
-                break
-            pos += 1
+        if True:
+            pos = self.parent().length()
+        else:
+            pos = min(end + 1, self.parent().length())
+            suf_style = self.parent().getStyleAt(pos)
+            logger.debug('next style: %s' % self.rstyles.get(suf_style) or self.inline_rstyles.get(suf_style))
+            while pos < self.parent().length():
+                char = self.parent().getCharAt(pos)
+                style = self.parent().getStyleAt(pos)
+                if char == ord('\n') and style != suf_style:
+                    break
+                pos += 1
         fix_end = pos
         text = self.parent().text(start, end)
         fix_text = self.parent().text(fix_start, fix_end)
