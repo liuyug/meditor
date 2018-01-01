@@ -3,6 +3,7 @@ import os.path
 import logging
 
 from PyQt5 import Qsci, QtGui, QtCore
+from PyQt5.Qsci import QsciScintilla
 
 from .. import __home_data_path__, __data_path__, globalvars
 
@@ -49,7 +50,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     styles = {
         'string': 0,
         'colon': 0,
-        'newline': 0,
+        'newline': 31,
         'comment': 1,
         'title': 2,
         'section': 2,
@@ -121,6 +122,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         23: 'fore:#4e9a06',
         24: 'fore:#4e9a06',
         25: 'back:#ef2929',
+        31: 'fore:#000000',
     }
     token_regex = [
         ('title',       r'''^([=`'"~^_*+#-]+)(\r\n?|\n).+\2\1\2'''),
@@ -258,30 +260,38 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             self.editor()._lexerEnd = max(end, self.editor()._lexerEnd)
             return
         logger.debug('styling'.center(70, '-'))
-        pos = max(start - 1, 0)
+        eol_mode = self.parent().eolMode()
+        if eol_mode == QsciScintilla.EolWindows:
+            eol = '\r\n'
+        if eol_mode == QsciScintilla.EolUnix:
+            eol = '\n'
+        if eol_mode == QsciScintilla.EolMac:
+            eol = '\r'
+        pos = max(start - len(eol), 0)
         pre_style = self.parent().getStyleAt(pos)
         logger.debug('prev style: %s' % self.rstyles.get(pre_style) or self.inline_rstyles.get(pre_style))
-        newline = ord('\n')
         while pos > 0:
-            char = self.parent().getCharAt(pos)
             style = self.parent().getStyleAt(pos)
-            if char == newline \
-                    and self.parent().getCharAt(max(pos - 1, 0)) == newline \
+            newline = self.parent().text(pos, pos + len(eol))
+            next_pos = max(pos - len(eol), 0)
+            if newline == eol \
+                    and newline == self.parent().text(next_pos, next_pos + len(eol)) \
                     and style != pre_style:
                 break
-            pos -= 1
+            pos -= len(eol)
         fix_start = pos
-        pos = min(end + 1, self.parent().length())
+        pos = min(end + len(eol), self.parent().length())
         suf_style = self.parent().getStyleAt(pos)
         logger.debug('next style: %s' % self.rstyles.get(suf_style) or self.inline_rstyles.get(suf_style))
         while pos < self.parent().length():
-            char = self.parent().getCharAt(pos)
             style = self.parent().getStyleAt(pos)
-            if char == newline \
-                    and self.parent().getCharAt(min(pos + 1, self.parent().length())) == newline \
+            newline = self.parent().text(pos, pos + len(eol))
+            next_pos = min(pos + len(eol), self.parent().length())
+            if newline == eol \
+                    and newline == self.parent().text(next_pos, next_pos + len(eol)) \
                     and style != suf_style:
                 break
-            pos += 1
+            pos += len(eol)
         fix_end = pos
         text = self.parent().text(start, end)
         fix_text = self.parent().text(fix_start, fix_end)
