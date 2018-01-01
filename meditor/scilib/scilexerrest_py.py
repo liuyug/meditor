@@ -138,7 +138,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         ('table1',      r'''^( *)[\-=+]{2,}((\r\n?|\n)\1[\|+].+)+(\r\n?|\n)'''),
         ('table2',      r'''^( *)[\-=]{2,} [\-= ]+((\r\n?|\n)\1.+)+(\r\n?|\n)'''),
 
-        ('literal3',    r'''^\.\. +code::.*([\r\n]+ {2,}.+)*(\r\n?|\n)'''),
+        ('literal3',    r'''^\.\. +code::.*(\r\n?|\n)([\r\n]+ {2,}.+)*\1'''),
         ('directive',   r'''^\.\. +[\-\w]+::.*([\r\n]+ {2,}.+)*(\r\n?|\n)'''),
         ('footnote',    r'''^\.\. \[[^\]]+\] .+([\r\n]+ {3,}.+)*(\r\n?|\n)'''),
         ('target1',     r'''^\.\. _[^:]+: .*(\r\n?|\n)'''),
@@ -265,7 +265,9 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         while pos > 0:
             char = self.parent().getCharAt(pos)
             style = self.parent().getStyleAt(pos)
-            if char == newline and style != pre_style:
+            if char == newline \
+                    and self.parent().getCharAt(max(pos - 1, 0)) == newline \
+                    and style != pre_style:
                 break
             pos -= 1
         fix_start = pos
@@ -275,7 +277,9 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         while pos < self.parent().length():
             char = self.parent().getCharAt(pos)
             style = self.parent().getStyleAt(pos)
-            if char == newline and style != suf_style:
+            if char == newline \
+                    and self.parent().getCharAt(min(pos + 1, self.parent().length())) == newline \
+                    and style != suf_style:
                 break
             pos += 1
         fix_end = pos
