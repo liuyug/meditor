@@ -95,9 +95,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._icon = os.path.join(__icon_path__, 'meditor-text-editor.ico')
         logger.info('icon path: %s' % __icon_path__)
         self.setWindowIcon(QtGui.QIcon(self._icon))
-        self.setupMenu()
-        self.setupToolbar()
-        self.setupStatusBar()
+        self.setFont(QtGui.QFont('Monospace', 12))
         # main window
         self.findDialog = FindReplaceDialog(self)
 
@@ -132,12 +130,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.explorer.fileNew.connect(self.onNew)
         self.explorer.fileRenamed.connect(self.onFileRenamed)
         self.explorer.fileDeleted.connect(self.onFileDeleted)
-        # window state
+
+        # setup main frame
+        self.setupMenu()
+        self.setupToolbar()
+        self.setupStatusBar()
+
+        # restore window state
         self.restoreGeometry(settings.value('geometry', type=QtCore.QByteArray))
         self.restoreState(settings.value('windowState', type=QtCore.QByteArray))
+
         value = settings.value('explorer/workspace', type=str)
         for path in value.split(';'):
             self.explorer.appendRootPath(path)
+
         value = settings.value('editor/opened_files', type=str)
         for filepath in value.split(';'):
             if not os.path.exists(filepath):
@@ -153,8 +159,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tabWidgets.addTab(editor, tab_title)
         self.onTabChanged(self.tabWidgets.currentIndex())
 
-        self.setFont(QtGui.QFont('Monospace', 12))
-
         value = settings.value('editor/enableLexer', True, type=bool)
         self.editor().enableLexer(value)
         self.previewWorker = threading.Thread(target=previewWorker,
@@ -167,14 +171,6 @@ class MainWindow(QtWidgets.QMainWindow):
         settings = self.settings
         # action
         # file
-        newRstAction = QtWidgets.QAction(
-            self.tr('reStructuredText'), self)
-        newRstAction.setShortcut('Ctrl+N')
-        newRstAction.triggered.connect(partial(self.onNew, '.rst'))
-
-        newMdAction = QtWidgets.QAction(self.tr('Markdown'), self)
-        newMdAction.triggered.connect(partial(self.onNew, '.md'))
-
         newwindowAction = QtWidgets.QAction(self.tr('New &window'), self)
         newwindowAction.setShortcut('Ctrl+W')
         newwindowAction.triggered.connect(self.onNewWindow)
@@ -386,8 +382,8 @@ class MainWindow(QtWidgets.QMainWindow):
         menubar = self.menuBar()
         menu = menubar.addMenu(self.tr('&File'))
         submenu = QtWidgets.QMenu(self.tr('&New'), menu)
-        submenu.addAction(newRstAction)
-        submenu.addAction(newMdAction)
+        submenu.addAction(self.explorer.newRstAction)
+        submenu.addAction(self.explorer.newMdAction)
         menu.addMenu(submenu)
         menu.addAction(newwindowAction)
         menu.addAction(openAction)
@@ -522,7 +518,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewQuit = True
         requestPreview.set()
         self.previewWorker.join()
-        logger.info('=== rsteditor end ===')
+        logger.info(' rsteditor end '.center(80, '='))
         event.accept()
 
     def onTabChanged(self, index):
