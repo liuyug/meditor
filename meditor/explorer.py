@@ -18,6 +18,7 @@ class Workspace(QtWidgets.QTreeWidget):
     type_folder = type_root + 1
     type_file = type_root + 2
     role_path = QtCore.Qt.UserRole
+    _actions = None
 
     fileLoaded = QtCore.pyqtSignal('QString')
     fileDeleted = QtCore.pyqtSignal('QString')
@@ -38,36 +39,51 @@ class Workspace(QtWidgets.QTreeWidget):
         self.itemActivated.connect(self.onItemActivated)
         # self.pathLoaded.connect(self.onPathLoaded)
         # popup menu
-        self.newRstAction = QtWidgets.QAction(self.tr('reStructuredText'), self)
-        self.newRstAction.triggered.connect(partial(self.onNewFile, '.rst'))
-        self.newRstAction.setShortcut('Ctrl+N')
-        self.newMdAction = QtWidgets.QAction(self.tr('Markdown'), self)
-        self.newMdAction.triggered.connect(partial(self.onNewFile, '.md'))
+        self._actions = {}
+        action = QtWidgets.QAction(self.tr('reStructuredText'), self)
+        action.triggered.connect(partial(self.onNewFile, '.rst'))
+        action.setShortcut('Ctrl+N')
+        self._actions['new_rst'] = action
 
-        self.newdirectoryAction = QtWidgets.QAction(self.tr('New &directory'), self)
-        self.newdirectoryAction.triggered.connect(self.onNewDirectory)
-        self.renameAction = QtWidgets.QAction(self.tr('&Rename...'), self)
-        self.renameAction.triggered.connect(self.onRename)
-        self.deleteAction = QtWidgets.QAction(self.tr('Delete'), self)
-        self.deleteAction.triggered.connect(self.onDelete)
-        self.refreshAction = QtWidgets.QAction(self.tr('Refresh'), self)
-        self.refreshAction.triggered.connect(self.onRefresh)
-        self.explorerAction = QtWidgets.QAction(self.tr('Windows Explorer'), self)
-        self.explorerAction.triggered.connect(self.onWindowsExplorer)
+        action = QtWidgets.QAction(self.tr('Markdown'), self)
+        action.triggered.connect(partial(self.onNewFile, '.md'))
+        self._actions['new_md'] = action
+
+        action = QtWidgets.QAction(self.tr('New &directory'), self)
+        action.triggered.connect(self.onNewDirectory)
+        self._actions['new_dir'] = action
+
+        action = QtWidgets.QAction(self.tr('&Rename...'), self)
+        action.triggered.connect(self.onRename)
+        self._actions['rename'] = action
+
+        action = QtWidgets.QAction(self.tr('Delete'), self)
+        action.triggered.connect(self.onDelete)
+        self._actions['delete'] = action
+        action = QtWidgets.QAction(self.tr('Refresh'), self)
+        action.triggered.connect(self.onRefresh)
+        self._actions['refresh'] = action
+        action = QtWidgets.QAction(self.tr('Windows Explorer'), self)
+        action.triggered.connect(self.onWindowsExplorer)
+        self._actions['explorer'] = action
+
+        action = QtWidgets.QAction(self.tr('Open folder'), self)
+        action.triggered.connect(self.onOpenWorkspace)
+        self._actions['open_workspace'] = action
 
         self.popupMenu = QtWidgets.QMenu(self)
         submenu = QtWidgets.QMenu(self.tr('New'), self.popupMenu)
-        submenu.addAction(self.newRstAction)
-        submenu.addAction(self.newMdAction)
+        submenu.addAction(self.action('new_rst'))
+        submenu.addAction(self.action('new_md'))
         self.popupMenu.addMenu(submenu)
 
-        self.popupMenu.addAction(self.newdirectoryAction)
+        self.popupMenu.addAction(self.action('new_dir'))
         self.popupMenu.addSeparator()
-        self.popupMenu.addAction(self.renameAction)
-        self.popupMenu.addAction(self.deleteAction)
+        self.popupMenu.addAction(self.action('rename'))
+        self.popupMenu.addAction(self.action('delete'))
         self.popupMenu.addSeparator()
-        self.popupMenu.addAction(self.refreshAction)
-        self.popupMenu.addAction(self.explorerAction)
+        self.popupMenu.addAction(self.action('refresh'))
+        self.popupMenu.addAction(self.action('explorer'))
         self.popupMenu.addSeparator()
         # drag & drop
         self.setDragEnabled(True)
@@ -87,9 +103,9 @@ class Workspace(QtWidgets.QTreeWidget):
             rect = self.visualItemRect(item)
             pos = self.mapToGlobal(rect.center())
         item = self.currentItem()
-        self.renameAction.setEnabled(bool(item) and item.type() != self.type_root)
-        self.deleteAction.setEnabled(bool(item))
-        self.deleteAction.setText(
+        self.action('rename').setEnabled(bool(item) and item.type() != self.type_root)
+        self.action('delete').setEnabled(bool(item))
+        self.action('delete').setText(
             self.tr('Remove Workspace') if item.type() == self.type_root else self.tr('Delete'))
         self.popupMenu.popup(pos)
 
@@ -162,6 +178,13 @@ class Workspace(QtWidgets.QTreeWidget):
     def onWindowsExplorer(self):
         path = self.getCurrentPath()
         subprocess.Popen('explorer "%s"' % path, shell=True)
+
+    def onOpenWorkspace(self):
+        path = QtWidgets.QFileDialog.getExistingDirectory(
+            self, self.tr('Open a folder'), '',
+        )
+        if path:
+            self.appendRootPath(path)
 
     def dragMoveEvent(self, event):
         super(Workspace, self).dragMoveEvent(event)
@@ -399,3 +422,6 @@ class Workspace(QtWidgets.QTreeWidget):
 
     def refreshPath(self, path):
         self.onRefresh()
+
+    def action(self, action):
+        return self._actions.get(action)

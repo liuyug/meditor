@@ -14,10 +14,11 @@ from functools import partial
 from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from pygments.formatters import get_formatter_by_name
 
-from . import __app_name__, __app_version__, __default_basename__, \
+from . import __app_name__, __app_version__, \
     __data_path__, __home_data_path__, __icon_path__, __mathjax_full_path__, \
     pygments_styles
-from .editor import Editor, CodeViewer
+from .editor import CodeViewer
+from .tab_editor import TabEditor
 from .scilib import EXTENSION_LEXER
 from . import webview
 from . import explorer
@@ -99,13 +100,17 @@ class MainWindow(QtWidgets.QMainWindow):
         # main window
         self.findDialog = FindReplaceDialog(self)
 
-        self.tabWidgets = QtWidgets.QTabWidget(self)
-        self.tabWidgets.setMovable(True)
-        self.tabWidgets.setTabsClosable(True)
-        self.tabWidgets.setDocumentMode(True)
-        self.tabWidgets.currentChanged.connect(self.onTabChanged)
-        self.tabWidgets.tabCloseRequested.connect(self.onTabCloseRequested)
-        self.setCentralWidget(self.tabWidgets)
+        self.tab_editor = TabEditor(self.settings, self.findDialog, self)
+        self.tab_editor.tabBarClicked.connect(self.onTabClicked)
+        self.tab_editor.encodingChanged.connect(partial(self.onStatusChange, 'encoding'))
+        self.tab_editor.lexerChanged.connect(partial(self.onStatusChange, 'lexer'))
+        self.tab_editor.eolChanged.connect(partial(self.onStatusChange, 'eol'))
+        self.tab_editor.cursorChanged.connect(partial(self.onStatusChange, 'cursor'))
+        self.tab_editor.verticalScrollBarChanged.connect(self.onValueChanged)
+        self.tab_editor.previewRequest.connect(self.onPreviewRequest)
+        self.tab_editor.modificationChanged.connect(self.onEditorModified)
+
+        self.setCentralWidget(self.tab_editor)
 
         # left dock window
         self.dock_explorer = QtWidgets.QDockWidget(self.tr('Explorer'), self)
@@ -116,7 +121,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # right dock window
         self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Previewer'), self)
         self.dock_webview.setObjectName('dock_webview')
-        self.webview = webview.WebView(self.dock_webview)
+        self.webview = webview.WebView(self.findDialog, self.dock_webview)
         self.dock_webview.setWidget(self.webview)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
         self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code viewer'), self)
@@ -130,6 +135,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.explorer.fileNew.connect(self.onNew)
         self.explorer.fileRenamed.connect(self.onFileRenamed)
         self.explorer.fileDeleted.connect(self.onFileDeleted)
+        QtWidgets.qApp.focusChanged.connect(self._onFocusChanged)
 
         # setup main frame
         self.setupMenu()
@@ -148,19 +154,11 @@ class MainWindow(QtWidgets.QMainWindow):
         for filepath in value.split(';'):
             if not os.path.exists(filepath):
                 continue
-            editor = self.setupNewEditor()
-            editor.readFile(filepath)
-            title, tab_title = self.createTitle(filepath, editor.isModified())
-            self.tabWidgets.addTab(editor, tab_title)
-        if self.tabWidgets.count() == 0:
-            editor = self.setupNewEditor()
-            editor.newFile('.rst')
-            title, tab_title = self.createTitle(editor.getFileName(), editor.isModified())
-            self.tabWidgets.addTab(editor, tab_title)
-        self.onTabChanged(self.tabWidgets.currentIndex())
+            self.tab_editor.open(filepath)
+        if self.tab_editor.count() == 0:
+            self.tab_editor.new('.rst')
+        self.onTabClicked(self.tab_editor.currentIndex())
 
-        value = settings.value('editor/enableLexer', True, type=bool)
-        self.editor().enableLexer(value)
         self.previewWorker = threading.Thread(target=previewWorker,
                                               args=(self,))
         self.previewSignal.connect(self.previewDisplay)
@@ -174,82 +172,26 @@ class MainWindow(QtWidgets.QMainWindow):
         newwindowAction = QtWidgets.QAction(self.tr('New &window'), self)
         newwindowAction.setShortcut('Ctrl+W')
         newwindowAction.triggered.connect(self.onNewWindow)
-        openAction = QtWidgets.QAction(self.tr('&Open'), self)
-        openAction.setShortcut('Ctrl+O')
-        openAction.triggered.connect(self.onOpen)
-        openWorkspaceAction = QtWidgets.QAction(self.tr('Open folder'), self)
-        openWorkspaceAction.triggered.connect(self.onOpenWorkspace)
-        saveAction = QtWidgets.QAction(self.tr('&Save'), self)
-        saveAction.setShortcut('Ctrl+S')
-        saveAction.triggered.connect(self.onSave)
-        saveAsAction = QtWidgets.QAction(self.tr('Save as...'), self)
-        saveAsAction.triggered.connect(self.onSaveAs)
+
         exportPDFAction = QtWidgets.QAction(self.tr('Export to PDF'), self)
         exportPDFAction.triggered.connect(partial(self.onExport, 'pdf'))
         exportHTMLAction = QtWidgets.QAction(self.tr('Export to HTML'), self)
         exportHTMLAction.triggered.connect(partial(self.onExport, 'html'))
+
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
         printAction.setShortcut('Ctrl+P')
         printAction.triggered.connect(self.onPrint)
         printPreviewAction = QtWidgets.QAction(self.tr('Print Pre&view'), self)
         printPreviewAction.triggered.connect(self.onPrintPreview)
-        exitAction = QtWidgets.QAction(self.tr('&Exit'), self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.triggered.connect(self.close)
-        # edit
-        self.undoAction = QtWidgets.QAction(self.tr('&Undo'), self)
-        self.undoAction.setShortcut('Ctrl+Z')
-        self.undoAction.triggered.connect(partial(self.onEdit, 'undo'))
-        self.redoAction = QtWidgets.QAction(self.tr('&Redo'), self)
-        self.redoAction.setShortcut('Shift+Ctrl+Z')
-        self.redoAction.triggered.connect(partial(self.onEdit, 'redo'))
-        self.cutAction = QtWidgets.QAction(self.tr('Cu&t'), self)
-        self.cutAction.setShortcut('Ctrl+X')
-        self.cutAction.triggered.connect(partial(self.onEdit, 'cut'))
-        self.copyAction = QtWidgets.QAction(self.tr('&Copy'), self)
-        self.copyAction.setShortcut('Ctrl+C')
-        self.copyAction.triggered.connect(partial(self.onEdit, 'copy'))
-        self.pasteAction = QtWidgets.QAction(self.tr('&Paste'), self)
-        self.pasteAction.setShortcut('Ctrl+V')
-        self.pasteAction.triggered.connect(partial(self.onEdit, 'paste'))
-        self.deleteAction = QtWidgets.QAction(self.tr('&Delete'), self)
-        self.deleteAction.triggered.connect(partial(self.onEdit, 'delete'))
-        self.selectallAction = QtWidgets.QAction(self.tr('Select &All'), self)
-        self.selectallAction.setShortcut('Ctrl+A')
-        self.selectallAction.triggered.connect(partial(self.onEdit,
-                                                       'selectall'))
-        self.findAction = QtWidgets.QAction(self.tr('&Find or Replace'), self)
-        self.findAction.setShortcut('Ctrl+F')
-        self.findAction.triggered.connect(partial(self.onEdit, 'find'))
-        self.findnextAction = QtWidgets.QAction(self.tr('Find Next'), self)
-        self.findnextAction.setShortcut('F3')
-        self.findnextAction.triggered.connect(partial(self.onEdit, 'findnext'))
-        self.findprevAction = QtWidgets.QAction(self.tr('Find Previous'), self)
-        self.findprevAction.setShortcut('Shift+F3')
-        self.findprevAction.triggered.connect(partial(self.onEdit, 'findprev'))
-
-        self.replacenextAction = QtWidgets.QAction(self.tr('Replace Next'), self)
-        self.replacenextAction.setShortcut('F4')
-        self.replacenextAction.triggered.connect(partial(self.onEdit, 'replacenext'))
-
-        self.indentAction = QtWidgets.QAction(self.tr('Indent'), self)
-        self.indentAction.setShortcut('TAB')
-        self.indentAction.triggered.connect(partial(self.onEdit, 'indent'))
-        self.unindentAction = QtWidgets.QAction(self.tr('Unindent'), self)
-        self.unindentAction.setShortcut('Shift+TAB')
-        self.unindentAction.triggered.connect(partial(self.onEdit, 'unindent'))
-
-        enableLexerAction = QtWidgets.QAction(self.tr('Enable Lexer'),
-                self, checkable=True)
-        value = settings.value('editor/enableLexer', True, type=bool)
-        settings.setValue('editor/enableLexer', value)
-        enableLexerAction.setChecked(value)
-        enableLexerAction.triggered.connect(
-            partial(self.onPreview, 'enablelexer'))
 
         fileAssociationAction = QtWidgets.QAction(self.tr('File Associate'), self)
         fileAssociationAction.triggered.connect(self.onFileAssociation)
         fileAssociationAction.setEnabled(sys.platform == 'win32')
+
+        exitAction = QtWidgets.QAction(self.tr('&Exit'), self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.triggered.connect(self.close)
+        # edit
         # view
         self.explorerAction = QtWidgets.QAction(self.tr('File explorer'),
                                             self,
@@ -377,20 +319,22 @@ class MainWindow(QtWidgets.QMainWindow):
         aboutAction = QtWidgets.QAction(self.tr('&About'), self)
         aboutAction.triggered.connect(self.onAbout)
         aboutqtAction = QtWidgets.QAction(self.tr('About &Qt'), self)
-        aboutqtAction.triggered.connect(QtWidgets.QApplication.aboutQt)
+        aboutqtAction.triggered.connect(QtWidgets.qApp.aboutQt)
         # menu
         menubar = self.menuBar()
         menu = menubar.addMenu(self.tr('&File'))
         submenu = QtWidgets.QMenu(self.tr('&New'), menu)
-        submenu.addAction(self.explorer.newRstAction)
-        submenu.addAction(self.explorer.newMdAction)
+        submenu.addAction(self.explorer.action('new_rst'))
+        submenu.addAction(self.explorer.action('new_md'))
         menu.addMenu(submenu)
         menu.addAction(newwindowAction)
-        menu.addAction(openAction)
-        menu.addAction(openWorkspaceAction)
+        menu.addAction(self.tab_editor.action('open'))
+        menu.addAction(self.explorer.action('open_workspace'))
         menu.addSeparator()
-        menu.addAction(saveAction)
-        menu.addAction(saveAsAction)
+        menu.addAction(self.tab_editor.action('save'))
+        menu.addAction(self.tab_editor.action('save_as'))
+        menu.addAction(self.tab_editor.action('close_all'))
+
         menu.addSeparator()
         menu.addAction(exportPDFAction)
         menu.addAction(exportHTMLAction)
@@ -398,30 +342,12 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(printPreviewAction)
         menu.addAction(printAction)
         menu.addSeparator()
+        menu.addAction(fileAssociationAction)
+        menu.addSeparator()
         menu.addAction(exitAction)
 
         menu = menubar.addMenu(self.tr('&Edit'))
-        menu.addAction(self.undoAction)
-        menu.addAction(self.redoAction)
-        menu.addSeparator()
-        menu.addAction(self.cutAction)
-        menu.addAction(self.copyAction)
-        menu.addAction(self.pasteAction)
-        menu.addAction(self.deleteAction)
-        menu.addSeparator()
-        menu.addAction(self.selectallAction)
-        menu.addSeparator()
-        menu.addAction(self.findAction)
-        menu.addAction(self.findnextAction)
-        menu.addAction(self.findprevAction)
-        menu.addAction(self.replacenextAction)
-        menu.addSeparator()
-        menu.addAction(self.indentAction)
-        menu.addAction(self.unindentAction)
-        menu.addSeparator()
-        menu.addAction(fileAssociationAction)
-        menu.addAction(enableLexerAction)
-        menu.aboutToShow.connect(self.onEditMenuShow)
+        menu.aboutToShow.connect(self.onEditAboutToShow)
 
         menu = menubar.addMenu(self.tr('&View'))
         menu.addAction(self.explorerAction)
@@ -435,7 +361,6 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(previewsaveAction)
         menu.addAction(previewinputAction)
         menu.addAction(previewsyncAction)
-
         menu = menubar.addMenu(self.tr('&Theme'))
         submenu = QtWidgets.QMenu(self.tr('&reStructuredText'), menu)
         for act in rstThemeGroup.actions():
@@ -485,34 +410,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.statusBar().showMessage(self.tr('Ready'))
 
-    def setupNewEditor(self):
-        editor = Editor()
-        editor.encodingChange.connect(partial(self.onStatusChange, 'encoding'))
-        editor.lexerChange.connect(partial(self.onStatusChange, 'lexer'))
-        editor.eolChange.connect(partial(self.onStatusChange, 'eol'))
-        editor.cursorChange.connect(partial(self.onStatusChange, 'cursor'))
-        editor.verticalScrollBar().valueChanged.connect(self.onValueChanged)
-        editor.lineInputed.connect(self.onInputPreview)
-        editor.modificationChanged.connect(self.onEditorModified)
-        return editor
-
     def closeEvent(self, event):
-        opens = []
-        for x in range(self.tabWidgets.count()):
-            editor = self.tabWidgets.widget(x)
-            filepath = editor.getFileName()
-            if os.path.dirname(filepath):
-                opens.append(filepath)
-            if not self.saveAndContinue(editor, preview=False):
-                event.ignore()
-                return
+        print('main close')
+        self.tab_editor.close()
 
         settings = self.settings
         settings.setValue('geometry', self.saveGeometry())
         settings.setValue('windowState', self.saveState())
         settings.setValue('explorer/workspace', ';'.join(
             self.explorer.getRootPaths()))
-        settings.setValue('editor/opened_files', ';'.join(opens))
+        # settings.setValue('editor/opened_files', ';'.join(opens))
         settings.sync()
 
         self.previewQuit = True
@@ -521,27 +428,30 @@ class MainWindow(QtWidgets.QMainWindow):
         logger.info(' rsteditor end '.center(80, '='))
         event.accept()
 
-    def onTabChanged(self, index):
-        editor = self.tabWidgets.widget(index)
-        if not editor:
+    def _onFocusChanged(self, old, new):
+        menu = None
+        for action in self.menuBar().actions():
+            if self.tr('&Edit') == action.text():
+                menu = action.menu()
+                break
+        if not menu:
             return
-        filepath = editor.getFileName()
-        title, _ = self.createTitle(filepath, editor.isModified())
+        menu.clear()
+        if self.codeview.hasFocus():
+            self.codeview.editMenu(menu)
+        elif self.webview.hasFocus():
+            self.webview.editMenu(menu)
+        else:
+            self.tab_editor.editMenu(menu)
+
+    def onTabClicked(self, index):
+        title = self.tab_editor.title(index, full=True)
         self.setWindowTitle(title)
-        text = editor.getValue()
-        self.preview(text, filepath)
-        for status, value in editor.getStatus().items():
-            self.onStatusChange(status, value)
+        self.preview(index)
+        for status, value in self.tab_editor.status(index).items():
+            self.onStatusChange(status, index, value)
 
-    def onTabCloseRequested(self, index):
-        editor = self.tabWidgets.widget(index)
-        if self.saveAndContinue(editor, preview=False):
-            self.tabWidgets.removeTab(index)
-            del editor
-        if self.tabWidgets.count() == 0:
-            self.onNew('.rst')
-
-    def onStatusChange(self, status, value):
+    def onStatusChange(self, status, index, value):
         length = max(len(value) + 2, 8)
         if status == 'lexer':
             self.statusLexer.setText(value.center(length, ' '))
@@ -553,15 +463,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.statusCursor.setText(value.center(length, ' '))
 
     def onNew(self, ext):
-        editor = self.setupNewEditor()
-        editor.newFile(ext)
-        filepath = editor.getFileName()
-        title, tab_title = self.createTitle(filepath, editor.isModified())
-        text = editor.getValue()
-        self.tabWidgets.insertTab(0, editor, tab_title)
-        self.tabWidgets.setCurrentWidget(editor)
+        index = self.tab_editor.new(ext)
+        title = self.tab_editor.title(index, full=True)
         self.setWindowTitle(title)
-        self.preview(text, filepath)
+        self.preview(index)
 
     def onNewWindow(self):
         if sys.platform == 'win32' and self._app_exec.endswith('.py'):
@@ -570,71 +475,55 @@ class MainWindow(QtWidgets.QMainWindow):
             subprocess.Popen([self._app_exec])
         return
 
-    def onOpen(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, self.tr('Open a file'),
-            filter=''.join(FILTER),
-        )
-        if filename:
-            self.loadFile(filename)
-            self.explorer.appendRootPath(os.path.dirname(filename))
+    # def onSave(self, editor=None, preview=True):
+    #     if not editor:
+    #         editor = self.tabWidgets.currentWidget()
+    #     filepath = editor.getFileName()
+    #     dir_name = os.path.dirname(filepath)
+    #     filename = os.path.basename(filepath)
+    #     basename, _ = os.path.splitext(filename)
+    #     if not dir_name and basename == __default_basename__:
+    #         self.onSaveAs(editor=editor, preview=preview)
+    #     else:
+    #         editor.writeFile()
+    #         if preview:
+    #             title, tab_title = self.createTitle(filepath, editor.isModified())
+    #             self.setWindowTitle(title)
+    #             self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
+    #             if self.settings.value('preview/onsave', type=bool):
+    #                 text = editor.getValue()
+    #                 self.preview(text, filename)
+    #     return
 
-    def onOpenWorkspace(self):
-        path = QtWidgets.QFileDialog.getExistingDirectory(
-            self, self.tr('Open a folder'), '',
-        )
-        if path:
-            self.explorer.appendRootPath(path)
-
-    def onSave(self, editor=None, preview=True):
-        if not editor:
-            editor = self.tabWidgets.currentWidget()
-        filepath = editor.getFileName()
-        dir_name = os.path.dirname(filepath)
-        filename = os.path.basename(filepath)
-        basename, _ = os.path.splitext(filename)
-        if not dir_name and basename == __default_basename__:
-            self.onSaveAs(editor=editor, preview=preview)
-        else:
-            editor.writeFile()
-            if preview:
-                title, tab_title = self.createTitle(filepath, editor.isModified())
-                self.setWindowTitle(title)
-                self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
-                if self.settings.value('preview/onsave', type=bool):
-                    text = editor.getValue()
-                    self.preview(text, filename)
-        return
-
-    def onSaveAs(self, editor=None, preview=True):
-        if not editor:
-            editor = self.tabWidgets.currentWidget()
-        filepath = editor.getFileName()
-        dir_name = os.path.dirname(filepath)
-        if not dir_name:
-            dir_name = self.explorer.getCurrentPath()
-        filename = os.path.basename(filepath)
-        new_filepath, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            self.tr('Save file as ...'),
-            os.path.join(dir_name, filename),
-            ''.join(FILTER),
-        )
-        if new_filepath:
-            new_filepath = os.path.abspath(new_filepath)
-            _, ext = os.path.splitext(new_filepath)
-            if not ext:
-                ext = selected_filter.split('(')[1][1:4].strip()
-                new_filepath = new_filepath + ext
-            editor.writeFile(new_filepath)
-            if preview:
-                title, tab_title = self.createTitle(new_filepath, editor.isModified())
-                self.setWindowTitle(title)
-                self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
-                if self.settings.value('preview/onsave', type=bool):
-                    text = editor.getValue()
-                    self.preview(text, new_filepath)
-                self.explorer.refreshPath(new_filepath)
+    # def onSaveAs(self, editor=None, preview=True):
+    #     if not editor:
+    #         editor = self.tabWidgets.currentWidget()
+    #     filepath = editor.getFileName()
+    #     dir_name = os.path.dirname(filepath)
+    #     if not dir_name:
+    #         dir_name = self.explorer.getCurrentPath()
+    #     filename = os.path.basename(filepath)
+    #     new_filepath, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
+    #         self,
+    #         self.tr('Save file as ...'),
+    #         os.path.join(dir_name, filename),
+    #         ''.join(FILTER),
+    #     )
+    #     if new_filepath:
+    #         new_filepath = os.path.abspath(new_filepath)
+    #         _, ext = os.path.splitext(new_filepath)
+    #         if not ext:
+    #             ext = selected_filter.split('(')[1][1:4].strip()
+    #             new_filepath = new_filepath + ext
+    #         editor.writeFile(new_filepath)
+    #         if preview:
+    #             title, tab_title = self.createTitle(new_filepath, editor.isModified())
+    #             self.setWindowTitle(title)
+    #             self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
+    #             if self.settings.value('preview/onsave', type=bool):
+    #                 text = editor.getValue()
+    #                 self.preview(text, new_filepath)
+    #             self.explorer.refreshPath(new_filepath)
 
     def onExport(self, label):
         if label == 'html':
@@ -703,99 +592,15 @@ class MainWindow(QtWidgets.QMainWindow):
         if printDialog.exec_() == QtWidgets.QDialog.Accepted:
             widget.print_(printer)
 
-    def onEditMenuShow(self):
+    def onEditAboutToShow(self):
+        menu = self.sender()
+        menu.clear()
         if self.codeview.hasFocus():
-            self.undoAction.setEnabled(False)
-            self.redoAction.setEnabled(False)
-            self.cutAction.setEnabled(False)
-            self.copyAction.setEnabled(self.codeview.isCopyAvailable())
-            self.pasteAction.setEnabled(False)
-            self.deleteAction.setEnabled(False)
-            self.selectallAction.setEnabled(True)
-            self.findAction.setEnabled(True)
-            self.findnextAction.setEnabled(True)
-            self.findprevAction.setEnabled(True)
-            self.replacenextAction.setEnabled(False)
-        elif self.editor().hasFocus():
-            self.undoAction.setEnabled(self.editor().isUndoAvailable())
-            self.redoAction.setEnabled(self.editor().isRedoAvailable())
-            self.cutAction.setEnabled(self.editor().isCopyAvailable())
-            self.copyAction.setEnabled(self.editor().isCopyAvailable())
-            self.pasteAction.setEnabled(self.editor().isPasteAvailable())
-            self.deleteAction.setEnabled(self.editor().isCopyAvailable())
-            self.selectallAction.setEnabled(True)
-            self.findAction.setEnabled(True)
-            self.findnextAction.setEnabled(True)
-            self.findprevAction.setEnabled(True)
-            self.replacenextAction.setEnabled(True)
-            self.indentAction.setEnabled(self.editor().hasSelectedText())
-            self.unindentAction.setEnabled(self.editor().hasSelectedText())
+            self.codeview.editMenu(menu)
         elif self.webview.hasFocus():
-            self.undoAction.setEnabled(False)
-            self.redoAction.setEnabled(False)
-            self.cutAction.setEnabled(False)
-            action = self.webview.pageAction(self.webview.page().Copy)
-            self.copyAction.setEnabled(action.isEnabled())
-            self.pasteAction.setEnabled(False)
-            self.deleteAction.setEnabled(False)
-            self.selectallAction.setEnabled(True)
-            self.findAction.setEnabled(False)
-            self.findnextAction.setEnabled(False)
-            self.findprevAction.setEnabled(False)
-
-    def onEdit(self, label):
-        if self.codeview.hasFocus():
-            if label == 'copy':
-                self.codeview.copy()
-            elif label == 'selectall':
-                self.codeview.selectAll()
-            elif label == 'find':
-                self.codeview.find(self.findDialog)
-            elif label == 'findnext':
-                self.codeview.findNext(self.findDialog.getFindText())
-            elif label == 'findprev':
-                self.codeview.findPrevious(self.findDialog.getFindText())
-        elif self.editor().hasFocus():
-            if label == 'undo':
-                self.editor().undo()
-            elif label == 'redo':
-                self.editor().redo()
-            elif label == 'cut':
-                self.editor().cut()
-            elif label == 'copy':
-                self.editor().copy()
-            elif label == 'paste':
-                self.editor().paste()
-            elif label == 'delete':
-                self.editor().delete()
-            elif label == 'selectall':
-                self.editor().selectAll()
-            elif label == 'find':
-                self.editor().find(self.findDialog)
-            elif label == 'findnext':
-                self.editor().findNext(self.findDialog.getFindText())
-            elif label == 'findprev':
-                self.editor().findPrevious(self.findDialog.getFindText())
-            elif label == 'replacenext':
-                self.editor().replaceNext(
-                    self.findDialog.getFindText(),
-                    self.findDialog.getReplaceText())
-            elif label == 'indent':
-                self.editor().indentLines(True)
-            elif label == 'unindent':
-                self.editor().indentLines(False)
-        elif self.webview.hasFocus():
-            if label == 'copy':
-                self.webview.triggerPageAction(self.webview.page().Copy)
-            elif label == 'selectall':
-                self.webview.triggerPageAction(self.webview.page().SelectAll)
-            elif label == 'find':
-                self.webview.find(self.findDialog)
-            elif label == 'findnext':
-                self.webview.findNext(self.findDialog.getFindText())
-            elif label == 'findprev':
-                self.webview.findPrevious(self.findDialog.getFindText())
-        return
+            self.webview.editMenu(menu)
+        else:
+            self.tab_editor.editMenu(menu)
 
     def onFileAssociation(self):
         reg_base = 'HKEY_CURRENT_USER\Software\Classes'
@@ -945,7 +750,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         ext = os.path.splitext(path)[1].lower()
         if ext in EXTENSION_LEXER:
-            self.loadFile(path)
+            self.tab_editor.loadFile(path)
         else:
             subprocess.Popen(path, shell=True)
         return
@@ -958,47 +763,36 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.webview.scrollRatioPage(dy, editor_vmax)
         return
 
-    def onEditorCursor(self, line, index):
-        text = 'Ln %s Col %s' % (line, index)
-        self.onStatusChange('cursor', text)
-
-    def onEditorModified(self, value):
-        editor = self.tabWidgets.currentWidget()
-        if not editor:
-            return
-        title, tab_title = self.createTitle(editor.getFileName(), editor.isModified())
-        self.tabWidgets.setTabText(self.tabWidgets.currentIndex(), tab_title)
+    def onEditorModified(self, index, value):
+        title = self.tab_editor.title(index, full=True)
         self.setWindowTitle(title)
 
-    def onInputPreview(self):
+    def onPreviewRequest(self, index):
         if self.settings.value('preview/oninput', type=bool):
-            text = toUtf8(self.editor().getValue())
-            self.preview(text, self.editor().getFileName())
-        return
+            self.preview(index)
 
     def onFileRenamed(self, old_name, new_name):
-        for x in range(self.tabWidgets.count()):
-            editor = self.tabWidgets.widget(x)
+        for x in range(self.tab_editor.count()):
+            editor = self.tab_editor.widget(x)
             if old_name == editor.getFileName():
                 editor.setFileName(new_name)
-                title, tab_title = self.createTitle(new_name, editor.isModified())
-                self.tabWidgets.setTabText(x, tab_title)
+                self.tab_editor.updateTitle(x)
                 if x == self.tabWidgets.currentIndex():
-                    self.setWindowTitle(title)
+                    self.setWindowTitle(self.tab_editor.title(x, full=True))
                 break
 
     def onFileDeleted(self, path):
-        for x in range(self.tabWidgets.count()):
-            editor = self.tabWidgets.widget(x)
+        for x in range(self.tab_editor.count()):
+            editor = self.tab_editor.widget(x)
             if path == editor.getFileName():
-                self.tabWidgets.removeTab(x)
+                self.tab_editor.removeTab(x)
                 del editor
                 break
-        if self.tabWidgets.count() == 0:
-            self.onNew('.rst')
+        if self.tab_editor.count() == 0:
+            self.tab_editor.new('.rst')
 
     def editor(self):
-        return self.tabWidgets.currentWidget()
+        return self.tab_editor.currentWidget()
 
     def moveCenter(self):
         qr = self.frameGeometry()
@@ -1006,17 +800,17 @@ class MainWindow(QtWidgets.QMainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-    def preview(self, text, path):
+    def preview(self, index):
         if requestPreview.is_set():
             logger.debug('Preview is working..., ignore')
         else:
-            self.previewText = text
-            self.previewPath = path
+            widget = self.tab_editor.widget(index)
+            self.previewText = widget.text()
+            self.previewPath = widget.getFileName()
             requestPreview.set()
 
     def previewCurrentText(self):
-        text = toUtf8(self.editor().getValue())
-        self.preview(text, self.editor().getFileName())
+        self.preview(self.tab_editor.currentIndex())
 
     def previewDisplay(self):
         self.webview.setHtml(self.previewHtml, self.previewPath)
@@ -1049,46 +843,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if ret == QtWidgets.QMessageBox.Save:
                 self.onSave(editor=editor, preview=preview)
         return True
-
-    def loadFile(self, path):
-        """
-        widget load file from command line
-        path:
-            None, filename will be unknown.rst
-            file exist, load file
-            not exist, create new file
-        """
-        editor = None
-        if not path:
-            editor = self.setupNewEditor()
-            editor.newFile('.rst')
-            filepath = editor.getFileName()
-            _, tab_title = self.createTitle(filepath, editor.isModified())
-            self.tabWidgets.insertTab(0, editor, tab_title)
-        else:
-            path = os.path.abspath(path)
-            ext = os.path.splitext(path)[1].lower()
-            if ext not in EXTENSION_LEXER:
-                return
-            bfound = False
-            for x in range(self.tabWidgets.count()):
-                editor = self.tabWidgets.widget(x)
-                if path == editor.getFileName():
-                    bfound = True
-                    break
-            if not bfound:
-                editor = self.setupNewEditor()
-                if os.path.exists(path):
-                    logger.debug('Loading file: %s', path)
-                    editor.readFile(path)
-                else:
-                    logger.debug('Creating file: %s', path)
-                    editor.newFile(path)
-                filepath = editor.getFileName()
-                _, tab_title = self.createTitle(filepath, editor.isModified())
-                self.tabWidgets.insertTab(0, editor, tab_title)
-
-        self.tabWidgets.setCurrentWidget(editor)
 
     def createTitle(self, filepath, modified):
         filename = os.path.basename(filepath)
@@ -1155,7 +909,7 @@ def main():
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow()
     if args.rstfile:
-        win.loadFile(os.path.abspath(args.rstfile))
+        win.tab_editor.loadFile(os.path.abspath(args.rstfile))
     win.show()
     sys.exit(app.exec_())
 

@@ -1,4 +1,6 @@
 
+from functools import partial
+
 from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
 from .util import toUtf8
@@ -8,34 +10,69 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     exportHtml = QtCore.pyqtSignal()
     _case_sensitive = False
     _whole_word = False
+    _actions = None
+    _find_dialog = None
 
-    def __init__(self, *args, **kwargs):
-        super(WebView, self).__init__(*args, **kwargs)
-        settings = self.settings()
-        settings.setAttribute(settings.PluginsEnabled, False)
+    def __init__(self, find_dialog, parent=None):
+        super(WebView, self).__init__(parent)
+        self._find_dialog = find_dialog
+        self.settings().setAttribute(self.settings().PluginsEnabled, False)
         self.page().setHtml('')
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
+
+        self._actions = {}
+        action = self.pageAction(self.page().Copy)
+        action.setShortcut(QtGui.QKeySequence('Ctrl+C'))
+        self._actions['copy'] = action
+
+        action = self.pageAction(self.page().SelectAll)
+        action.setShortcut(QtGui.QKeySequence('Ctrl+A'))
+        self._actions['select_all'] = action
+
+        action = QtWidgets.QAction(self.tr('Export to PDF'), self)
+        action.triggered.connect(self.onExportToPdf)
+        self._actions['export_pdf'] = action
+
+        action = QtWidgets.QAction(self.tr('Export to HTML'), self)
+        action.triggered.connect(self.onExportToHtml)
+        self._actions['export_html'] = action
+
+        action = QtWidgets.QAction(self.tr('Find'), self)
+        action.setShortcut('Ctrl+F')
+        action.triggered.connect(partial(self._onEditAction, 'find'))
+        self._actions['find'] = action
+
+        action = QtWidgets.QAction(self.tr('Find Next'), self)
+        action.setShortcut('F3')
+        action.triggered.connect(partial(self._onEditAction, 'findnext'))
+        self._actions['find_next'] = action
+
+        action = QtWidgets.QAction(self.tr('Find Previous'), self)
+        action.setShortcut('Shift+F3')
+        action.triggered.connect(partial(self._onEditAction, 'findprev'))
+        self._actions['find_prev'] = action
+
         # popup menu
         self.popupMenu = QtWidgets.QMenu(self)
-        self.copyAction = self.pageAction(self.page().Copy)
-        self.copyAction.setShortcut(QtGui.QKeySequence('Ctrl+C'))
-        self.popupMenu.addAction(self.copyAction)
+        self.popupMenu.addAction(self.action('copy'))
         self.popupMenu.addSeparator()
-        self.selectAllAction = self.pageAction(self.page().SelectAll)
-        self.selectAllAction.setShortcut(QtGui.QKeySequence('Ctrl+A'))
-        self.popupMenu.addAction(self.selectAllAction)
+        self.popupMenu.addAction(self.action('select_all'))
         self.popupMenu.addSeparator()
-        self.exportPdfAction = QtWidgets.QAction(self.tr('Export to PDF'), self)
-        self.exportPdfAction.triggered.connect(self.onExportToPdf)
-        self.popupMenu.addAction(self.exportPdfAction)
-        self.exportHtmlAction = QtWidgets.QAction(self.tr('Export to HTML'), self)
-        self.exportHtmlAction.triggered.connect(self.onExportToHtml)
-        self.popupMenu.addAction(self.exportHtmlAction)
+        self.popupMenu.addAction(self.action('export_pdf'))
+        self.popupMenu.addAction(self.action('export_html'))
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
             self.popupMenu.popup(event.globalPos())
+
+    def _onEditAction(self, action):
+        if action == 'find':
+            self.find(self._find_dialog)
+        elif action == 'findnext':
+            self.findNext(self._find_dialog.getFindText())
+        elif action == 'findprev':
+            self.findPrevious(self._find_dialog.getFindText())
 
     def onLoadFinished(self, ok):
         pass
@@ -63,6 +100,20 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def onExportToHtml(self):
         self.exportHtml.emit()
+        self.action('undo').setEnabled(self.isUndoAvailable())
+
+    def action(self, action):
+        return self._actions.get(action)
+
+    def editMenu(self, menu):
+        menu.addAction(self.action('copy'))
+        menu.addSeparator()
+        menu.addAction(self.action('select_all'))
+        menu.addSeparator()
+        menu.addAction(self.action('find'))
+        menu.addAction(self.action('find_next'))
+        menu.addAction(self.action('find_prev'))
+        # page widget will set enabled
 
     def setHtml(self, html, url=None):
         url = url or ''

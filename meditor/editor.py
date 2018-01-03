@@ -4,6 +4,7 @@ import time
 import os.path
 import codecs
 import logging
+from functools import partial
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.Qsci import QSCINTILLA_VERSION, QsciScintilla, QsciPrinter
@@ -27,10 +28,10 @@ class Editor(QsciScintilla):
     Scintilla Offical Document: http://www.scintilla.org/ScintillaDoc.html
     """
     lineInputed = QtCore.pyqtSignal()
-    encodingChange = QtCore.pyqtSignal('QString')
-    lexerChange = QtCore.pyqtSignal('QString')
-    eolChange = QtCore.pyqtSignal('QString')
-    cursorChange = QtCore.pyqtSignal('QString')
+    encodingChanged = QtCore.pyqtSignal('QString')
+    lexerChanged = QtCore.pyqtSignal('QString')
+    eolChanged = QtCore.pyqtSignal('QString')
+    cursorChanged = QtCore.pyqtSignal('QString')
     enable_lexer = True
     filename = None
     input_count = 0
@@ -47,9 +48,13 @@ class Editor(QsciScintilla):
     _whole_word = False
     _file_encoding = 'utf8'
     _modified = False
+    _actions = None
+    _find_dialog = None
 
-    def __init__(self, parent=None):
+    def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
+        self._find_dialog = find_dialog
+
         font = QtGui.QFont('Monospace', 12)
         fontmetrics = QtGui.QFontMetrics(font)
         self.setMarginsFont(font)
@@ -69,6 +74,74 @@ class Editor(QsciScintilla):
         self.inputMethodEventCount = 0
         self._imsupport = _SciImSupport(self)
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
+
+        self._actions = {}
+        action = QtWidgets.QAction(self.tr('&Undo'), self)
+        action.setShortcut('Ctrl+Z')
+        action.triggered.connect(partial(self._onEditAction, 'undo'))
+        self._actions['undo'] = action
+
+        action = QtWidgets.QAction(self.tr('&Redo'), self)
+        action.setShortcut('Shift+Ctrl+Z')
+        action.triggered.connect(partial(self._onEditAction, 'redo'))
+        self._actions['redo'] = action
+
+        action = QtWidgets.QAction(self.tr('Cu&t'), self)
+        action.setShortcut('Ctrl+X')
+        action.triggered.connect(partial(self._onEditAction, 'cut'))
+        self._actions['cut'] = action
+
+        action = QtWidgets.QAction(self.tr('&Copy'), self)
+        action.setShortcut('Ctrl+C')
+        action.triggered.connect(partial(self._onEditAction, 'copy'))
+        self._actions['copy'] = action
+
+        action = QtWidgets.QAction(self.tr('&Paste'), self)
+        action.setShortcut('Ctrl+V')
+        action.triggered.connect(partial(self._onEditAction, 'paste'))
+        self._actions['paste'] = action
+
+        action = QtWidgets.QAction(self.tr('&Delete'), self)
+        action.triggered.connect(partial(self._onEditAction, 'delete'))
+        self._actions['delete'] = action
+
+        action = QtWidgets.QAction(self.tr('Select &All'), self)
+        action.setShortcut('Ctrl+A')
+        action.triggered.connect(partial(self._onEditAction, 'selectall'))
+        self._actions['select_all'] = action
+
+        action = QtWidgets.QAction(self.tr('&Find or Replace'), self)
+        action.setShortcut('Ctrl+F')
+        action.triggered.connect(partial(self._onEditAction, 'find'))
+        self._actions['find'] = action
+
+        action = QtWidgets.QAction(self.tr('Find Next'), self)
+        action.setShortcut('F3')
+        action.triggered.connect(partial(self._onEditAction, 'findnext'))
+        self._actions['find_next'] = action
+
+        action = QtWidgets.QAction(self.tr('Find Previous'), self)
+        action.setShortcut('Shift+F3')
+        action.triggered.connect(partial(self._onEditAction, 'findprev'))
+        self._actions['find_prev'] = action
+
+        action = QtWidgets.QAction(self.tr('Replace Next'), self)
+        action.setShortcut('F4')
+        action.triggered.connect(partial(self._onEditAction, 'replacenext'))
+        self._actions['replace_next'] = action
+
+        action = QtWidgets.QAction(self.tr('Indent'), self)
+        action.setShortcut('TAB')
+        action.triggered.connect(partial(self._onEditAction, 'indent'))
+        self._actions['indent'] = action
+
+        action = QtWidgets.QAction(self.tr('Unindent'), self)
+        action.setShortcut('Shift+TAB')
+        action.triggered.connect(partial(self._onEditAction, 'unindent'))
+        self._actions['unindent'] = action
+
+    def action(self, action):
+        return self._actions.get(action)
 
     def inputMethodQuery(self, query):
         if query == QtCore.Qt.ImMicroFocus:
@@ -149,16 +222,78 @@ class Editor(QsciScintilla):
     def print_(self, printer):
         printer.printRange(self)
 
+    def editMenu(self, menu):
+        menu.addAction(self.action('undo'))
+        menu.addAction(self.action('redo'))
+        menu.addSeparator()
+        menu.addAction(self.action('cut'))
+        menu.addAction(self.action('copy'))
+        menu.addAction(self.action('paste'))
+        menu.addAction(self.action('delete'))
+        menu.addSeparator()
+        menu.addAction(self.action('select_all'))
+        menu.addSeparator()
+        menu.addAction(self.action('find'))
+        menu.addAction(self.action('find_next'))
+        menu.addAction(self.action('find_prev'))
+        menu.addAction(self.action('replace_next'))
+        menu.addSeparator()
+        menu.addAction(self.action('indent'))
+        menu.addAction(self.action('unindent'))
+        self.action('undo').setEnabled(self.isUndoAvailable())
+        self.action('redo').setEnabled(self.isRedoAvailable())
+        self.action('cut').setEnabled(self.isCopyAvailable())
+        self.action('copy').setEnabled(self.isCopyAvailable())
+        self.action('paste').setEnabled(self.isPasteAvailable())
+        self.action('delete').setEnabled(self.isCopyAvailable())
+        self.action('select_all').setEnabled(True)
+        self.action('find').setEnabled(True)
+        self.action('find_next').setEnabled(True)
+        self.action('find_prev').setEnabled(True)
+        self.action('replace_next').setEnabled(True)
+        self.action('indent').setEnabled(self.hasSelectedText())
+        self.action('unindent').setEnabled(self.hasSelectedText())
+
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
             super(Editor, self).contextMenuEvent(event)
+
+    def _onEditAction(self, action):
+        if action == 'undo':
+            self.undo()
+        elif action == 'redo':
+            self.redo()
+        elif action == 'cut':
+            self.cut()
+        elif action == 'copy':
+            self.copy()
+        elif action == 'paste':
+            self.paste()
+        elif action == 'delete':
+            self.delete()
+        elif action == 'selectall':
+            self.selectAll()
+        elif action == 'find':
+            self.find(self._find_dialog)
+        elif action == 'findnext':
+            self.findNext(self._find_dialog.getFindText())
+        elif action == 'findprev':
+            self.findPrevious(self._find_dialog.getFindText())
+        elif action == 'replacenext':
+            self.replaceNext(
+                self._find_dialog.getFindText(),
+                self._find_dialog.getReplaceText())
+        elif action == 'indent':
+            self.indentLines(True)
+        elif action == 'unindent':
+            self.indentLines(False)
 
     def onCopyAvailable(self, yes):
         self.copy_available = yes
 
     def onCursorPositionChanged(self, line, index):
         cursor = 'Ln %s/%s Col %s/80' % (line + 1, self.lines(), index + 1)
-        self.cursorChange.emit(cursor)
+        self.cursorChanged.emit(cursor)
 
     def isCopyAvailable(self):
         return self.copy_available
@@ -212,9 +347,9 @@ class Editor(QsciScintilla):
         self.setText(text)
         self.setCursorPosition(0, 0)
         self.setModified(False)
-        self.encodingChange.emit(self._file_encoding.upper())
+        self.encodingChanged.emit(self._file_encoding.upper())
         self.setEolMode(self._qsciEolModeFromLine(self.text(0)))
-        self.eolChange.emit(EOL_DESCRIPTION[self.eolMode()])
+        self.eolChanged.emit(EOL_DESCRIPTION[self.eolMode()])
 
     def _qsciEolModeFromOs(self):
         if sys.platform == 'win32':
@@ -442,9 +577,9 @@ class Editor(QsciScintilla):
                 lexer.setFont(QtGui.QFont('Monospace', 12))
         self.setLexer(lexer)
         if lexer:
-            self.lexerChange.emit(lexer.language())
+            self.lexerChanged.emit(lexer.language())
         else:
-            self.lexerChange.emit('')
+            self.lexerChanged.emit('')
         t2 = time.clock()
         logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
         self.cur_lexer = lexer
