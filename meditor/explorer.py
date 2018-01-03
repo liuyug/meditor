@@ -18,6 +18,7 @@ class Workspace(QtWidgets.QTreeWidget):
     type_folder = type_root + 1
     type_file = type_root + 2
     role_path = QtCore.Qt.UserRole
+    _settings = None
     _actions = None
 
     fileLoaded = QtCore.pyqtSignal('QString')
@@ -25,8 +26,9 @@ class Workspace(QtWidgets.QTreeWidget):
     fileRenamed = QtCore.pyqtSignal('QString', 'QString')
     fileNew = QtCore.pyqtSignal('QString')
 
-    def __init__(self, parent, style=None):
+    def __init__(self, settings, parent, style=None):
         super(Workspace, self).__init__(parent)
+        self._settings = settings
         self.header().close()
         self.padding_right = 32
         # QStyle, such as QtWidgets.QStyleFactory.create('windows')
@@ -90,6 +92,9 @@ class Workspace(QtWidgets.QTreeWidget):
         self.setDropIndicatorShown(True)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
+
+    def closeEvent(self, event):
+        self._settings.setValue('explorer/workspace', ';'.join(self.getRootPaths()))
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:

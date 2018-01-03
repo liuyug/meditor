@@ -27,7 +27,7 @@ class Editor(QsciScintilla):
     """
     Scintilla Offical Document: http://www.scintilla.org/ScintillaDoc.html
     """
-    lineInputed = QtCore.pyqtSignal()
+    inputPreviewRequest = QtCore.pyqtSignal()
     encodingChanged = QtCore.pyqtSignal('QString')
     lexerChanged = QtCore.pyqtSignal('QString')
     eolChanged = QtCore.pyqtSignal('QString')
@@ -75,73 +75,77 @@ class Editor(QsciScintilla):
         self._imsupport = _SciImSupport(self)
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
 
-        self._actions = {}
-        action = QtWidgets.QAction(self.tr('&Undo'), self)
+    @classmethod
+    def createAction(cls, parent, do_action):
+        actions = {}
+        action = QtWidgets.QAction(parent.tr('&Undo'), parent)
         action.setShortcut('Ctrl+Z')
-        action.triggered.connect(partial(self._onEditAction, 'undo'))
-        self._actions['undo'] = action
+        action.triggered.connect(partial(do_action, 'undo'))
+        actions['undo'] = action
 
-        action = QtWidgets.QAction(self.tr('&Redo'), self)
+        action = QtWidgets.QAction(parent.tr('&Redo'), parent)
         action.setShortcut('Shift+Ctrl+Z')
-        action.triggered.connect(partial(self._onEditAction, 'redo'))
-        self._actions['redo'] = action
+        action.triggered.connect(partial(do_action, 'redo'))
+        actions['redo'] = action
 
-        action = QtWidgets.QAction(self.tr('Cu&t'), self)
+        action = QtWidgets.QAction(parent.tr('Cu&t'), parent)
         action.setShortcut('Ctrl+X')
-        action.triggered.connect(partial(self._onEditAction, 'cut'))
-        self._actions['cut'] = action
+        action.triggered.connect(partial(do_action, 'cut'))
+        actions['cut'] = action
 
-        action = QtWidgets.QAction(self.tr('&Copy'), self)
+        action = QtWidgets.QAction(parent.tr('&Copy'), parent)
         action.setShortcut('Ctrl+C')
-        action.triggered.connect(partial(self._onEditAction, 'copy'))
-        self._actions['copy'] = action
+        action.triggered.connect(partial(do_action, 'copy'))
+        actions['copy'] = action
 
-        action = QtWidgets.QAction(self.tr('&Paste'), self)
+        action = QtWidgets.QAction(parent.tr('&Paste'), parent)
         action.setShortcut('Ctrl+V')
-        action.triggered.connect(partial(self._onEditAction, 'paste'))
-        self._actions['paste'] = action
+        action.triggered.connect(partial(do_action, 'paste'))
+        actions['paste'] = action
 
-        action = QtWidgets.QAction(self.tr('&Delete'), self)
-        action.triggered.connect(partial(self._onEditAction, 'delete'))
-        self._actions['delete'] = action
+        action = QtWidgets.QAction(parent.tr('&Delete'), parent)
+        action.triggered.connect(partial(do_action, 'delete'))
+        actions['delete'] = action
 
-        action = QtWidgets.QAction(self.tr('Select &All'), self)
+        action = QtWidgets.QAction(parent.tr('Select &All'), parent)
         action.setShortcut('Ctrl+A')
-        action.triggered.connect(partial(self._onEditAction, 'selectall'))
-        self._actions['select_all'] = action
+        action.triggered.connect(partial(do_action, 'selectall'))
+        actions['select_all'] = action
 
-        action = QtWidgets.QAction(self.tr('&Find or Replace'), self)
+        action = QtWidgets.QAction(parent.tr('&Find or Replace'), parent)
         action.setShortcut('Ctrl+F')
-        action.triggered.connect(partial(self._onEditAction, 'find'))
-        self._actions['find'] = action
+        action.triggered.connect(partial(do_action, 'find'))
+        actions['find'] = action
 
-        action = QtWidgets.QAction(self.tr('Find Next'), self)
+        action = QtWidgets.QAction(parent.tr('Find Next'), parent)
         action.setShortcut('F3')
-        action.triggered.connect(partial(self._onEditAction, 'findnext'))
-        self._actions['find_next'] = action
+        action.triggered.connect(partial(do_action, 'findnext'))
+        actions['find_next'] = action
 
-        action = QtWidgets.QAction(self.tr('Find Previous'), self)
+        action = QtWidgets.QAction(parent.tr('Find Previous'), parent)
         action.setShortcut('Shift+F3')
-        action.triggered.connect(partial(self._onEditAction, 'findprev'))
-        self._actions['find_prev'] = action
+        action.triggered.connect(partial(do_action, 'findprev'))
+        actions['find_prev'] = action
 
-        action = QtWidgets.QAction(self.tr('Replace Next'), self)
+        action = QtWidgets.QAction(parent.tr('Replace Next'), parent)
         action.setShortcut('F4')
-        action.triggered.connect(partial(self._onEditAction, 'replacenext'))
-        self._actions['replace_next'] = action
+        action.triggered.connect(partial(do_action, 'replacenext'))
+        actions['replace_next'] = action
 
-        action = QtWidgets.QAction(self.tr('Indent'), self)
+        action = QtWidgets.QAction(parent.tr('Indent'), parent)
         action.setShortcut('TAB')
-        action.triggered.connect(partial(self._onEditAction, 'indent'))
-        self._actions['indent'] = action
+        action.triggered.connect(partial(do_action, 'indent'))
+        actions['indent'] = action
 
-        action = QtWidgets.QAction(self.tr('Unindent'), self)
+        action = QtWidgets.QAction(parent.tr('Unindent'), parent)
         action.setShortcut('Shift+TAB')
-        action.triggered.connect(partial(self._onEditAction, 'unindent'))
-        self._actions['unindent'] = action
+        action.triggered.connect(partial(do_action, 'unindent'))
+        actions['unindent'] = action
+        return actions
 
     def action(self, action):
-        return self._actions.get(action)
+        if self._actions:
+            return self._actions.get(action)
 
     def inputMethodQuery(self, query):
         if query == QtCore.Qt.ImMicroFocus:
@@ -193,7 +197,7 @@ class Editor(QsciScintilla):
             if commit_text:
                 self.input_count += len(commit_text)
             if self.input_count > 5:
-                self.lineInputed.emit()
+                self.inputPreviewRequest.emit()
                 self.input_count = 0
 
     def keyPressEvent(self, event):
@@ -206,7 +210,7 @@ class Editor(QsciScintilla):
         if (self.input_count > 5 or
             (event.key() == QtCore.Qt.Key_Enter or
              event.key() == QtCore.Qt.Key_Return)):
-            self.lineInputed.emit()
+            self.inputPreviewRequest.emit()
             self.input_count = 0
         return
 
@@ -242,17 +246,17 @@ class Editor(QsciScintilla):
         menu.addAction(self.action('unindent'))
         self.action('undo').setEnabled(self.isUndoAvailable())
         self.action('redo').setEnabled(self.isRedoAvailable())
-        self.action('cut').setEnabled(self.isCopyAvailable())
+        self.action('cut').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
         self.action('copy').setEnabled(self.isCopyAvailable())
-        self.action('paste').setEnabled(self.isPasteAvailable())
-        self.action('delete').setEnabled(self.isCopyAvailable())
+        self.action('paste').setEnabled(self.isPasteAvailable() and not self.isReadOnly())
+        self.action('delete').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
         self.action('select_all').setEnabled(True)
         self.action('find').setEnabled(True)
         self.action('find_next').setEnabled(True)
         self.action('find_prev').setEnabled(True)
-        self.action('replace_next').setEnabled(True)
-        self.action('indent').setEnabled(self.hasSelectedText())
-        self.action('unindent').setEnabled(self.hasSelectedText())
+        self.action('replace_next').setEnabled(True and not self.isReadOnly())
+        self.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
+        self.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -606,9 +610,11 @@ class Editor(QsciScintilla):
 
 class CodeViewer(Editor):
     """ code viewer, readonly """
-    def __init__(self, parent=None):
+    def __init__(self, find_dialog, parent=None):
         super(CodeViewer, self).__init__(parent)
+        self._find_dialog = find_dialog
         self.setReadOnly(True)
+        self._actions = self.createAction(self, self._onEditAction)
 
     def setValue(self, text):
         """ set all readonly text """

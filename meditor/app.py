@@ -106,16 +106,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tab_editor.lexerChanged.connect(partial(self.onStatusChange, 'lexer'))
         self.tab_editor.eolChanged.connect(partial(self.onStatusChange, 'eol'))
         self.tab_editor.cursorChanged.connect(partial(self.onStatusChange, 'cursor'))
-        self.tab_editor.verticalScrollBarChanged.connect(self.onValueChanged)
+        self.tab_editor.verticalScrollBarChanged.connect(self.onVScrollBarChanged)
         self.tab_editor.previewRequest.connect(self.onPreviewRequest)
         self.tab_editor.modificationChanged.connect(self.onEditorModified)
+        self.tab_editor.filenameChanged.connect(self.onFileRenamed)
 
         self.setCentralWidget(self.tab_editor)
 
         # left dock window
         self.dock_explorer = QtWidgets.QDockWidget(self.tr('Explorer'), self)
         self.dock_explorer.setObjectName('dock_explorer')
-        self.explorer = explorer.Workspace(self.dock_explorer)
+        self.explorer = explorer.Workspace(self.settings, self.dock_explorer)
         self.dock_explorer.setWidget(self.explorer)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
         # right dock window
@@ -124,9 +125,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.webview = webview.WebView(self.findDialog, self.dock_webview)
         self.dock_webview.setWidget(self.webview)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
+
         self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code viewer'), self)
         self.dock_codeview.setObjectName('dock_codeview')
-        self.codeview = CodeViewer(self.dock_codeview)
+        self.codeview = CodeViewer(self.findDialog, self.dock_codeview)
         self.dock_codeview.setWidget(self.codeview)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
         # event
@@ -135,7 +137,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.explorer.fileNew.connect(self.onNew)
         self.explorer.fileRenamed.connect(self.onFileRenamed)
         self.explorer.fileDeleted.connect(self.onFileDeleted)
-        QtWidgets.qApp.focusChanged.connect(self._onFocusChanged)
+        QtWidgets.qApp.focusChanged.connect(self.onFocusChanged)
 
         # setup main frame
         self.setupMenu()
@@ -173,11 +175,6 @@ class MainWindow(QtWidgets.QMainWindow):
         newwindowAction.setShortcut('Ctrl+W')
         newwindowAction.triggered.connect(self.onNewWindow)
 
-        exportPDFAction = QtWidgets.QAction(self.tr('Export to PDF'), self)
-        exportPDFAction.triggered.connect(partial(self.onExport, 'pdf'))
-        exportHTMLAction = QtWidgets.QAction(self.tr('Export to HTML'), self)
-        exportHTMLAction.triggered.connect(partial(self.onExport, 'html'))
-
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
         printAction.setShortcut('Ctrl+P')
         printAction.triggered.connect(self.onPrint)
@@ -193,102 +190,88 @@ class MainWindow(QtWidgets.QMainWindow):
         exitAction.triggered.connect(self.close)
         # edit
         # view
-        self.explorerAction = QtWidgets.QAction(self.tr('File explorer'),
-                                            self,
-                                            checkable=True)
-        self.explorerAction.triggered.connect(partial(self.onView, 'explorer'))
+        self.showExplorerAction = QtWidgets.QAction(self.tr('File explorer'), self, checkable=True)
+        self.showExplorerAction.triggered.connect(partial(self.onView, 'explorer'))
         value = settings.value('view/explorer', True, type=bool)
         settings.setValue('view/explorer', value)
-        self.explorerAction.setChecked(value)
-        self.webviewAction = QtWidgets.QAction(self.tr('Web Viewer'),
-                                           self,
-                                           checkable=True)
-        self.webviewAction.triggered.connect(partial(self.onView, 'webview'))
+        self.showExplorerAction.setChecked(value)
+
+        self.showWebviewAction = QtWidgets.QAction(self.tr('Web Viewer'), self, checkable=True)
+        self.showWebviewAction.triggered.connect(partial(self.onView, 'webview'))
         value = settings.value('view/webview', True, type=bool)
         settings.setValue('view/webview', value)
-        self.webviewAction.setChecked(value)
-        self.codeviewAction = QtWidgets.QAction(self.tr('Code Viewer'),
-                                            self,
-                                            checkable=True)
-        self.codeviewAction.triggered.connect(partial(self.onView, 'codeview'))
+        self.showWebviewAction.setChecked(value)
+
+        self.showCodeviewAction = QtWidgets.QAction(self.tr('Code Viewer'), self, checkable=True)
+        self.showCodeviewAction.triggered.connect(partial(self.onView, 'codeview'))
         value = settings.value('view/codeview', True, type=bool)
         settings.setValue('view/codeview', value)
-        self.codeviewAction.setChecked(value)
+        self.showCodeviewAction.setChecked(value)
         # preview
         previewAction = QtWidgets.QAction(self.tr('&Preview'), self)
         previewAction.triggered.connect(partial(self.onPreview, 'preview'))
-        previewsaveAction = QtWidgets.QAction(self.tr('Preview on save'),
-                                          self,
-                                          checkable=True)
-        previewsaveAction.triggered.connect(partial(self.onPreview,
-                                                    'previewonsave'))
+
+        previewsaveAction = QtWidgets.QAction(self.tr('Preview on save'), self, checkable=True)
+        previewsaveAction.triggered.connect(partial(self.onPreview, 'previewonsave'))
         value = settings.value('preview/onsave', True, type=bool)
         settings.setValue('preview/onsave', value)
         previewsaveAction.setChecked(value)
-        previewinputAction = QtWidgets.QAction(self.tr('Preview on input'),
-                                           self,
-                                           checkable=True)
-        previewinputAction.triggered.connect(partial(self.onPreview,
-                                                     'previewoninput'))
+
+        previewinputAction = QtWidgets.QAction(self.tr('Preview on input'), self, checkable=True)
+        previewinputAction.triggered.connect(partial(self.onPreview, 'previewoninput'))
         value = settings.value('preview/oninput', True, type=bool)
         settings.setValue('preview/oninput', value)
         previewinputAction.setChecked(value)
-        previewsyncAction = QtWidgets.QAction(self.tr('Scroll synchronize'),
-                                          self,
-                                          checkable=True)
-        previewsyncAction.triggered.connect(partial(self.onPreview,
-                                                    'previewsync'))
+
+        previewsyncAction = QtWidgets.QAction(self.tr('Scroll synchronize'), self, checkable=True)
+        previewsyncAction.triggered.connect(partial(self.onPreview, 'previewsync'))
         value = settings.value('preview/sync', True, type=bool)
         settings.setValue('preview/sync', value)
         previewsyncAction.setChecked(value)
         # theme
         # docutils theme
-        default_cssAction = QtWidgets.QAction('Default theme',
-                                           self,
-                                           checkable=True)
-        default_cssAction.triggered.connect(
-            partial(self.onRstThemeChanged, 'default'))
+        default_cssAction = QtWidgets.QAction('Default theme', self, checkable=True)
+        default_cssAction.triggered.connect(partial(self.onRstThemeChanged, 'default'))
+
         rstThemeGroup = QtWidgets.QActionGroup(self)
         rstThemeGroup.setExclusive(True)
         rstThemeGroup.addAction(default_cssAction)
         for theme in output.get_rst_themes().keys():
-            act = QtWidgets.QAction('%s theme' % theme,
-                                self,
-                                checkable=True)
+            act = QtWidgets.QAction('%s theme' % theme, self, checkable=True)
             act.triggered.connect(partial(self.onRstThemeChanged, theme))
             rstThemeGroup.addAction(act)
-        value = toUtf8(settings.value('rst_theme', 'default', type=str))
+
+        value = settings.value('rst_theme', 'default', type=str)
         settings.setValue('rst_theme', value)
         self.rst_theme = value
+
         default_cssAction.setChecked(True)
-        theme_name = '%s theme' % toUtf8(value)
+        theme_name = '%s theme' % value
         for act in rstThemeGroup.actions():
-            theme = toUtf8(act.text())
+            theme = act.text()
             if theme_name == theme:
                 act.setChecked(True)
                 break
         # markdown theme
-        default_cssAction = QtWidgets.QAction('Default theme',
-                                           self,
-                                           checkable=True)
-        default_cssAction.triggered.connect(
-            partial(self.onMdThemeChanged, 'default'))
+        default_cssAction = QtWidgets.QAction('Default theme', self, checkable=True)
+        default_cssAction.triggered.connect(partial(self.onMdThemeChanged, 'default'))
+
         mdThemeGroup = QtWidgets.QActionGroup(self)
         mdThemeGroup.setExclusive(True)
         mdThemeGroup.addAction(default_cssAction)
         for theme in output.get_md_themes().keys():
-            act = QtWidgets.QAction('%s theme' % theme,
-                                self,
-                                checkable=True)
+            act = QtWidgets.QAction('%s theme' % theme, self, checkable=True)
             act.triggered.connect(partial(self.onMdThemeChanged, theme))
             mdThemeGroup.addAction(act)
-        value = toUtf8(settings.value('md_theme', 'default', type=str))
+
+        value = settings.value('md_theme', 'default', type=str)
         settings.setValue('md_theme', value)
         self.md_theme = value
+
         default_cssAction.setChecked(True)
         theme_name = '%s theme' % toUtf8(value)
         for act in mdThemeGroup.actions():
-            theme = toUtf8(act.text())
+            theme = act.text()
             if theme_name == theme:
                 act.setChecked(True)
                 break
@@ -296,22 +279,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.codeStyleGroup = QtWidgets.QActionGroup(self)
         self.codeStyleGroup.setExclusive(True)
         for k, v in pygments_styles.items():
-                act = QtWidgets.QAction(v,
-                                    self,
-                                    checkable=True)
+                act = QtWidgets.QAction(v, self, checkable=True)
                 act.triggered.connect(partial(self.onCodeStyleChanged, k))
                 self.codeStyleGroup.addAction(act)
-        value = toUtf8(settings.value('pygments', 'null', type=str))
+
+        value = settings.value('pygments', 'null', type=str)
         settings.setValue('pygments', value)
         for act in self.codeStyleGroup.actions():
             pygments_desc = toUtf8(act.text())
             if pygments_desc == pygments_styles.get(value, ''):
                 act.setChecked(True)
                 break
-        self.mathjaxAction = QtWidgets.QAction(
-            self.tr('Install MathJax'), self)
-        self.mathjaxAction.triggered.connect(
-            partial(self.onMathJax, 'install'))
+
+        self.mathjaxAction = QtWidgets.QAction(self.tr('Install MathJax'), self)
+        self.mathjaxAction.triggered.connect(partial(self.onMathJax, 'install'))
         self.mathjaxAction.setEnabled(not os.path.exists(__mathjax_full_path__))
         # help
         helpAction = QtWidgets.QAction(self.tr('&Help'), self)
@@ -326,23 +307,28 @@ class MainWindow(QtWidgets.QMainWindow):
         submenu = QtWidgets.QMenu(self.tr('&New'), menu)
         submenu.addAction(self.explorer.action('new_rst'))
         submenu.addAction(self.explorer.action('new_md'))
+
         menu.addMenu(submenu)
         menu.addAction(newwindowAction)
         menu.addAction(self.tab_editor.action('open'))
         menu.addAction(self.explorer.action('open_workspace'))
+
         menu.addSeparator()
         menu.addAction(self.tab_editor.action('save'))
         menu.addAction(self.tab_editor.action('save_as'))
         menu.addAction(self.tab_editor.action('close_all'))
 
         menu.addSeparator()
-        menu.addAction(exportPDFAction)
-        menu.addAction(exportHTMLAction)
+        menu.addAction(self.webview.action('export_pdf'))
+        menu.addAction(self.webview.action('export_html'))
+
         menu.addSeparator()
         menu.addAction(printPreviewAction)
         menu.addAction(printAction)
+
         menu.addSeparator()
         menu.addAction(fileAssociationAction)
+
         menu.addSeparator()
         menu.addAction(exitAction)
 
@@ -350,35 +336,42 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.aboutToShow.connect(self.onEditAboutToShow)
 
         menu = menubar.addMenu(self.tr('&View'))
-        menu.addAction(self.explorerAction)
-        menu.addAction(self.webviewAction)
-        menu.addAction(self.codeviewAction)
+        menu.addAction(self.showExplorerAction)
+        menu.addAction(self.showWebviewAction)
+        menu.addAction(self.showCodeviewAction)
         menu.aboutToShow.connect(self.onViewMenuShow)
 
         menu = menubar.addMenu(self.tr('&Preview'))
         menu.addAction(previewAction)
+
         menu.addSeparator()
         menu.addAction(previewsaveAction)
         menu.addAction(previewinputAction)
         menu.addAction(previewsyncAction)
+
         menu = menubar.addMenu(self.tr('&Theme'))
         submenu = QtWidgets.QMenu(self.tr('&reStructuredText'), menu)
         for act in rstThemeGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
+
         submenu = QtWidgets.QMenu(self.tr('&Markdown'), menu)
         for act in mdThemeGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
+
         menu.addSeparator()
         submenu = QtWidgets.QMenu(self.tr('&Pygments'), menu)
         for act in self.codeStyleGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
+
+        menu.addSeparator()
         menu.addAction(self.mathjaxAction)
 
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
+
         menu.addSeparator()
         menu.addAction(aboutAction)
         menu.addAction(aboutqtAction)
@@ -411,16 +404,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().showMessage(self.tr('Ready'))
 
     def closeEvent(self, event):
-        print('main close')
-        self.tab_editor.close()
+        self.settings.setValue('geometry', self.saveGeometry())
+        self.settings.setValue('windowState', self.saveState())
 
-        settings = self.settings
-        settings.setValue('geometry', self.saveGeometry())
-        settings.setValue('windowState', self.saveState())
-        settings.setValue('explorer/workspace', ';'.join(
-            self.explorer.getRootPaths()))
-        # settings.setValue('editor/opened_files', ';'.join(opens))
-        settings.sync()
+        self.tab_editor.close()
+        self.explorer.close()
+        self.webview.close()
+        self.codeview.close()
+        self.findDialog.done(0)
+
+        self.settings.sync()
 
         self.previewQuit = True
         requestPreview.set()
@@ -428,7 +421,7 @@ class MainWindow(QtWidgets.QMainWindow):
         logger.info(' rsteditor end '.center(80, '='))
         event.accept()
 
-    def _onFocusChanged(self, old, new):
+    def onFocusChanged(self, old, new):
         menu = None
         for action in self.menuBar().actions():
             if self.tr('&Edit') == action.text():
@@ -475,60 +468,10 @@ class MainWindow(QtWidgets.QMainWindow):
             subprocess.Popen([self._app_exec])
         return
 
-    # def onSave(self, editor=None, preview=True):
-    #     if not editor:
-    #         editor = self.tabWidgets.currentWidget()
-    #     filepath = editor.getFileName()
-    #     dir_name = os.path.dirname(filepath)
-    #     filename = os.path.basename(filepath)
-    #     basename, _ = os.path.splitext(filename)
-    #     if not dir_name and basename == __default_basename__:
-    #         self.onSaveAs(editor=editor, preview=preview)
-    #     else:
-    #         editor.writeFile()
-    #         if preview:
-    #             title, tab_title = self.createTitle(filepath, editor.isModified())
-    #             self.setWindowTitle(title)
-    #             self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
-    #             if self.settings.value('preview/onsave', type=bool):
-    #                 text = editor.getValue()
-    #                 self.preview(text, filename)
-    #     return
-
-    # def onSaveAs(self, editor=None, preview=True):
-    #     if not editor:
-    #         editor = self.tabWidgets.currentWidget()
-    #     filepath = editor.getFileName()
-    #     dir_name = os.path.dirname(filepath)
-    #     if not dir_name:
-    #         dir_name = self.explorer.getCurrentPath()
-    #     filename = os.path.basename(filepath)
-    #     new_filepath, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
-    #         self,
-    #         self.tr('Save file as ...'),
-    #         os.path.join(dir_name, filename),
-    #         ''.join(FILTER),
-    #     )
-    #     if new_filepath:
-    #         new_filepath = os.path.abspath(new_filepath)
-    #         _, ext = os.path.splitext(new_filepath)
-    #         if not ext:
-    #             ext = selected_filter.split('(')[1][1:4].strip()
-    #             new_filepath = new_filepath + ext
-    #         editor.writeFile(new_filepath)
-    #         if preview:
-    #             title, tab_title = self.createTitle(new_filepath, editor.isModified())
-    #             self.setWindowTitle(title)
-    #             self.tabWidgets.setTabText(self.tabWidgets.indexOf(editor), tab_title)
-    #             if self.settings.value('preview/onsave', type=bool):
-    #                 text = editor.getValue()
-    #                 self.preview(text, new_filepath)
-    #             self.explorer.refreshPath(new_filepath)
-
     def onExport(self, label):
         if label == 'html':
-            in_basename, in_ext = os.path.splitext(
-                os.path.basename(self.editor().getFileName()))
+            in_filepath = self.tab_editor.filepath()
+            in_basename, in_ext = os.path.splitext(os.path.basename(in_filepath))
             out_file = in_basename + '.html'
             out_html = QtWidgets.QFileDialog.getSaveFileName(
                 self, self.tr('export HTML as ...'),
@@ -538,20 +481,18 @@ class MainWindow(QtWidgets.QMainWindow):
             if isinstance(out_html, tuple):
                 out_html = out_html[0]
             if out_html:
-                out_html = toUtf8(out_html)
+                out_html = out_html
                 basename, out_ext = os.path.splitext(out_html)
                 if out_ext.lower() not in ['.html', '.htm']:
                     out_html += '.html'
                 if in_ext.lower() in ['.rst', '.rest']:
-                    output.rst2html(self.editor().getFileName(),
+                    output.rst2html(in_filepath,
                                     out_html,
                                     theme=self.rst_theme)
                 elif in_ext.lower() in ['.md', '.markdown']:
-                    output.md2html(self.editor().getFileName(),
+                    output.md2html(in_filepath,
                                 out_html,
                                 theme=self.md_theme)
-        elif label == 'pdf':
-            self.webview.onExportToPdf()
 
     def onPrintPreview(self):
         if self.codeview.hasFocus():
@@ -563,9 +504,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtPrintSupport.QPrinter.ScreenResolution)
             widget = self.webview
         else:
-            printer = self.editor().getPrinter(
+            widget = self.tab_editor.currentWidget()
+            printer = widget.getPrinter(
                 QtPrintSupport.QPrinter.ScreenResolution)
-            widget = self.editor()
         printer.setPageSize(QtPrintSupport.QPrinter.A4)
         printer.setPageOrientation(QtGui.QPageLayout.Portrait)
         printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
@@ -583,9 +524,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtPrintSupport.QPrinter.HighResolution)
             widget = self.webview
         else:
-            printer = self.editor().getPrinter(
+            widget = self.tab_editor.currentWidget()
+            printer = widget.getPrinter(
                 QtPrintSupport.QPrinter.HighResolution)
-            widget = self.editor()
         printer.setPageSize(QtPrintSupport.QPrinter.A4)
         printer.setPageMargins(15, 15, 15, 15, QtPrintSupport.QPrinter.Millimeter)
         printDialog = QtPrintSupport.QPrintDialog(printer, widget)
@@ -633,9 +574,9 @@ class MainWindow(QtWidgets.QMainWindow):
             SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None)
 
     def onViewMenuShow(self):
-        self.explorerAction.setChecked(self.dock_explorer.isVisible())
-        self.webviewAction.setChecked(self.dock_webview.isVisible())
-        self.codeviewAction.setChecked(self.dock_codeview.isVisible())
+        self.showExplorerAction.setChecked(self.dock_explorer.isVisible())
+        self.showWebviewAction.setChecked(self.dock_webview.isVisible())
+        self.showCodeviewAction.setChecked(self.dock_codeview.isVisible())
 
     def onView(self, label, checked):
         if label == 'explorer':
@@ -647,7 +588,6 @@ class MainWindow(QtWidgets.QMainWindow):
         elif label == 'codeview':
             self.dock_codeview.setVisible(checked)
             self.settings.setValue('view/codeview', checked)
-        return
 
     def onPreview(self, label, checked):
         if label == 'preview':
@@ -658,10 +598,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.settings.setValue('preview/oninput', checked)
         elif label == 'previewsync':
             self.settings.setValue('preview/sync', checked)
-        elif label == 'enablelexer':
-            self.settings.setValue('editor/enableLexer', checked)
-            self.editor().enableLexer(checked)
-        return
 
     def onRstThemeChanged(self, label, checked):
         self.rst_theme = label
@@ -745,41 +681,42 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
-        path = path
         if not os.path.exists(path):
             return
-        ext = os.path.splitext(path)[1].lower()
-        if ext in EXTENSION_LEXER:
-            self.tab_editor.loadFile(path)
-        else:
+        if not self.tab_editor.loadFile(path):
             subprocess.Popen(path, shell=True)
-        return
 
-    def onValueChanged(self, value):
+    def onVScrollBarChanged(self, value):
         if self.settings.value('preview/sync', type=bool):
-            dy = self.editor().getVScrollValue()
-            editor_vmax = self.editor().getVScrollMaximum()
+            widget = self.tab_editor.currentWidget()
+            dy = widget.getVScrollValue()
+            editor_vmax = widget.getVScrollMaximum()
             if editor_vmax:
                 self.webview.scrollRatioPage(dy, editor_vmax)
-        return
 
     def onEditorModified(self, index, value):
         title = self.tab_editor.title(index, full=True)
         self.setWindowTitle(title)
 
-    def onPreviewRequest(self, index):
-        if self.settings.value('preview/oninput', type=bool):
-            self.preview(index)
+    def onPreviewRequest(self, index, source):
+        if source == 'input' and not self.settings.value('preview/oninput', type=bool):
+            return
+        if source == 'save' and not self.settings.value('preview/onsave', type=bool):
+            return
+        self.preview(index)
 
     def onFileRenamed(self, old_name, new_name):
-        for x in range(self.tab_editor.count()):
-            editor = self.tab_editor.widget(x)
-            if old_name == editor.getFileName():
-                editor.setFileName(new_name)
-                self.tab_editor.updateTitle(x)
-                if x == self.tabWidgets.currentIndex():
-                    self.setWindowTitle(self.tab_editor.title(x, full=True))
-                break
+        if self.sender() == self.explorer:
+            for x in range(self.tab_editor.count()):
+                editor = self.tab_editor.widget(x)
+                if old_name == editor.getFileName():
+                    editor.setFileName(new_name)
+                    self.tab_editor.updateTitle(x)
+                    if x == self.tab_editor.currentIndex():
+                        self.setWindowTitle(self.tab_editor.title(x, full=True))
+                    break
+        elif self.sender() == self.tab_editor:
+            self.explorer.refreshPath(new_name)
 
     def onFileDeleted(self, path):
         for x in range(self.tab_editor.count()):
@@ -790,9 +727,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 break
         if self.tab_editor.count() == 0:
             self.tab_editor.new('.rst')
-
-    def editor(self):
-        return self.tab_editor.currentWidget()
 
     def moveCenter(self):
         qr = self.frameGeometry()
@@ -816,39 +750,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.webview.setHtml(self.previewHtml, self.previewPath)
         self.codeview.setValue(self.previewHtml)
         self.codeview.setFileName(self.previewPath + '.html')
-        dy = self.editor().getVScrollValue()
-        editor_vmax = self.editor().getVScrollMaximum()
+        widget = self.tab_editor.currentWidget()
+        dy = widget.getVScrollValue()
+        editor_vmax = widget.getVScrollMaximum()
         if editor_vmax:
             self.webview.scrollRatioPage(dy, editor_vmax)
-        self.editor().setFocus()
-
-    def saveAndContinue(self, editor, preview=False):
-        if editor.isModified():
-            filepath = editor.getFileName()
-            msgBox = QtWidgets.QMessageBox(self)
-            msgBox.setIcon(QtWidgets.QMessageBox.Question)
-            msgBox.setText(self.tr('The document has been modified.'))
-            msgBox.setInformativeText(
-                self.tr('Do you want to save your changes?\n%s' % filepath)
-            )
-            msgBox.setStandardButtons(
-                QtWidgets.QMessageBox.Save |
-                QtWidgets.QMessageBox.Discard |
-                QtWidgets.QMessageBox.Cancel
-            )
-            msgBox.setDefaultButton(QtWidgets.QMessageBox.Save)
-            ret = msgBox.exec_()
-            if ret == QtWidgets.QMessageBox.Cancel:
-                return False
-            if ret == QtWidgets.QMessageBox.Save:
-                self.onSave(editor=editor, preview=preview)
-        return True
-
-    def createTitle(self, filepath, modified):
-        filename = os.path.basename(filepath)
-        tab_title = ('*' if modified else '') + filename
-        title = __app_name__ + ' - ' + ('*' if modified else '') + filepath
-        return title, tab_title
+        widget.setFocus()
 
 
 def main():

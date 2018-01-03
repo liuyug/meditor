@@ -100,7 +100,6 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def onExportToHtml(self):
         self.exportHtml.emit()
-        self.action('undo').setEnabled(self.isUndoAvailable())
 
     def action(self, action):
         return self._actions.get(action)
