@@ -146,7 +146,7 @@ class Editor(QsciScintilla):
         action.triggered.connect(partial(do_action, 'unindent'))
         actions['unindent'] = action
 
-        action = QtWidgets.QAction(parent.tr('Wrap line'), parent)
+        action = QtWidgets.QAction(parent.tr('Wrap line'), parent, checkable=True)
         action.triggered.connect(partial(do_action, 'wrap_line'))
         actions['wrap_line'] = action
         return actions
@@ -590,7 +590,7 @@ class Editor(QsciScintilla):
         )
         return version
 
-    def do_action(self, action):
+    def do_action(self, action, value):
         if action == 'undo':
             self.undo()
         elif action == 'redo':
@@ -620,7 +620,7 @@ class Editor(QsciScintilla):
         elif action == 'unindent':
             self.indentLines(False)
         elif action == 'wrap_line':
-            if self.wrapMode() == QsciScintilla.WrapNone:
+            if value:
                 self.setWrapMode(QsciScintilla.WrapCharacter)
             else:
                 self.setWrapMode(QsciScintilla.WrapNone)

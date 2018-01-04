@@ -25,11 +25,13 @@ class TabEditor(QtWidgets.QTabWidget):
     modificationChanged = QtCore.pyqtSignal(int, bool)
     verticalScrollBarChanged = QtCore.pyqtSignal(int, int)
     filenameChanged = QtCore.pyqtSignal('QString', 'QString')
+    fileLoaded = QtCore.pyqtSignal(int)
     _actions = None
     _enable_lexer = True
     _find_dialog = None
     _settings = None
     _wrap_mode = 0
+    _one_editor = False
 
     def __init__(self, settings, find_dialog, parent=None):
         super(TabEditor, self).__init__(parent)
@@ -38,17 +40,21 @@ class TabEditor(QtWidgets.QTabWidget):
         self.setMovable(True)
         self.setTabsClosable(True)
         self.setDocumentMode(True)
+        self.setTabBarAutoHide(True)
         self.tabCloseRequested.connect(self._onTabCloseRequested)
 
-        self._wrap_mode = self._settings.value('editor/wrap_mode', type=int)
+        self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
+        self._one_editor = self._settings.value('editor/one_editor', False, type=bool)
+
         value = self._settings.value('editor/opened_files', type=str)
         for filepath in value.split(';')[::-1]:
             if not os.path.exists(filepath):
                 continue
-            index = self.open(filepath)
+            self.open(filepath)
+            if self._one_editor:
+                break
         if self.count() == 0:
-            index = self.new('.rst')
-        self.setCurrentIndex(index)
+            self.new('.rst')
 
         self._actions = {}
         action = QtWidgets.QAction(self.tr('&Open'), self)
@@ -69,7 +75,13 @@ class TabEditor(QtWidgets.QTabWidget):
         action.triggered.connect(self._onCloseAll)
         self._actions['close_all'] = action
 
+        action = QtWidgets.QAction(self.tr('One editor'), self, checkable=True)
+        action.triggered.connect(self._onOneEditor)
+        action.setChecked(self._one_editor)
+        self._actions['one_editor'] = action
+
         self._actions.update(Editor.createAction(self, self._onEditAction))
+        self.action('wrap_line').setChecked(self._wrap_mode > 0)
 
     def closeEvent(self, event):
         for x in range(self.count()):
@@ -78,6 +90,7 @@ class TabEditor(QtWidgets.QTabWidget):
                 return
         self._settings.setValue('editor/opened_files', ';'.join(self.openedFiles()))
         self._settings.setValue('editor/wrap_mode', self._wrap_mode)
+        self._settings.setValue('editor/one_editor', self._one_editor)
 
     def _onStatusChanged(self, status):
         widget = self.sender()
@@ -115,8 +128,11 @@ class TabEditor(QtWidgets.QTabWidget):
         if self.count() == 0:
             self.new('.rst')
         widget = self.currentWidget()
+        index = self.currentIndex()
         widget.setFocus(QtCore.Qt.TabFocusReason)
+        self.fileLoaded.emit(index)
         self.statusChanged.emit(index, widget.status())
+        self.previewRequest.emit(index, 'open')
 
     def _onOpen(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -192,15 +208,11 @@ class TabEditor(QtWidgets.QTabWidget):
         return True
 
     def _onCloseAll(self):
-        x = self.currentIndex()
-        while x > -1:
-            if not self._saveAndContinue(x):
-                return
-            widget = self.widget(x)
-            self.removeTab(x)
-            del widget
-            x = self.currentIndex()
+        self.do_close_all()
         self.new('.rst')
+
+    def _onOneEditor(self, value):
+        self._one_editor = value
 
     def _newEditor(self):
         editor = Editor(self._find_dialog, self)
@@ -216,17 +228,29 @@ class TabEditor(QtWidgets.QTabWidget):
         return self._actions.get(action)
 
     def new(self, ext):
+        if self._one_editor:
+            self.do_close_all()
         editor = self._newEditor()
         editor.newFile(ext)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
+        self.setCurrentIndex(index)
+        self.fileLoaded.emit(index)
+        self.statusChanged.emit(index, self.widget(index).status())
+        self.previewRequest.emit(index, 'new')
         return index
 
     def open(self, filepath):
+        if self._one_editor:
+            self.do_close_all()
         editor = self._newEditor()
         editor.readFile(filepath)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
+        self.setCurrentIndex(index)
+        self.fileLoaded.emit(index)
+        self.statusChanged.emit(index, self.widget(index).status())
+        self.previewRequest.emit(index, 'open')
         return index
 
     def text(self, index):
@@ -283,12 +307,15 @@ class TabEditor(QtWidgets.QTabWidget):
             index = self.new('.rst')
         else:
             if not Editor.isCanOpened(path):
-                logger.warn('Not load file: %s' % path)
                 return
             index = None
             for x in range(self.count()):
                 if path == self.filepath(x):
                     index = x
+                    self.setCurrentIndex(index)
+                    self.fileLoaded.emit(index)
+                    self.statusChanged.emit(index, self.widget(index).status())
+                    self.previewRequest.emit(index, 'open')
                     break
             if index is None:
                 if os.path.exists(path):
@@ -297,20 +324,25 @@ class TabEditor(QtWidgets.QTabWidget):
                 else:
                     logger.debug('Creating file: %s', path)
                     index = self.new(path)
-        self.setCurrentIndex(index)
-        self.statusChanged.emit(index, self.widget(index).status())
-        self.previewRequest.emit(index, 'loadfile')
-        return path
+        return index
 
     def editMenu(self, menu):
         widget = self.currentWidget()
         widget.editMenu(menu, self)
 
-    def _onEditAction(self, action):
+    def _onEditAction(self, action, value):
         widget = self.currentWidget()
         if action == 'wrap_line':
             for x in range(self.count()):
-                self.widget(x).do_action(action)
+                self.widget(x).do_action(action, value)
             self._wrap_mode = widget.wrapMode()
         else:
-            widget.do_action(action)
+            widget.do_action(action, value)
+
+    def do_close_all(self):
+        for x in list(range(self.count()))[::-1]:
+            widget = self.widget(x)
+            if not self._saveAndContinue(x):
+                return
+            self.removeTab(x)
+            del widget

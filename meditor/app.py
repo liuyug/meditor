@@ -137,6 +137,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tab_editor.previewRequest.connect(self.onEditorPreviewRequest)
         self.tab_editor.modificationChanged.connect(self.onEditorModified)
         self.tab_editor.filenameChanged.connect(self.onFileRenamed)
+        self.tab_editor.fileLoaded.connect(self.onEditorFileLoaded)
 
         self.webview.exportHtml.connect(partial(self.onMenuExport, 'html'))
 
@@ -347,6 +348,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu = menubar.addMenu(self.tr('&Settings'))
         menu.addAction(fileAssociationAction)
         menu.addAction(self.tab_editor.action('wrap_line'))
+        menu.addAction(self.tab_editor.action('one_editor'))
 
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
@@ -458,12 +460,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.statusEol.setText(value.center(length, ' '))
             elif key == 'cursor':
                 self.statusCursor.setText(value.center(length, ' '))
-
-    def onExplorerNew(self, ext):
-        index = self.tab_editor.new(ext)
-        title = self.tab_editor.title(index, full=True)
-        self.setWindowTitle(title)
-        self.do_preview(index)
 
     def onMenuNewWindow(self):
         if sys.platform == 'win32' and self._app_exec.endswith('.py'):
@@ -677,11 +673,30 @@ class MainWindow(QtWidgets.QMainWindow):
         text += self.tr('QScintilla: %s\n') % widget.getScintillaVersion()
         QtWidgets.QMessageBox.about(self, title, text)
 
+    def onExplorerNew(self, ext):
+        index = self.tab_editor.new(ext)
+        self.do_preview(index)
+
     def onExplorerFileLoaded(self, path):
         if not os.path.exists(path):
             return
-        if not self.tab_editor.loadFile(path):
+        index = self.tab_editor.loadFile(path)
+        if index is None:
             subprocess.Popen(path, shell=True)
+
+    def onExplorerFileDeleted(self, path):
+        for x in range(self.tab_editor.count()):
+            editor = self.tab_editor.widget(x)
+            if path == editor.getFileName():
+                self.tab_editor.removeTab(x)
+                del editor
+                break
+        if self.tab_editor.count() == 0:
+            self.tab_editor.new('.rst')
+
+    def onEditorFileLoaded(self, index):
+        title = self.tab_editor.title(index, full=True)
+        self.setWindowTitle(title)
 
     def onEditorVScrollBarChanged(self, value):
         if self.settings.value('preview/sync', type=bool):
@@ -714,16 +729,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     break
         elif self.sender() == self.tab_editor:
             self.explorer.refreshPath(new_name)
-
-    def onExplorerFileDeleted(self, path):
-        for x in range(self.tab_editor.count()):
-            editor = self.tab_editor.widget(x)
-            if path == editor.getFileName():
-                self.tab_editor.removeTab(x)
-                del editor
-                break
-        if self.tab_editor.count() == 0:
-            self.tab_editor.new('.rst')
 
     def moveCenter(self):
         qr = self.frameGeometry()
