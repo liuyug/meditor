@@ -29,6 +29,7 @@ class TabEditor(QtWidgets.QTabWidget):
     _enable_lexer = True
     _find_dialog = None
     _settings = None
+    _wrap_mode = 0
 
     def __init__(self, settings, find_dialog, parent=None):
         super(TabEditor, self).__init__(parent)
@@ -38,6 +39,16 @@ class TabEditor(QtWidgets.QTabWidget):
         self.setTabsClosable(True)
         self.setDocumentMode(True)
         self.tabCloseRequested.connect(self._onTabCloseRequested)
+
+        self._wrap_mode = self._settings.value('editor/wrap_mode', type=int)
+        value = self._settings.value('editor/opened_files', type=str)
+        for filepath in value.split(';')[::-1]:
+            if not os.path.exists(filepath):
+                continue
+            index = self.open(filepath)
+        if self.count() == 0:
+            index = self.new('.rst')
+        self.setCurrentIndex(index)
 
         self._actions = {}
         action = QtWidgets.QAction(self.tr('&Open'), self)
@@ -66,6 +77,7 @@ class TabEditor(QtWidgets.QTabWidget):
                 event.ignore()
                 return
         self._settings.setValue('editor/opened_files', ';'.join(self.openedFiles()))
+        self._settings.setValue('editor/wrap_mode', self._wrap_mode)
 
     def _onStatusChanged(self, status):
         widget = self.sender()
@@ -195,6 +207,7 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.inputPreviewRequest.connect(self._onInputPreview)
         editor.modificationChanged.connect(self._onModificationChanged)
         editor.enableLexer(self._enable_lexer)
+        editor.setWrapMode(self._wrap_mode)
         return editor
 
     def action(self, action):
@@ -293,4 +306,9 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def _onEditAction(self, action):
         widget = self.currentWidget()
-        widget.do_action(action)
+        if action == 'wrap_line':
+            for x in range(self.count()):
+                self.widget(x).do_action(action)
+            self._wrap_mode = widget.wrapMode()
+        else:
+            widget.do_action(action)

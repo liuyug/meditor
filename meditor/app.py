@@ -156,18 +156,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.restoreGeometry(settings.value('geometry', type=QtCore.QByteArray))
         self.restoreState(settings.value('windowState', type=QtCore.QByteArray))
 
-        value = settings.value('explorer/workspace', type=str)
-        for path in value.split(';'):
-            self.explorer.appendRootPath(path)
-
-        value = settings.value('editor/opened_files', type=str)
-        for filepath in value.split(';')[::-1]:
-            if not os.path.exists(filepath):
-                continue
-            self.tab_editor.open(filepath)
-        if self.tab_editor.count() == 0:
-            self.tab_editor.new('.rst')
-
         self.previewSignal.connect(self.onUpdatePreviewView)
         self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
         logger.debug('Preview worker start')
@@ -318,9 +306,6 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(printAction)
 
         menu.addSeparator()
-        menu.addAction(fileAssociationAction)
-
-        menu.addSeparator()
         menu.addAction(exitAction)
 
         menu = menubar.addMenu(self.tr('&Edit'))
@@ -358,6 +343,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         menu.addSeparator()
         menu.addAction(self.mathjaxAction)
+
+        menu = menubar.addMenu(self.tr('&Settings'))
+        menu.addAction(fileAssociationAction)
+        menu.addAction(self.tab_editor.action('wrap_line'))
 
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)

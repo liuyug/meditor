@@ -93,6 +93,10 @@ class Workspace(QtWidgets.QTreeWidget):
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
+        value = self._settings.value('explorer/workspace', type=str)
+        for path in value.split(';'):
+            self.appendRootPath(path)
+
     def closeEvent(self, event):
         self._settings.setValue('explorer/workspace', ';'.join(self.getRootPaths()))
 

@@ -145,6 +145,10 @@ class Editor(QsciScintilla):
         action.setShortcut('Shift+TAB')
         action.triggered.connect(partial(do_action, 'unindent'))
         actions['unindent'] = action
+
+        action = QtWidgets.QAction(parent.tr('Wrap line'), parent)
+        action.triggered.connect(partial(do_action, 'wrap_line'))
+        actions['wrap_line'] = action
         return actions
 
     def action(self, action):
@@ -615,6 +619,11 @@ class Editor(QsciScintilla):
             self.indentLines(True)
         elif action == 'unindent':
             self.indentLines(False)
+        elif action == 'wrap_line':
+            if self.wrapMode() == QsciScintilla.WrapNone:
+                self.setWrapMode(QsciScintilla.WrapCharacter)
+            else:
+                self.setWrapMode(QsciScintilla.WrapNone)
 
 
 class CodeViewer(Editor):
