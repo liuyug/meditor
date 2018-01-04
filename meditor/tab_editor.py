@@ -114,7 +114,9 @@ class TabEditor(QtWidgets.QTabWidget):
             del widget
         if self.count() == 0:
             self.new('.rst')
-        self.currentWidget().setFocus(QtCore.Qt.TabFocusReason)
+        widget = self.currentWidget()
+        widget.setFocus(QtCore.Qt.TabFocusReason)
+        self.statusChanged.emit(index, widget.status())
 
     def _onOpen(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
