@@ -53,10 +53,10 @@ class Editor(QsciScintilla):
         self._find_dialog = find_dialog
 
         font = QtGui.QFont('Monospace', 12)
-        fontmetrics = QtGui.QFontMetrics(font)
+        self._fontmetrics = QtGui.QFontMetrics(font)
         self.setMarginsFont(font)
         self.setMarginType(0, QsciScintilla.NumberMargin)
-        self.setMarginWidth(0, fontmetrics.width('0000'))
+        self.setMarginWidth(0, self._fontmetrics.width('0000'))
         self.setMarginWidth(1, 5)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
@@ -335,6 +335,9 @@ class Editor(QsciScintilla):
         self.setCursorPosition(0, 0)
         self.setModified(False)
         self.setEolMode(self._qsciEolModeFromLine(self.text(0)))
+        length = len('%s' % self.lines())
+        if length > 3:
+            self.setMarginWidth(0, self._fontmetrics.width('0' * (length + 1)))
 
     def _qsciEolModeFromOs(self):
         if sys.platform == 'win32':
