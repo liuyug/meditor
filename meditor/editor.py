@@ -28,17 +28,14 @@ class Editor(QsciScintilla):
     Scintilla Offical Document: http://www.scintilla.org/ScintillaDoc.html
     """
     inputPreviewRequest = QtCore.pyqtSignal()
-    encodingChanged = QtCore.pyqtSignal('QString')
-    lexerChanged = QtCore.pyqtSignal('QString')
-    eolChanged = QtCore.pyqtSignal('QString')
-    cursorChanged = QtCore.pyqtSignal('QString')
+    statusChanged = QtCore.pyqtSignal('QString')
     enable_lexer = True
     filename = None
     input_count = 0
     find_text = None
     find_forward = True
     tabWidth = 4
-    edgeColumn = 78
+    _edgeColumn = 80
     cur_lexer = None
     _pauseLexer = False
     _lexerStart = 0
@@ -66,7 +63,7 @@ class Editor(QsciScintilla):
         self.setTabWidth(self.tabWidth)
         self.setIndentationGuides(True)
         self.setEdgeMode(QsciScintilla.EdgeLine)
-        self.setEdgeColumn(self.edgeColumn)
+        self.setEdgeColumn(self._edgeColumn)
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setUtf8(True)
         self.copy_available = False
@@ -272,7 +269,7 @@ class Editor(QsciScintilla):
 
     def onCursorPositionChanged(self, line, index):
         cursor = 'Ln %s/%s Col %s/80' % (line + 1, self.lines(), index + 1)
-        self.cursorChanged.emit(cursor)
+        self.statusChanged.emit('cursor:%s' % cursor)
 
     def isCopyAvailable(self):
         return self.copy_available
@@ -326,9 +323,7 @@ class Editor(QsciScintilla):
         self.setText(text)
         self.setCursorPosition(0, 0)
         self.setModified(False)
-        self.encodingChanged.emit(self._file_encoding.upper())
         self.setEolMode(self._qsciEolModeFromLine(self.text(0)))
-        self.eolChanged.emit(EOL_DESCRIPTION[self.eolMode()])
 
     def _qsciEolModeFromOs(self):
         if sys.platform == 'win32':
@@ -386,8 +381,8 @@ class Editor(QsciScintilla):
             logging.error('%s: %s' % (filename, encoding))
             text = data.decode(encoding)
         self._file_encoding = encoding
-        self.setValue(text)
         self.setFileName(filename)
+        self.setValue(text)
         return True
 
     def writeFile(self, filename=None):
@@ -427,20 +422,22 @@ class Editor(QsciScintilla):
                     text = f.read()
                 break
         self._file_encoding = 'utf8'
-        self.setValue(text)
         self.setFileName(filepath)
+        self.setValue(text)
 
-    def getStatus(self):
+    def status(self):
+        if not self.getFileName():
+            return ''
         lines = self.lines()
         line, index = self.getCursorPosition()
         cursor = 'Ln %s/%s Col %s/80' % (line + 1, lines, index + 1)
-        status = {
-            'encoding': self._file_encoding.upper(),
-            'eol': EOL_DESCRIPTION[self.eolMode()],
-            'language': self.lexer().language(),
-            'cursor': cursor,
-        }
-        return status
+        status = [
+            'encoding:%s' % self._file_encoding.upper(),
+            'eol:%s' % EOL_DESCRIPTION[self.eolMode()],
+            'lexer:%s' % self.lexer().language(),
+            'cursor:%s' % cursor,
+        ]
+        return ';'.join(status)
 
     def emptyFile(self):
         self.clear()
@@ -556,9 +553,9 @@ class Editor(QsciScintilla):
                 lexer.setFont(QtGui.QFont('Monospace', 12))
         self.setLexer(lexer)
         if lexer:
-            self.lexerChanged.emit(lexer.language())
+            self.statusChanged.emit('lexer:%s' % lexer.language())
         else:
-            self.lexerChanged.emit('')
+            self.statusChanged.emit('lexer:')
         t2 = time.clock()
         logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
         self.cur_lexer = lexer

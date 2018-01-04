@@ -131,10 +131,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_codeview.setVisible(value)
         # event
         self.tab_editor.tabBarClicked.connect(self.onEditorTabClicked)
-        self.tab_editor.encodingChanged.connect(partial(self.onEditorStatusChange, 'encoding'))
-        self.tab_editor.lexerChanged.connect(partial(self.onEditorStatusChange, 'lexer'))
-        self.tab_editor.eolChanged.connect(partial(self.onEditorStatusChange, 'eol'))
-        self.tab_editor.cursorChanged.connect(partial(self.onEditorStatusChange, 'cursor'))
+        self.tab_editor.statusChanged.connect(self.onEditorStatusChange)
         self.tab_editor.verticalScrollBarChanged.connect(self.onEditorVScrollBarChanged)
         self.tab_editor.previewRequest.connect(self.onEditorPreviewRequest)
         self.tab_editor.modificationChanged.connect(self.onEditorModified)
@@ -435,22 +432,27 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tab_editor.editMenu(menu)
 
     def onEditorTabClicked(self, index):
+        widget = self.tab_editor.widget(index)
+        if not widget:
+            return
+        widget.setFocus(QtCore.Qt.TabFocusReason)
         title = self.tab_editor.title(index, full=True)
         self.setWindowTitle(title)
-        for status, value in self.tab_editor.status(index).items():
-            self.onEditorStatusChange(status, index, value)
+        self.onEditorStatusChange(index, widget.status())
         self.do_preview(index)
 
-    def onEditorStatusChange(self, status, index, value):
-        length = max(len(value) + 2, 8)
-        if status == 'lexer':
-            self.statusLexer.setText(value.center(length, ' '))
-        elif status == 'encoding':
-            self.statusEncoding.setText(value.center(length, ' '))
-        elif status == 'eol':
-            self.statusEol.setText(value.center(length, ' '))
-        elif status == 'cursor':
-            self.statusCursor.setText(value.center(length, ' '))
+    def onEditorStatusChange(self, index, status):
+        for item in status.split(';'):
+            key, value = item.split(':')
+            length = max(len(value) + 2, 8)
+            if key == 'lexer':
+                self.statusLexer.setText(value.center(length, ' '))
+            elif key == 'encoding':
+                self.statusEncoding.setText(value.center(length, ' '))
+            elif key == 'eol':
+                self.statusEol.setText(value.center(length, ' '))
+            elif key == 'cursor':
+                self.statusCursor.setText(value.center(length, ' '))
 
     def onExplorerNew(self, ext):
         index = self.tab_editor.new(ext)
@@ -575,10 +577,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.webview.setFocus(QtCore.Qt.TabFocusReason)
         elif value and dock == 'codeview':
             self.codeview.setFocus(QtCore.Qt.TabFocusReason)
+        if value:
+            self.previewCurrentText()
 
     def onMenuPreview(self, label, checked):
         if label == 'preview':
-            self.previewCurrentText()
+            self.previewCurrentText(force=True)
         elif label == 'previewonsave':
             self.settings.setValue('preview/onsave', checked)
         elif label == 'previewoninput':
@@ -731,8 +735,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.previewText = widget.text()
             requestPreview.set()
 
-    def previewCurrentText(self):
-        self.do_preview(self.tab_editor.currentIndex())
+    def previewCurrentText(self, force=False):
+        self.do_preview(self.tab_editor.currentIndex(), force=force)
 
     def onUpdatePreviewView(self):
         if self.dock_webview.isVisible():

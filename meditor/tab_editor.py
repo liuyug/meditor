@@ -21,10 +21,7 @@ FILTER = [
 
 
 class TabEditor(QtWidgets.QTabWidget):
-    encodingChanged = QtCore.pyqtSignal(int, 'QString')
-    lexerChanged = QtCore.pyqtSignal(int, 'QString')
-    eolChanged = QtCore.pyqtSignal(int, 'QString')
-    cursorChanged = QtCore.pyqtSignal(int, 'QString')
+    statusChanged = QtCore.pyqtSignal(int, 'QString')
     previewRequest = QtCore.pyqtSignal(int, 'QString')
     modificationChanged = QtCore.pyqtSignal(int, bool)
     verticalScrollBarChanged = QtCore.pyqtSignal(int, int)
@@ -71,33 +68,12 @@ class TabEditor(QtWidgets.QTabWidget):
                 return
         self._settings.setValue('editor/opened_files', ';'.join(self.openedFiles()))
 
-    def _onEncodingChanged(self, value):
+    def _onStatusChanged(self, status):
         widget = self.sender()
         index = self.indexOf(widget)
         if index < 0:
             return
-        self.encodingChanged.emit(index, value)
-
-    def _onLexerChanged(self, value):
-        widget = self.sender()
-        index = self.indexOf(widget)
-        if index < 0:
-            return
-        self.lexerChanged.emit(index, value)
-
-    def _onEolChanged(self, value):
-        widget = self.sender()
-        index = self.indexOf(widget)
-        if index < 0:
-            return
-        self.eolChanged.emit(index, value)
-
-    def _onCursorChanged(self, value):
-        widget = self.sender()
-        index = self.indexOf(widget)
-        if index < 0:
-            return
-        self.cursorChanged.emit(index, value)
+        self.statusChanged.emit(index, status)
 
     def _onInputPreview(self):
         widget = self.sender()
@@ -127,6 +103,7 @@ class TabEditor(QtWidgets.QTabWidget):
             del widget
         if self.count() == 0:
             self.new('.rst')
+        self.currentWidget().setFocus(QtCore.Qt.TabFocusReason)
 
     def _onOpen(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -214,10 +191,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def _newEditor(self):
         editor = Editor(self._find_dialog, self)
-        editor.encodingChanged.connect(self._onEncodingChanged)
-        editor.lexerChanged.connect(self._onLexerChanged)
-        editor.eolChanged.connect(self._onEolChanged)
-        editor.cursorChanged.connect(self._onCursorChanged)
+        editor.statusChanged.connect(self._onStatusChanged)
         editor.verticalScrollBar().valueChanged.connect(self._onVerticalScrollBarChanged)
         editor.inputPreviewRequest.connect(self._onInputPreview)
         editor.modificationChanged.connect(self._onModificationChanged)
@@ -232,7 +206,6 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.newFile(ext)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
-        self.setCurrentIndex(index)
         return index
 
     def open(self, filepath):
@@ -240,7 +213,6 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.readFile(filepath)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
-        self.setCurrentIndex(index)
         return index
 
     def text(self, index):
@@ -268,7 +240,7 @@ class TabEditor(QtWidgets.QTabWidget):
             editor = self.widget(index)
         if not editor:
             return
-        return editor.getStatus()
+        return editor.status()
 
     def openedFiles(self):
         return [self.filepath(x) for x in range(self.count())]
@@ -313,6 +285,7 @@ class TabEditor(QtWidgets.QTabWidget):
                     logger.debug('Creating file: %s', path)
                     index = self.new(path)
         self.setCurrentIndex(index)
+        self.statusChanged.emit(index, self.widget(index).status())
         self.previewRequest.emit(index, 'loadfile')
         return path
 
