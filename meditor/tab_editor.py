@@ -131,7 +131,8 @@ class TabEditor(QtWidgets.QTabWidget):
     def _onOpen(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, self.tr('Open a file'),
-            filter=''.join(FILTER),
+            os.getcwd(),
+            ''.join(FILTER),
         )
         if filename:
             self.loadFile(filename)
@@ -278,9 +279,9 @@ class TabEditor(QtWidgets.QTabWidget):
         else:
             editor = self.widget(index)
         if full:
-            title = ('*' if editor.isModified() else '') + editor.getFileName()
+            title = ('* ' if editor.isModified() else '') + editor.getFileName()
         else:
-            title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
+            title = ('* ' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         return title
 
     def updateTitle(self, index):

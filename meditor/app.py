@@ -104,19 +104,31 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_explorer.visibilityChanged.connect(partial(self.onDockVisibility, 'explorer'))
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
         # right dock window
-        self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Previewer'), self)
+        self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Viewer'), self)
         self.dock_webview.setObjectName('dock_webview')
         self.webview = webview.WebView(self.findDialog, self.dock_webview)
         self.dock_webview.setWidget(self.webview)
         self.dock_webview.visibilityChanged.connect(partial(self.onDockVisibility, 'webview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
 
-        self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code viewer'), self)
+        self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code Viewer'), self)
         self.dock_codeview.setObjectName('dock_codeview')
         self.codeview = CodeViewer(self.findDialog, self.dock_codeview)
         self.dock_codeview.setWidget(self.codeview)
         self.dock_codeview.visibilityChanged.connect(partial(self.onDockVisibility, 'codeview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
+
+        value = settings.value('view/explorer', True, type=bool)
+        settings.setValue('view/explorer', value)
+        self.dock_explorer.setVisible(value)
+
+        value = settings.value('view/webview', True, type=bool)
+        settings.setValue('view/webview', value)
+        self.dock_webview.setVisible(value)
+
+        value = settings.value('view/codeview', True, type=bool)
+        settings.setValue('view/codeview', value)
+        self.dock_codeview.setVisible(value)
         # event
         self.tab_editor.tabBarClicked.connect(self.onEditorTabClicked)
         self.tab_editor.encodingChanged.connect(partial(self.onEditorStatusChange, 'encoding'))
@@ -151,18 +163,19 @@ class MainWindow(QtWidgets.QMainWindow):
             self.explorer.appendRootPath(path)
 
         value = settings.value('editor/opened_files', type=str)
-        for filepath in value.split(';'):
+        for filepath in value.split(';')[::-1]:
             if not os.path.exists(filepath):
                 continue
             self.tab_editor.open(filepath)
         if self.tab_editor.count() == 0:
             self.tab_editor.new('.rst')
 
-        self.previewSignal.connect(self.previewDisplay)
+        self.previewSignal.connect(self.onUpdatePreviewView)
         self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
         logger.debug('Preview worker start')
         self.previewWorker.start()
         self.onEditorTabClicked(self.tab_editor.currentIndex())
+        self.do_preview(self.tab_editor.currentIndex(), force=True)
 
     def setupMenu(self):
         settings = self.settings
@@ -187,23 +200,6 @@ class MainWindow(QtWidgets.QMainWindow):
         exitAction.triggered.connect(self.close)
         # edit
         # view
-        self.showExplorerAction = QtWidgets.QAction(self.tr('File explorer'), self, checkable=True)
-        self.showExplorerAction.triggered.connect(partial(self.onMenuView, 'explorer'))
-        value = settings.value('view/explorer', True, type=bool)
-        settings.setValue('view/explorer', value)
-        self.showExplorerAction.setChecked(value)
-
-        self.showWebviewAction = QtWidgets.QAction(self.tr('Web Viewer'), self, checkable=True)
-        self.showWebviewAction.triggered.connect(partial(self.onMenuView, 'webview'))
-        value = settings.value('view/webview', True, type=bool)
-        settings.setValue('view/webview', value)
-        self.showWebviewAction.setChecked(value)
-
-        self.showCodeviewAction = QtWidgets.QAction(self.tr('Code Viewer'), self, checkable=True)
-        self.showCodeviewAction.triggered.connect(partial(self.onMenuView, 'codeview'))
-        value = settings.value('view/codeview', True, type=bool)
-        settings.setValue('view/codeview', value)
-        self.showCodeviewAction.setChecked(value)
         # preview
         previewAction = QtWidgets.QAction(self.tr('&Preview'), self)
         previewAction.triggered.connect(partial(self.onMenuPreview, 'preview'))
@@ -333,10 +329,9 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.aboutToShow.connect(self.onMenuEditAboutToShow)
 
         menu = menubar.addMenu(self.tr('&View'))
-        menu.addAction(self.showExplorerAction)
-        menu.addAction(self.showWebviewAction)
-        menu.addAction(self.showCodeviewAction)
-        menu.aboutToShow.connect(self.onMenuViewShow)
+        menu.addAction(self.dock_explorer.toggleViewAction())
+        menu.addAction(self.dock_webview.toggleViewAction())
+        menu.addAction(self.dock_codeview.toggleViewAction())
 
         menu = menubar.addMenu(self.tr('&Preview'))
         menu.addAction(previewAction)
@@ -403,6 +398,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         self.settings.setValue('geometry', self.saveGeometry())
         self.settings.setValue('windowState', self.saveState())
+        self.settings.setValue('view/explorer', self.dock_explorer.isVisible())
+        self.settings.setValue('view/webview', self.dock_webview.isVisible())
+        self.settings.setValue('view/codeview', self.dock_codeview.isVisible())
 
         if not self.tab_editor.close():
             event.ignore()
@@ -441,7 +439,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle(title)
         for status, value in self.tab_editor.status(index).items():
             self.onEditorStatusChange(status, index, value)
-        self.preview(index)
+        self.do_preview(index)
 
     def onEditorStatusChange(self, status, index, value):
         length = max(len(value) + 2, 8)
@@ -458,7 +456,7 @@ class MainWindow(QtWidgets.QMainWindow):
         index = self.tab_editor.new(ext)
         title = self.tab_editor.title(index, full=True)
         self.setWindowTitle(title)
-        self.preview(index)
+        self.do_preview(index)
 
     def onMenuNewWindow(self):
         if sys.platform == 'win32' and self._app_exec.endswith('.py'):
@@ -578,22 +576,6 @@ class MainWindow(QtWidgets.QMainWindow):
         elif value and dock == 'codeview':
             self.codeview.setFocus(QtCore.Qt.TabFocusReason)
 
-    def onMenuViewShow(self):
-        self.showExplorerAction.setChecked(self.dock_explorer.isVisible())
-        self.showWebviewAction.setChecked(self.dock_webview.isVisible())
-        self.showCodeviewAction.setChecked(self.dock_codeview.isVisible())
-
-    def onMenuView(self, label, checked):
-        if label == 'explorer':
-            self.dock_explorer.setVisible(checked)
-            self.settings.setValue('view/explorer', checked)
-        elif label == 'webview':
-            self.dock_webview.setVisible(checked)
-            self.settings.setValue('view/webview', checked)
-        elif label == 'codeview':
-            self.dock_codeview.setVisible(checked)
-            self.settings.setValue('view/codeview', checked)
-
     def onMenuPreview(self, label, checked):
         if label == 'preview':
             self.previewCurrentText()
@@ -709,7 +691,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if source == 'save' and not self.settings.value('preview/onsave', type=bool):
             return
-        self.preview(index)
+        self.do_preview(index)
 
     def onFileRenamed(self, old_name, new_name):
         if self.sender() == self.explorer:
@@ -740,19 +722,19 @@ class MainWindow(QtWidgets.QMainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-    def preview(self, index):
+    def do_preview(self, index, force=False):
         if requestPreview.is_set():
             logger.debug('Preview is working..., ignore')
-        elif self.dock_codeview.isVisible() or self.dock_webview.isVisible():
+        elif force or self.dock_codeview.isVisible() or self.dock_webview.isVisible():
             widget = self.tab_editor.widget(index)
             self.previewPath = widget.getFileName()
             self.previewText = widget.text()
             requestPreview.set()
 
     def previewCurrentText(self):
-        self.preview(self.tab_editor.currentIndex())
+        self.do_preview(self.tab_editor.currentIndex())
 
-    def previewDisplay(self):
+    def onUpdatePreviewView(self):
         if self.dock_webview.isVisible():
             self.webview.setHtml(self.previewHtml, self.previewPath)
         if self.dock_codeview.isVisible():
