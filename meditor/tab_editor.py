@@ -5,7 +5,6 @@ import logging
 from PyQt5 import QtCore, QtWidgets
 
 from .editor import Editor
-from .scilib import EXTENSION_LEXER
 from . import __default_basename__
 
 
@@ -112,7 +111,7 @@ class TabEditor(QtWidgets.QTabWidget):
             ''.join(FILTER),
         )
         if filename:
-            self.loadFile(filename)
+            self.loadFile(os.path.abspath(filename))
 
     def _onSave(self, index):
         if not index:
@@ -268,9 +267,8 @@ class TabEditor(QtWidgets.QTabWidget):
         if not path:
             index = self.new('.rst')
         else:
-            path = os.path.abspath(path)
-            ext = os.path.splitext(path)[1].lower()
-            if ext not in EXTENSION_LEXER:
+            if not Editor.isCanOpened(path):
+                logger.warn('Not load file: %s' % path)
                 return
             index = None
             for x in range(self.count()):

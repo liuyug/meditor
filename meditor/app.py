@@ -17,7 +17,7 @@ from pygments.formatters import get_formatter_by_name
 from . import __app_name__, __app_version__, \
     __data_path__, __home_data_path__, __icon_path__, __mathjax_full_path__, \
     pygments_styles
-from .editor import CodeViewer
+from .editor import Editor, CodeViewer
 from .tab_editor import TabEditor
 from .scilib import EXTENSION_LEXER
 from . import webview
@@ -90,6 +90,7 @@ class MainWindow(QtWidgets.QMainWindow):
         logger.info('icon path: %s' % __icon_path__)
         self.setWindowIcon(QtGui.QIcon(self._icon))
         self.setFont(QtGui.QFont('Monospace', 12))
+        self.setAcceptDrops(True)
         # main window
         self.findDialog = FindReplaceDialog(self)
 
@@ -414,6 +415,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewWorker.join()
         logger.info(' rsteditor end '.center(80, '='))
         event.accept()
+
+    def dragEnterEvent(self, event):
+        mimedata = event.mimeData()
+        if mimedata.hasUrls():
+            for url in mimedata.urls():
+                if not url.isLocalFile():
+                    return
+                if not Editor.isCanOpened(os.path.abspath(url.toLocalFile())):
+                    return
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        mimedata = event.mimeData()
+        for url in mimedata.urls():
+            self.tab_editor.loadFile(os.path.abspath(url.toLocalFile()))
 
     def onFocusChanged(self, old, new):
         menu = None

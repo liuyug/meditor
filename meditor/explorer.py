@@ -125,7 +125,7 @@ class Workspace(QtWidgets.QTreeWidget):
                 self.expandDir(item)
         else:
             path = os.path.join(item.data(0, self.role_path), item.text(0))
-            self.fileLoaded.emit(path)
+            self.fileLoaded.emit(os.path.abspath(path))
 
     def onNewFile(self, label):
         self.fileNew.emit(label)

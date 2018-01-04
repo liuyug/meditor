@@ -72,6 +72,13 @@ class Editor(QsciScintilla):
         self._imsupport = _SciImSupport(self)
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
 
+    @staticmethod
+    def isCanOpened(filepath):
+        basename, ext = os.path.splitext(filepath)
+        if not ext:
+            ext = basename
+        return ext.lower() in EXTENSION_LEXER
+
     @classmethod
     def createAction(cls, parent, do_action):
         actions = {}
