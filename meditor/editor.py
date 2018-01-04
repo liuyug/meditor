@@ -226,71 +226,46 @@ class Editor(QsciScintilla):
     def print_(self, printer):
         printer.printRange(self)
 
-    def editMenu(self, menu):
-        menu.addAction(self.action('undo'))
-        menu.addAction(self.action('redo'))
+    def editMenu(self, menu, widget=None):
+        if not widget:
+            widget = self
+        menu.addAction(widget.action('undo'))
+        menu.addAction(widget.action('redo'))
         menu.addSeparator()
-        menu.addAction(self.action('cut'))
-        menu.addAction(self.action('copy'))
-        menu.addAction(self.action('paste'))
-        menu.addAction(self.action('delete'))
+        menu.addAction(widget.action('cut'))
+        menu.addAction(widget.action('copy'))
+        menu.addAction(widget.action('paste'))
+        menu.addAction(widget.action('delete'))
         menu.addSeparator()
-        menu.addAction(self.action('select_all'))
+        menu.addAction(widget.action('select_all'))
         menu.addSeparator()
-        menu.addAction(self.action('find'))
-        menu.addAction(self.action('find_next'))
-        menu.addAction(self.action('find_prev'))
-        menu.addAction(self.action('replace_next'))
+        menu.addAction(widget.action('find'))
+        menu.addAction(widget.action('find_next'))
+        menu.addAction(widget.action('find_prev'))
+        menu.addAction(widget.action('replace_next'))
         menu.addSeparator()
-        menu.addAction(self.action('indent'))
-        menu.addAction(self.action('unindent'))
-        self.action('undo').setEnabled(self.isUndoAvailable())
-        self.action('redo').setEnabled(self.isRedoAvailable())
-        self.action('cut').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
-        self.action('copy').setEnabled(self.isCopyAvailable())
-        self.action('paste').setEnabled(self.isPasteAvailable() and not self.isReadOnly())
-        self.action('delete').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
-        self.action('select_all').setEnabled(True)
-        self.action('find').setEnabled(True)
-        self.action('find_next').setEnabled(True)
-        self.action('find_prev').setEnabled(True)
-        self.action('replace_next').setEnabled(True and not self.isReadOnly())
-        self.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
-        self.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
+        menu.addAction(widget.action('indent'))
+        menu.addAction(widget.action('unindent'))
+        widget.action('undo').setEnabled(self.isUndoAvailable())
+        widget.action('redo').setEnabled(self.isRedoAvailable())
+        widget.action('cut').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
+        widget.action('copy').setEnabled(self.isCopyAvailable())
+        widget.action('paste').setEnabled(self.isPasteAvailable() and not self.isReadOnly())
+        widget.action('delete').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
+        widget.action('select_all').setEnabled(True)
+        widget.action('find').setEnabled(True)
+        widget.action('find_next').setEnabled(True)
+        widget.action('find_prev').setEnabled(True)
+        widget.action('replace_next').setEnabled(True and not self.isReadOnly())
+        widget.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
+        widget.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
             super(Editor, self).contextMenuEvent(event)
 
     def _onEditAction(self, action):
-        if action == 'undo':
-            self.undo()
-        elif action == 'redo':
-            self.redo()
-        elif action == 'cut':
-            self.cut()
-        elif action == 'copy':
-            self.copy()
-        elif action == 'paste':
-            self.paste()
-        elif action == 'delete':
-            self.delete()
-        elif action == 'selectall':
-            self.selectAll()
-        elif action == 'find':
-            self.find(self._find_dialog)
-        elif action == 'findnext':
-            self.findNext(self._find_dialog.getFindText())
-        elif action == 'findprev':
-            self.findPrevious(self._find_dialog.getFindText())
-        elif action == 'replacenext':
-            self.replaceNext(
-                self._find_dialog.getFindText(),
-                self._find_dialog.getReplaceText())
-        elif action == 'indent':
-            self.indentLines(True)
-        elif action == 'unindent':
-            self.indentLines(False)
+        self.do_action(action)
 
     def onCopyAvailable(self, yes):
         self.copy_available = yes
@@ -606,6 +581,36 @@ class Editor(QsciScintilla):
             QSCINTILLA_VERSION & 0xff,
         )
         return version
+
+    def do_action(self, action):
+        if action == 'undo':
+            self.undo()
+        elif action == 'redo':
+            self.redo()
+        elif action == 'cut':
+            self.cut()
+        elif action == 'copy':
+            self.copy()
+        elif action == 'paste':
+            self.paste()
+        elif action == 'delete':
+            self.delete()
+        elif action == 'selectall':
+            self.selectAll()
+        elif action == 'find':
+            self.find(self._find_dialog)
+        elif action == 'findnext':
+            self.findNext(self._find_dialog.getFindText())
+        elif action == 'findprev':
+            self.findPrevious(self._find_dialog.getFindText())
+        elif action == 'replacenext':
+            self.replaceNext(
+                self._find_dialog.getFindText(),
+                self._find_dialog.getReplaceText())
+        elif action == 'indent':
+            self.indentLines(True)
+        elif action == 'unindent':
+            self.indentLines(False)
 
 
 class CodeViewer(Editor):

@@ -317,64 +317,8 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def editMenu(self, menu):
         widget = self.currentWidget()
-        menu.addAction(self.action('undo'))
-        menu.addAction(self.action('redo'))
-        menu.addSeparator()
-        menu.addAction(self.action('cut'))
-        menu.addAction(self.action('copy'))
-        menu.addAction(self.action('paste'))
-        menu.addAction(self.action('delete'))
-        menu.addSeparator()
-        menu.addAction(self.action('select_all'))
-        menu.addSeparator()
-        menu.addAction(self.action('find'))
-        menu.addAction(self.action('find_next'))
-        menu.addAction(self.action('find_prev'))
-        menu.addAction(self.action('replace_next'))
-        menu.addSeparator()
-        menu.addAction(self.action('indent'))
-        menu.addAction(self.action('unindent'))
-        self.action('undo').setEnabled(widget.isUndoAvailable())
-        self.action('redo').setEnabled(widget.isRedoAvailable())
-        self.action('cut').setEnabled(widget.isCopyAvailable() and not widget.isReadOnly())
-        self.action('copy').setEnabled(widget.isCopyAvailable())
-        self.action('paste').setEnabled(widget.isPasteAvailable() and not widget.isReadOnly())
-        self.action('delete').setEnabled(widget.isCopyAvailable() and not widget.isReadOnly())
-        self.action('select_all').setEnabled(True)
-        self.action('find').setEnabled(True)
-        self.action('find_next').setEnabled(True)
-        self.action('find_prev').setEnabled(True)
-        self.action('replace_next').setEnabled(True and not widget.isReadOnly())
-        self.action('indent').setEnabled(widget.hasSelectedText() and not widget.isReadOnly())
-        self.action('unindent').setEnabled(widget.hasSelectedText() and not widget.isReadOnly())
+        widget.editMenu(menu, self)
 
     def _onEditAction(self, action):
         widget = self.currentWidget()
-        if action == 'undo':
-            widget.undo()
-        elif action == 'redo':
-            widget.redo()
-        elif action == 'cut':
-            widget.cut()
-        elif action == 'copy':
-            widget.copy()
-        elif action == 'paste':
-            widget.paste()
-        elif action == 'delete':
-            widget.delete()
-        elif action == 'selectall':
-            widget.selectAll()
-        elif action == 'find':
-            widget.find(self._find_dialog)
-        elif action == 'findnext':
-            widget.findNext(self._find_dialog.getFindText())
-        elif action == 'findprev':
-            widget.findPrevious(self._find_dialog.getFindText())
-        elif action == 'replacenext':
-            widget.replaceNext(
-                self._find_dialog.getFindText(),
-                self._find_dialog.getReplaceText())
-        elif action == 'indent':
-            widget.indentLines(True)
-        elif action == 'unindent':
-            widget.indentLines(False)
+        widget.do_action(action)

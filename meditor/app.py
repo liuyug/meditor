@@ -28,13 +28,6 @@ from .util import toUtf8, toBytes, download, unzip
 from .findreplace import FindReplaceDialog
 
 
-FILTER = [
-    'All support files (*.rst *.md *.txt);;',
-    'reStructuredText files (*.rst *.rest);;',
-    'Markdown files (*.md *.markdown);;',
-    'Text files (*.txt)',
-]
-
 requestPreview = threading.Event()
 
 # for debug
@@ -407,7 +400,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settings.setValue('geometry', self.saveGeometry())
         self.settings.setValue('windowState', self.saveState())
 
-        self.tab_editor.close()
+        if not self.tab_editor.close():
+            event.ignore()
+            return
         self.explorer.close()
         self.webview.close()
         self.codeview.close()
