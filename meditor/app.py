@@ -101,18 +101,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_explorer.setObjectName('dock_explorer')
         self.explorer = explorer.Workspace(self.settings, self.dock_explorer)
         self.dock_explorer.setWidget(self.explorer)
+        self.dock_explorer.visibilityChanged.connect(partial(self.onDockVisibility, 'explorer'))
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
         # right dock window
         self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Previewer'), self)
         self.dock_webview.setObjectName('dock_webview')
         self.webview = webview.WebView(self.findDialog, self.dock_webview)
         self.dock_webview.setWidget(self.webview)
+        self.dock_webview.visibilityChanged.connect(partial(self.onDockVisibility, 'webview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
 
         self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code viewer'), self)
         self.dock_codeview.setObjectName('dock_codeview')
         self.codeview = CodeViewer(self.findDialog, self.dock_codeview)
         self.dock_codeview.setWidget(self.codeview)
+        self.dock_codeview.visibilityChanged.connect(partial(self.onDockVisibility, 'codeview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
         # event
         self.tab_editor.tabBarClicked.connect(self.onEditorTabClicked)
@@ -154,13 +157,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tab_editor.open(filepath)
         if self.tab_editor.count() == 0:
             self.tab_editor.new('.rst')
-        self.onEditorTabClicked(self.tab_editor.currentIndex())
 
-        self.previewWorker = threading.Thread(target=previewWorker,
-                                              args=(self,))
         self.previewSignal.connect(self.previewDisplay)
+        self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
         logger.debug('Preview worker start')
         self.previewWorker.start()
+        self.onEditorTabClicked(self.tab_editor.currentIndex())
 
     def setupMenu(self):
         settings = self.settings
@@ -437,9 +439,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def onEditorTabClicked(self, index):
         title = self.tab_editor.title(index, full=True)
         self.setWindowTitle(title)
-        self.preview(index)
         for status, value in self.tab_editor.status(index).items():
             self.onEditorStatusChange(status, index, value)
+        self.preview(index)
 
     def onEditorStatusChange(self, status, index, value):
         length = max(len(value) + 2, 8)
@@ -569,6 +571,12 @@ class MainWindow(QtWidgets.QMainWindow):
         SHCNF_IDLIST = 0
         windll.shell32.SHChangeNotify(
             SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None)
+
+    def onDockVisibility(self, dock, value):
+        if value and dock == 'webview':
+            self.webview.setFocus(QtCore.Qt.TabFocusReason)
+        elif value and dock == 'codeview':
+            self.codeview.setFocus(QtCore.Qt.TabFocusReason)
 
     def onMenuViewShow(self):
         self.showExplorerAction.setChecked(self.dock_explorer.isVisible())
