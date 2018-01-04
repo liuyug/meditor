@@ -574,7 +574,7 @@ class Editor(QsciScintilla):
             # PyQt5.Qsci
             pass
 
-    def getVersion(self):
+    def getScintillaVersion(self):
         version = '%s.%s.%s' % (
             QSCINTILLA_VERSION >> 16 & 0xff,
             QSCINTILLA_VERSION >> 8 & 0xff,

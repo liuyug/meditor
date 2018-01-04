@@ -668,11 +668,12 @@ class MainWindow(QtWidgets.QMainWindow):
         text = self.tr("%s %s\n\nThe editor for Markup Text\n\n"
                        ) % (__app_name__, __app_version__)
         text += self.tr('Platform: %s\n') % (sys.platform)
-        text += self.tr('Config path: %s\n') % (__home_data_path__)
+        text += self.tr('Home path: %s\n') % (__home_data_path__)
         text += self.tr('Application path: %s\n') % (__data_path__)
-        text += self.tr('Editor lexer: %s\n') % self.editor().cur_lexer.__module__
+        widget = self.tab_editor.currentWidget()
+        text += self.tr('Editor lexer: %s\n') % widget.cur_lexer.__module__
         text += self.tr('\n')
-        text += self.tr('QScintilla: %s\n') % self.editor().getVersion()
+        text += self.tr('QScintilla: %s\n') % widget.getScintillaVersion()
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onFileLoaded(self, path):
