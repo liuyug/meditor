@@ -236,7 +236,7 @@ class Editor(QsciScintilla):
     def print_(self, printer):
         printer.printRange(self)
 
-    def editMenu(self, menu, widget=None):
+    def menuEdit(self, menu, widget=None):
         if not widget:
             widget = self
         menu.addAction(widget.action('undo'))

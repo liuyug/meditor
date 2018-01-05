@@ -34,11 +34,11 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self._actions['select_all'] = action
 
         action = QtWidgets.QAction(self.tr('Export to PDF'), self)
-        action.triggered.connect(self.onExportToPdf)
+        action.triggered.connect(partial(self._onAction, 'export_pdf'))
         self._actions['export_pdf'] = action
 
         action = QtWidgets.QAction(self.tr('Export to HTML'), self)
-        action.triggered.connect(self.onExportToHtml)
+        action.triggered.connect(partial(self._onAction, 'export_html'))
         self._actions['export_html'] = action
 
         action = QtWidgets.QAction(self.tr('Find'), self)
@@ -58,7 +58,9 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
         # popup menu
         self.popupMenu = QtWidgets.QMenu(self)
-        self.editMenu(self.popupMenu)
+        self.menuEdit(self.popupMenu)
+        self.popupMenu.addSeparator()
+        self.menuExport(self.popupMenu)
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -71,6 +73,10 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
             self.findNext(self._find_dialog.getFindText())
         elif action == 'findprev':
             self.findPrevious(self._find_dialog.getFindText())
+        elif action == 'export_pdf':
+            self.do_export_pdf()
+        elif action == 'export_html':
+            self.exportHtml.emit()
 
     def onLoadFinished(self, ok):
         pass
@@ -78,45 +84,28 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     def onPdfPrintingFinished(self, filePath, success):
         pass
 
-    def onExportToPdf(self):
-        pdf_file = '%s.pdf' % self.title()
-        filename = QtWidgets.QFileDialog.getSaveFileName(
-            self, self.tr('export PDF as ...'),
-            pdf_file,
-            'PDF files (*.pdf)',
-        )
-        if isinstance(filename, tuple):
-            filename = filename[0]
-        if filename:
-            pageLayout = QtGui.QPageLayout(
-                QtGui.QPageSize(QtGui.QPageSize.A4),
-                QtGui.QPageLayout.Portrait,
-                QtCore.QMarginsF(15, 15, 15, 15),
-                QtGui.QPageLayout.Millimeter
-            )
-            self.page().printToPdf(filename, pageLayout)
-
-    def onExportToHtml(self):
-        self.exportHtml.emit()
-
     def action(self, action):
         return self._actions.get(action)
 
-    def editMenu(self, menu):
+    def menuAboutToShow(self):
+        self.action('export_pdf').setEnabled(self.isVisible())
+        self.action('export_html').setEnabled(self.isVisible())
+
+    def menuEdit(self, menu):
         menu.addAction(self.action('copy'))
 
         menu.addSeparator()
         menu.addAction(self.action('select_all'))
-
-        self.popupMenu.addSeparator()
-        self.popupMenu.addAction(self.action('export_pdf'))
-        self.popupMenu.addAction(self.action('export_html'))
 
         menu.addSeparator()
         menu.addAction(self.action('find'))
         menu.addAction(self.action('find_next'))
         menu.addAction(self.action('find_prev'))
         # page widget will set enabled
+
+    def menuExport(self, menu):
+        menu.addAction(self.action('export_pdf'))
+        menu.addAction(self.action('export_html'))
 
     def setHtml(self, html, url=None):
         url = url or ''
@@ -157,3 +146,21 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def findPrevious(self, text):
         self.page().findText(text, self.page().FindBackward)
+
+    def do_export_pdf(self):
+        pdf_file = '%s.pdf' % self.title()
+        filename = QtWidgets.QFileDialog.getSaveFileName(
+            self, self.tr('export PDF as ...'),
+            pdf_file,
+            'PDF files (*.pdf)',
+        )
+        if isinstance(filename, tuple):
+            filename = filename[0]
+        if filename:
+            pageLayout = QtGui.QPageLayout(
+                QtGui.QPageSize(QtGui.QPageSize.A4),
+                QtGui.QPageLayout.Portrait,
+                QtCore.QMarginsF(15, 15, 15, 15),
+                QtGui.QPageLayout.Millimeter
+            )
+            self.page().printToPdf(filename, pageLayout)

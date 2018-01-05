@@ -294,8 +294,8 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.tab_editor.action('close_all'))
 
         menu.addSeparator()
-        menu.addAction(self.webview.action('export_pdf'))
-        menu.addAction(self.webview.action('export_html'))
+        self.webview.menuExport(menu)
+        menu.aboutToShow.connect(self.webview.menuAboutToShow)
 
         menu.addSeparator()
         menu.addAction(printPreviewAction)
@@ -305,7 +305,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(exitAction)
 
         menu = menubar.addMenu(self.tr('&Edit'))
-        self.tab_editor.editMenu(menu)
+        self.tab_editor.menuEdit(menu)
         menu.aboutToShow.connect(self.tab_editor.menuAboutToShow)
 
         menu = menubar.addMenu(self.tr('&View'))
@@ -344,7 +344,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu = menubar.addMenu(self.tr('&Setting'))
         menu.addAction(fileAssociationAction)
         menu.addSeparator()
-        self.tab_editor.settingMenu(menu)
+        self.tab_editor.menuSetting(menu)
 
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
