@@ -2,8 +2,8 @@ import sys
 import os.path
 from collections import OrderedDict
 
-__app_name__ = 'MEditor'
-__app_version__ = '0.2.10.13'
+__app_name__ = 'Markup Editor'
+__app_version__ = '2.12.13'
 __default_basename__ = 'unknown'
 
 prefixs = [
