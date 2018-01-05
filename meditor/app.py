@@ -14,7 +14,7 @@ from functools import partial
 from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from pygments.formatters import get_formatter_by_name
 
-from . import __app_name__, __app_version__, \
+from . import __app_name__, __app_version__, __app_path__, \
     __data_path__, __home_data_path__, __icon_path__, __mathjax_full_path__, \
     pygments_styles
 from .editor import Editor, CodeViewer
@@ -80,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._app_exec += '.exe'
         logger.info('app name: %s' % self._app_exec)
         self.settings = settings = QtCore.QSettings(
-            __app_name__.lower(),
+            __app_path__,
             'config'
         )
         # No support fromTheme function in Qt4.6
@@ -664,8 +664,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tab_editor.new('.rst')
 
     def onEditorFileLoaded(self, index):
-        title = self.tab_editor.title(index, full=True)
-        self.setWindowTitle(title)
+        self.updateWindowTitle(index)
 
     def onEditorVScrollBarChanged(self, value):
         if self.settings.value('preview/sync', type=bool):
@@ -676,8 +675,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.webview.scrollRatioPage(dy, editor_vmax)
 
     def onEditorModified(self, index, value):
-        title = self.tab_editor.title(index, full=True)
-        self.setWindowTitle(title)
+        self.updateWindowTitle(index)
 
     def onEditorPreviewRequest(self, index, source):
         if source == 'input' and not self.settings.value('preview/oninput', type=bool):
@@ -694,7 +692,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     editor.setFileName(new_name)
                     self.tab_editor.updateTitle(x)
                     if x == self.tab_editor.currentIndex():
-                        self.setWindowTitle(self.tab_editor.title(x, full=True))
+                        self.updateWindowTitle(x)
                     return
         elif self.sender() == self.tab_editor:
             self.explorer.refreshPath(new_name)
@@ -729,6 +727,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if editor_vmax:
             self.webview.scrollRatioPage(dy, editor_vmax)
         widget.setFocus()
+
+    def updateWindowTitle(self, index):
+        title = __app_name__ + ' - ' + self.tab_editor.title(index, full=True)
+        self.setWindowTitle(title)
 
 
 def main():
