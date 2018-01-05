@@ -55,7 +55,7 @@ def previewWorker(self):
             self.previewHtml = output.md2htmlcode(self.previewText,
                                                   theme=self.md_theme)
         elif ext in EXTENSION_LEXER:
-            self.previewHtml = self.previewText
+            self.previewHtml = '<html><body><pre>%s</pre></body></html>' % self.previewText
         else:
             self.previewPath = '<html><body><h1>Error</h1><p>Unknown extension: %s</p></body></html>' % ext
         self.previewSignal.emit()
@@ -179,6 +179,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         exitAction = QtWidgets.QAction(self.tr('&Exit'), self)
         exitAction.setShortcut('Ctrl+Q')
+        exitAction.setIcon(QtGui.QIcon.fromTheme('application-exit'))
         exitAction.triggered.connect(self.close)
         # edit
         # view
@@ -269,6 +270,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mathjaxAction = QtWidgets.QAction(self.tr('Install MathJax'), self)
         self.mathjaxAction.triggered.connect(partial(self.onMenuMathJax, 'install'))
         self.mathjaxAction.setEnabled(not os.path.exists(__mathjax_full_path__))
+
         # help
         helpAction = QtWidgets.QAction(self.tr('&Help'), self)
         helpAction.triggered.connect(self.onMenuHelp)
@@ -276,6 +278,7 @@ class MainWindow(QtWidgets.QMainWindow):
         aboutAction.triggered.connect(self.onMenuAbout)
         aboutqtAction = QtWidgets.QAction(self.tr('About &Qt'), self)
         aboutqtAction.triggered.connect(QtWidgets.qApp.aboutQt)
+
         # menu
         menubar = self.menuBar()
         menu = menubar.addMenu(self.tr('&File'))
@@ -378,7 +381,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusLexer = QtWidgets.QLabel('Lexer', self)
         self.statusBar().addPermanentWidget(self.statusLexer)
 
-        self.statusBar().showMessage(self.tr('Ready'))
+        self.showMessage(self.tr('Ready'))
+
+    def showMessage(self, message):
+        self.statusBar().showMessage(message, 5000)
 
     def closeEvent(self, event):
         self.settings.setValue('geometry', self.saveGeometry())
@@ -554,11 +560,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def onMenuRstThemeChanged(self, label, checked):
         self.rst_theme = label
         self.settings.setValue('rst_theme', self.rst_theme)
+        self.showMessage(self.tr('reStructuredText theme: %s' % label))
         self.previewCurrentText()
 
     def onMenuMdThemeChanged(self, label, checked):
         self.md_theme = label
         self.settings.setValue('md_theme', self.md_theme)
+        self.showMessage(self.tr('Markdown theme: %s' % label))
         self.previewCurrentText()
 
     def onMenuCodeStyleChanged(self, label, checked):
@@ -589,6 +597,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 formatter = get_formatter_by_name('html', style=label)
                 f.write(toBytes(formatter.get_style_defs('.codehilite')))
         self.previewCurrentText()
+        self.showMessage(
+            self.tr('pygments change: %s' % label))
 
     def onMenuMathJax(self, label):
         if label == 'install':
@@ -634,19 +644,22 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onExplorerNew(self, ext):
-        self.tab_editor.new(ext)
+        index = self.tab_editor.new(ext)
+        self.showMessage(self.tr('new "%s"' % self.tab_editor.filepath(index)))
 
     def onExplorerFileLoaded(self, path):
         if not os.path.exists(path):
             return
         index = self.tab_editor.loadFile(path)
         if index is None:
+            self.showMessage(self.tr('load "%s"' % path))
             subprocess.Popen(path, shell=True)
 
     def onExplorerFileDeleted(self, path):
         for x in range(self.tab_editor.count()):
             editor = self.tab_editor.widget(x)
             if path == editor.getFileName():
+                self.showMessage(self.tr('delete "%s"' % path))
                 self.tab_editor.removeTab(x)
                 del editor
                 break
@@ -655,6 +668,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onEditorFileLoaded(self, index):
         self.updateWindowTitle(index)
+        self.showMessage(self.tr('load "%s"' % self.tab_editor.filepath(index)))
 
     def onEditorVScrollBarChanged(self, value):
         if self.settings.value('preview/sync', type=bool):
@@ -666,6 +680,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onEditorModified(self, index, value):
         self.updateWindowTitle(index)
+        self.showMessage(self.tr('modified "%s"' % self.tab_editor.filepath(index)))
 
     def onEditorPreviewRequest(self, index, source):
         if source == 'input' and not self.settings.value('preview/oninput', type=bool):
@@ -681,6 +696,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if old_name == editor.getFileName():
                     editor.setFileName(new_name)
                     self.tab_editor.updateTitle(x)
+                    self.showMessage(
+                        self.tr('rename "%s" => "%s"' % (old_name, new_name)))
                     if x == self.tab_editor.currentIndex():
                         self.updateWindowTitle(x)
                     return
