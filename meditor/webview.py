@@ -20,6 +20,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.page().setHtml('')
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
+        self.page().view().setFocusPolicy(QtCore.Qt.NoFocus)
 
         self._actions = {}
         action = self.pageAction(self.page().Copy)

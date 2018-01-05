@@ -31,6 +31,8 @@ class Workspace(QtWidgets.QTreeWidget):
         self._settings = settings
         self.header().close()
         self.padding_right = 32
+
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
         # QStyle, such as QtWidgets.QStyleFactory.create('windows')
         self.qstyle = style
         # QT BUG, must keep reference or crash

@@ -48,18 +48,16 @@ def previewWorker(self):
         ext = os.path.splitext(self.previewPath)[1].lower()
         if not self.previewText:
             self.previewHtml = ''
-        elif ext in ['.rst', '.rest', '.txt']:
+        elif ext in ['.rst', '.rest']:
             self.previewHtml = output.rst2htmlcode(self.previewText,
                                                    theme=self.rst_theme)
-        elif ext in ['.md', '.markdown']:
+        elif ext in ['.md', '.markdown', '.txt']:
             self.previewHtml = output.md2htmlcode(self.previewText,
                                                   theme=self.md_theme)
-        elif ext in ['.html', '.htm']:
-            self.previewHtml = self.previewText
         elif ext in EXTENSION_LEXER:
-            self.previewHtml = '<html><strong>Do not support preview.</strong></html>'
+            self.previewHtml = self.previewText
         else:
-            self.previewPath = 'error'
+            self.previewPath = '<html><body><h1>Error</h1><p>Unknown extension: %s</p></body></html>' % ext
         self.previewSignal.emit()
     return
 
@@ -131,7 +129,6 @@ class MainWindow(QtWidgets.QMainWindow):
         settings.setValue('view/codeview', value)
         self.dock_codeview.setVisible(value)
         # event
-        self.tab_editor.tabBarClicked.connect(self.onEditorTabClicked)
         self.tab_editor.statusChanged.connect(self.onEditorStatusChange)
         self.tab_editor.verticalScrollBarChanged.connect(self.onEditorVScrollBarChanged)
         self.tab_editor.previewRequest.connect(self.onEditorPreviewRequest)
@@ -146,8 +143,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.explorer.fileDeleted.connect(self.onExplorerFileDeleted)
         self.explorer.fileRenamed.connect(self.onFileRenamed)
 
-        QtWidgets.qApp.focusChanged.connect(self.onFocusChanged)
-
         # setup main frame
         self.setupMenu()
         self.setupToolbar()
@@ -161,8 +156,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
         logger.debug('Preview worker start')
         self.previewWorker.start()
-        self.onEditorTabClicked(self.tab_editor.currentIndex())
-        self.do_preview(self.tab_editor.currentIndex(), force=True)
+        self.tab_editor.loadFile(self.tab_editor.filepath())
+        self.previewCurrentText(force=True)
 
     def setupMenu(self):
         settings = self.settings
@@ -175,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
         printAction.setShortcut('Ctrl+P')
         printAction.triggered.connect(self.onMenuPrint)
-        printPreviewAction = QtWidgets.QAction(self.tr('Print Pre&view'), self)
+        printPreviewAction = QtWidgets.QAction(self.tr('Print Preview'), self)
         printPreviewAction.triggered.connect(self.onMenuPrintPreview)
 
         fileAssociationAction = QtWidgets.QAction(self.tr('File Associate'), self)
@@ -188,7 +183,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # edit
         # view
         # preview
-        previewAction = QtWidgets.QAction(self.tr('&Preview'), self)
+        previewAction = QtWidgets.QAction(self.tr('Preview'), self)
         previewAction.triggered.connect(partial(self.onMenuPreview, 'preview'))
 
         previewsaveAction = QtWidgets.QAction(self.tr('Preview on save'), self, checkable=True)
@@ -310,6 +305,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(exitAction)
 
         menu = menubar.addMenu(self.tr('&Edit'))
+        self.tab_editor.editMenu(menu)
         menu.aboutToShow.connect(self.onMenuEditAboutToShow)
 
         menu = menubar.addMenu(self.tr('&View'))
@@ -326,18 +322,18 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(previewsyncAction)
 
         menu = menubar.addMenu(self.tr('&Theme'))
-        submenu = QtWidgets.QMenu(self.tr('&reStructuredText'), menu)
+        submenu = QtWidgets.QMenu(self.tr('reStructuredText'), menu)
         for act in rstThemeGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
 
-        submenu = QtWidgets.QMenu(self.tr('&Markdown'), menu)
+        submenu = QtWidgets.QMenu(self.tr('Markdown'), menu)
         for act in mdThemeGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
 
         menu.addSeparator()
-        submenu = QtWidgets.QMenu(self.tr('&Pygments'), menu)
+        submenu = QtWidgets.QMenu(self.tr('Pygments'), menu)
         for act in self.codeStyleGroup.actions():
             submenu.addAction(act)
         menu.addMenu(submenu)
@@ -345,7 +341,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addSeparator()
         menu.addAction(self.mathjaxAction)
 
-        menu = menubar.addMenu(self.tr('&Settings'))
+        menu = menubar.addMenu(self.tr('&Setting'))
         menu.addAction(fileAssociationAction)
         menu.addAction(self.tab_editor.action('wrap_line'))
         menu.addAction(self.tab_editor.action('one_editor'))
@@ -421,32 +417,6 @@ class MainWindow(QtWidgets.QMainWindow):
         mimedata = event.mimeData()
         for url in mimedata.urls():
             self.tab_editor.loadFile(os.path.abspath(url.toLocalFile()))
-
-    def onFocusChanged(self, old, new):
-        menu = None
-        for action in self.menuBar().actions():
-            if self.tr('&Edit') == action.text():
-                menu = action.menu()
-                break
-        if not menu:
-            return
-        menu.clear()
-        if self.codeview.hasFocus():
-            self.codeview.editMenu(menu)
-        elif self.webview.hasFocus():
-            self.webview.editMenu(menu)
-        else:
-            self.tab_editor.editMenu(menu)
-
-    def onEditorTabClicked(self, index):
-        widget = self.tab_editor.widget(index)
-        if not widget:
-            return
-        widget.setFocus(QtCore.Qt.TabFocusReason)
-        title = self.tab_editor.title(index, full=True)
-        self.setWindowTitle(title)
-        self.onEditorStatusChange(index, widget.status())
-        self.do_preview(index)
 
     def onEditorStatusChange(self, index, status):
         for item in status.split(';'):
@@ -674,8 +644,7 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.about(self, title, text)
 
     def onExplorerNew(self, ext):
-        index = self.tab_editor.new(ext)
-        self.do_preview(index)
+        self.tab_editor.new(ext)
 
     def onExplorerFileLoaded(self, path):
         if not os.path.exists(path):
@@ -726,7 +695,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.tab_editor.updateTitle(x)
                     if x == self.tab_editor.currentIndex():
                         self.setWindowTitle(self.tab_editor.title(x, full=True))
-                    break
+                    return
         elif self.sender() == self.tab_editor:
             self.explorer.refreshPath(new_name)
 

@@ -51,9 +51,9 @@ class Editor(QsciScintilla):
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
-
         font = QtGui.QFont('Monospace', 12)
         self._fontmetrics = QtGui.QFontMetrics(font)
+        # Scintilla
         self.setMarginsFont(font)
         self.setMarginType(0, QsciScintilla.NumberMargin)
         self.setMarginWidth(0, self._fontmetrics.width('0000'))
@@ -66,6 +66,8 @@ class Editor(QsciScintilla):
         self.setEdgeColumn(self._edgeColumn)
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setUtf8(True)
+        self.setCaretLineVisible(True)
+
         self.copy_available = False
         self.copyAvailable.connect(self.onCopyAvailable)
         self.inputMethodEventCount = 0
@@ -272,8 +274,8 @@ class Editor(QsciScintilla):
         if event.reason() == event.Mouse:
             super(Editor, self).contextMenuEvent(event)
 
-    def _onEditAction(self, action):
-        self.do_action(action)
+    def _onAction(self, action, value):
+        self.do_action(action, value)
 
     def onCopyAvailable(self, yes):
         self.copy_available = yes
@@ -635,7 +637,8 @@ class CodeViewer(Editor):
         super(CodeViewer, self).__init__(parent)
         self._find_dialog = find_dialog
         self.setReadOnly(True)
-        self._actions = self.createAction(self, self._onEditAction)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        self._actions = self.createAction(self, self._onAction)
 
     def setValue(self, text):
         """ set all readonly text """

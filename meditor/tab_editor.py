@@ -37,10 +37,12 @@ class TabEditor(QtWidgets.QTabWidget):
         super(TabEditor, self).__init__(parent)
         self._settings = settings
         self._find_dialog = find_dialog
+
         self.setMovable(True)
         self.setTabsClosable(True)
         self.setDocumentMode(True)
         self.setTabBarAutoHide(True)
+        self.tabBarClicked.connect(self._onTabClicked)
         self.tabCloseRequested.connect(self._onTabCloseRequested)
 
         self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
@@ -50,7 +52,7 @@ class TabEditor(QtWidgets.QTabWidget):
         for filepath in value.split(';')[::-1]:
             if not os.path.exists(filepath):
                 continue
-            self.open(filepath)
+            self.open(os.path.abspath(filepath))
             if self._one_editor:
                 break
         if self.count() == 0:
@@ -80,7 +82,7 @@ class TabEditor(QtWidgets.QTabWidget):
         action.setChecked(self._one_editor)
         self._actions['one_editor'] = action
 
-        self._actions.update(Editor.createAction(self, self._onEditAction))
+        self._actions.update(Editor.createAction(self, self._onAction))
         self.action('wrap_line').setChecked(self._wrap_mode > 0)
 
     def closeEvent(self, event):
@@ -120,6 +122,15 @@ class TabEditor(QtWidgets.QTabWidget):
             return
         self.verticalScrollBarChanged.emit(index, value)
 
+    def _onTabClicked(self, index):
+        widget = self.widget(index)
+        if not widget:
+            return
+        widget.setFocus(QtCore.Qt.TabFocusReason)
+        self.fileLoaded.emit(index)
+        self.statusChanged.emit(index, widget.status())
+        self.previewRequest.emit(index, 'open')
+
     def _onTabCloseRequested(self, index):
         if self._saveAndContinue(index):
             widget = self.widget(index)
@@ -152,7 +163,7 @@ class TabEditor(QtWidgets.QTabWidget):
         filename = os.path.basename(filepath)
         basename, _ = os.path.splitext(filename)
         if not dir_name and basename == __default_basename__:
-            self.onSaveAs(index)
+            self._onSaveAs(index)
         else:
             self.widget(index).writeFile()
             self.updateTitle(index)
@@ -305,32 +316,30 @@ class TabEditor(QtWidgets.QTabWidget):
     def loadFile(self, path):
         if not path:
             index = self.new('.rst')
+            return index
         else:
             if not Editor.isCanOpened(path):
                 return
-            index = None
-            for x in range(self.count()):
-                if path == self.filepath(x):
-                    index = x
+            for index in range(self.count()):
+                if path == self.filepath(index):
                     self.setCurrentIndex(index)
                     self.fileLoaded.emit(index)
                     self.statusChanged.emit(index, self.widget(index).status())
                     self.previewRequest.emit(index, 'open')
-                    break
-            if index is None:
-                if os.path.exists(path):
-                    logger.debug('Loading file: %s', path)
-                    index = self.open(path)
-                else:
-                    logger.debug('Creating file: %s', path)
-                    index = self.new(path)
-        return index
+                    return index
+            if os.path.exists(path):
+                logger.debug('Loading file: %s', path)
+                index = self.open(path)
+            else:
+                logger.debug('Creating file: %s', path)
+                index = self.new(path)
+            return index
 
     def editMenu(self, menu):
         widget = self.currentWidget()
         widget.editMenu(menu, self)
 
-    def _onEditAction(self, action, value):
+    def _onAction(self, action, value):
         widget = self.currentWidget()
         if action == 'wrap_line':
             for x in range(self.count()):
