@@ -256,6 +256,10 @@ class Editor(QsciScintilla):
         menu.addSeparator()
         menu.addAction(widget.action('indent'))
         menu.addAction(widget.action('unindent'))
+
+    def menuAboutToShow(self, widget=None):
+        if not widget:
+            widget = self
         widget.action('undo').setEnabled(self.isUndoAvailable())
         widget.action('redo').setEnabled(self.isRedoAvailable())
         widget.action('cut').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
@@ -476,6 +480,7 @@ class Editor(QsciScintilla):
         if not readonly:
             finddialog.replace_next.disconnect(self.replaceNext)
             finddialog.replace_all.disconnect(self.replaceAll)
+
         self._case_sensitive = finddialog.isCaseSensitive()
         self._whole_word = finddialog.isWholeWord()
 

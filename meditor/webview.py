@@ -20,7 +20,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.page().setHtml('')
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
-        self.page().view().setFocusPolicy(QtCore.Qt.NoFocus)
+        # self.page().view().setFocusPolicy(QtCore.Qt.NoFocus)
 
         self._actions = {}
         action = self.pageAction(self.page().Copy)
@@ -41,33 +41,28 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
         action = QtWidgets.QAction(self.tr('Find'), self)
         action.setShortcut('Ctrl+F')
-        action.triggered.connect(partial(self._onEditAction, 'find'))
+        action.triggered.connect(partial(self._onAction, 'find'))
         self._actions['find'] = action
 
         action = QtWidgets.QAction(self.tr('Find Next'), self)
         action.setShortcut('F3')
-        action.triggered.connect(partial(self._onEditAction, 'findnext'))
+        action.triggered.connect(partial(self._onAction, 'findnext'))
         self._actions['find_next'] = action
 
         action = QtWidgets.QAction(self.tr('Find Previous'), self)
         action.setShortcut('Shift+F3')
-        action.triggered.connect(partial(self._onEditAction, 'findprev'))
+        action.triggered.connect(partial(self._onAction, 'findprev'))
         self._actions['find_prev'] = action
 
         # popup menu
         self.popupMenu = QtWidgets.QMenu(self)
-        self.popupMenu.addAction(self.action('copy'))
-        self.popupMenu.addSeparator()
-        self.popupMenu.addAction(self.action('select_all'))
-        self.popupMenu.addSeparator()
-        self.popupMenu.addAction(self.action('export_pdf'))
-        self.popupMenu.addAction(self.action('export_html'))
+        self.editMenu(self.popupMenu)
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
             self.popupMenu.popup(event.globalPos())
 
-    def _onEditAction(self, action):
+    def _onAction(self, action):
         if action == 'find':
             self.find(self._find_dialog)
         elif action == 'findnext':
@@ -107,8 +102,14 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def editMenu(self, menu):
         menu.addAction(self.action('copy'))
+
         menu.addSeparator()
         menu.addAction(self.action('select_all'))
+
+        self.popupMenu.addSeparator()
+        self.popupMenu.addAction(self.action('export_pdf'))
+        self.popupMenu.addAction(self.action('export_html'))
+
         menu.addSeparator()
         menu.addAction(self.action('find'))
         menu.addAction(self.action('find_next'))

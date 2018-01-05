@@ -339,6 +339,14 @@ class TabEditor(QtWidgets.QTabWidget):
         widget = self.currentWidget()
         widget.editMenu(menu, self)
 
+    def menuAboutToShow(self):
+        widget = self.currentWidget()
+        widget.menuAboutToShow(self)
+
+    def settingMenu(self, menu):
+        menu.addAction(self.action('wrap_line'))
+        menu.addAction(self.action('one_editor'))
+
     def _onAction(self, action, value):
         widget = self.currentWidget()
         if action == 'wrap_line':

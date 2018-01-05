@@ -173,7 +173,7 @@ class MainWindow(QtWidgets.QMainWindow):
         printPreviewAction = QtWidgets.QAction(self.tr('Print Preview'), self)
         printPreviewAction.triggered.connect(self.onMenuPrintPreview)
 
-        fileAssociationAction = QtWidgets.QAction(self.tr('File Associate'), self)
+        fileAssociationAction = QtWidgets.QAction(self.tr('File associate'), self)
         fileAssociationAction.triggered.connect(self.onMenuFileAssociation)
         fileAssociationAction.setEnabled(sys.platform == 'win32')
 
@@ -306,7 +306,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         menu = menubar.addMenu(self.tr('&Edit'))
         self.tab_editor.editMenu(menu)
-        menu.aboutToShow.connect(self.onMenuEditAboutToShow)
+        menu.aboutToShow.connect(self.tab_editor.menuAboutToShow)
 
         menu = menubar.addMenu(self.tr('&View'))
         menu.addAction(self.dock_explorer.toggleViewAction())
@@ -343,8 +343,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         menu = menubar.addMenu(self.tr('&Setting'))
         menu.addAction(fileAssociationAction)
-        menu.addAction(self.tab_editor.action('wrap_line'))
-        menu.addAction(self.tab_editor.action('one_editor'))
+        menu.addSeparator()
+        self.tab_editor.settingMenu(menu)
 
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
@@ -502,16 +502,6 @@ class MainWindow(QtWidgets.QMainWindow):
         printDialog = QtPrintSupport.QPrintDialog(printer, widget)
         if printDialog.exec_() == QtWidgets.QDialog.Accepted:
             widget.print_(printer)
-
-    def onMenuEditAboutToShow(self):
-        menu = self.sender()
-        menu.clear()
-        if self.codeview.hasFocus():
-            self.codeview.editMenu(menu)
-        elif self.webview.hasFocus():
-            self.webview.editMenu(menu)
-        else:
-            self.tab_editor.editMenu(menu)
 
     def onMenuFileAssociation(self):
         reg_base = 'HKEY_CURRENT_USER\Software\Classes'
