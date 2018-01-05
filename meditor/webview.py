@@ -17,6 +17,8 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         super(WebView, self).__init__(parent)
         self._find_dialog = find_dialog
         self.settings().setAttribute(self.settings().PluginsEnabled, False)
+        self.setAcceptDrops(False)
+
         self.page().setHtml('')
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
