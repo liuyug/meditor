@@ -64,6 +64,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
+            self.menuAboutToShow()
             self.popupMenu.popup(event.globalPos())
 
     def _onAction(self, action):
