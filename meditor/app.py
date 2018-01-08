@@ -188,7 +188,7 @@ class MainWindow(QtWidgets.QMainWindow):
         exitAction = QtWidgets.QAction(self.tr('&Exit'), self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setShortcut(QtGui.QKeySequence.Quit)
-        exitAction.setIcon(QtGui.QIcon.fromTheme('application-exit'))
+        exitAction.setIcon(QtGui.QIcon.fromTheme('system-log-out'))
         exitAction.triggered.connect(self.close)
         # edit
         # view
@@ -283,11 +283,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # help
         helpAction = QtWidgets.QAction(self.tr('&Help Documents'), self)
         helpAction.setShortcut(QtGui.QKeySequence.HelpContents)
+        helpAction.setIcon(QtGui.QIcon.fromTheme('help-contents'))
         helpAction.triggered.connect(self.onMenuHelp)
 
         aboutAction = QtWidgets.QAction(self.tr('&About'), self)
-        aboutAction.triggered.connect(self.onMenuAbout)
         aboutAction.setIcon(QtGui.QIcon.fromTheme('help-about'))
+        aboutAction.triggered.connect(self.onMenuAbout)
+
         aboutqtAction = QtWidgets.QAction(self.tr('About &Qt'), self)
         aboutqtAction.triggered.connect(QtWidgets.qApp.aboutQt)
 
@@ -356,7 +358,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addSeparator()
         menu.addAction(self.mathjaxAction)
 
-        menu = menubar.addMenu(self.tr('&Setting'))
+        menu = menubar.addMenu(self.tr('&Settings'))
         menu.addAction(fileAssociationAction)
         menu.addSeparator()
         self.tab_editor.menuSetting(menu)
