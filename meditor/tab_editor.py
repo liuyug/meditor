@@ -48,16 +48,6 @@ class TabEditor(QtWidgets.QTabWidget):
         self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
         self._one_editor = self._settings.value('editor/one_editor', False, type=bool)
 
-        value = self._settings.value('editor/opened_files', type=str)
-        for filepath in value.split(';')[::-1]:
-            if not os.path.exists(filepath):
-                continue
-            self.open(os.path.abspath(filepath))
-            if self._one_editor:
-                break
-        if self.count() == 0:
-            self.new('.rst')
-
         self._actions = {}
         action = QtWidgets.QAction(self.tr('&Open'), self)
         action.setShortcut('Ctrl+O')
@@ -88,6 +78,16 @@ class TabEditor(QtWidgets.QTabWidget):
         self._actions.update(Editor.createAction(self, self._onAction))
         self.action('wrap_line').setChecked(self._wrap_mode > 0)
 
+        value = self._settings.value('editor/opened_files', type=str)
+        for filepath in value.split(';')[::-1]:
+            if not os.path.exists(filepath):
+                continue
+            self.open(os.path.abspath(filepath))
+            if self._one_editor:
+                break
+        if self.count() == 0:
+            self.new('.rst')
+
     def closeEvent(self, event):
         for x in range(self.count()):
             if not self._saveAndContinue(x):
@@ -116,8 +116,13 @@ class TabEditor(QtWidgets.QTabWidget):
         index = self.indexOf(widget)
         if index < 0:
             return
+        widget.do_modification_changed(value, self)
         self.updateTitle(index)
         self.modificationChanged.emit(index, value)
+
+    def _onCopyAvailable(self, value):
+        widget = self.currentWidget()
+        widget and widget.do_copy_available(value, self)
 
     def _onVerticalScrollBarChanged(self, value):
         index = self.currentIndex()
@@ -234,6 +239,7 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.verticalScrollBar().valueChanged.connect(self._onVerticalScrollBarChanged)
         editor.inputPreviewRequest.connect(self._onInputPreview)
         editor.modificationChanged.connect(self._onModificationChanged)
+        editor.copyAvailable.connect(self._onCopyAvailable)
         editor.enableLexer(self._enable_lexer)
         editor.setWrapMode(self._wrap_mode)
         return editor
@@ -321,7 +327,7 @@ class TabEditor(QtWidgets.QTabWidget):
             index = self.new('.rst')
             return index
         else:
-            if not Editor.isCanOpened(path):
+            if not Editor.canOpened(path):
                 return
             for index in range(self.count()):
                 if path == self.filepath(index):

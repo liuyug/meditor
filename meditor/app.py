@@ -433,7 +433,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for url in mimedata.urls():
                 if not url.isLocalFile():
                     return
-                if not Editor.isCanOpened(os.path.abspath(url.toLocalFile())):
+                if not Editor.canOpened(os.path.abspath(url.toLocalFile())):
                     return
             event.acceptProposedAction()
 

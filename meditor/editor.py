@@ -68,14 +68,12 @@ class Editor(QsciScintilla):
         self.setUtf8(True)
         self.setCaretLineVisible(True)
 
-        self.copy_available = False
-        self.copyAvailable.connect(self.onCopyAvailable)
         self.inputMethodEventCount = 0
         self._imsupport = _SciImSupport(self)
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
 
     @staticmethod
-    def isCanOpened(filepath):
+    def canOpened(filepath):
         basename, ext = os.path.splitext(filepath)
         if not ext:
             ext = basename
@@ -88,24 +86,28 @@ class Editor(QsciScintilla):
         action.setShortcut('Ctrl+Z')
         action.triggered.connect(partial(do_action, 'undo'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-undo'))
+        action.setEnabled(False)
         actions['undo'] = action
 
         action = QtWidgets.QAction(parent.tr('&Redo'), parent)
         action.setShortcut('Shift+Ctrl+Z')
         action.triggered.connect(partial(do_action, 'redo'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-redo'))
+        action.setEnabled(False)
         actions['redo'] = action
 
         action = QtWidgets.QAction(parent.tr('Cu&t'), parent)
         action.setShortcut('Ctrl+X')
         action.triggered.connect(partial(do_action, 'cut'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-cut'))
+        action.setEnabled(False)
         actions['cut'] = action
 
         action = QtWidgets.QAction(parent.tr('&Copy'), parent)
         action.setShortcut('Ctrl+C')
         action.triggered.connect(partial(do_action, 'copy'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-copy'))
+        action.setEnabled(False)
         actions['copy'] = action
 
         action = QtWidgets.QAction(parent.tr('&Paste'), parent)
@@ -117,6 +119,7 @@ class Editor(QsciScintilla):
         action = QtWidgets.QAction(parent.tr('&Delete'), parent)
         action.triggered.connect(partial(do_action, 'delete'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-delete'))
+        action.setEnabled(False)
         actions['delete'] = action
 
         action = QtWidgets.QAction(parent.tr('Select &All'), parent)
@@ -270,16 +273,6 @@ class Editor(QsciScintilla):
     def menuAboutToShow(self, widget=None):
         if not widget:
             widget = self
-        widget.action('undo').setEnabled(self.isUndoAvailable())
-        widget.action('redo').setEnabled(self.isRedoAvailable())
-        widget.action('cut').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
-        widget.action('copy').setEnabled(self.isCopyAvailable())
-        widget.action('paste').setEnabled(self.isPasteAvailable() and not self.isReadOnly())
-        widget.action('delete').setEnabled(self.isCopyAvailable() and not self.isReadOnly())
-        widget.action('select_all').setEnabled(True)
-        widget.action('find').setEnabled(True)
-        widget.action('find_next').setEnabled(True)
-        widget.action('find_prev').setEnabled(True)
         widget.action('replace_next').setEnabled(True and not self.isReadOnly())
         widget.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
         widget.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
@@ -291,15 +284,15 @@ class Editor(QsciScintilla):
     def _onAction(self, action, value):
         self.do_action(action, value)
 
-    def onCopyAvailable(self, yes):
-        self.copy_available = yes
+    def onCopyAvailable(self, value):
+        self.do_copy_available(value, self)
+
+    def onModificationChanged(self, value):
+        self.do_modification_changed(value, self)
 
     def onCursorPositionChanged(self, line, index):
         cursor = 'Ln %s/%s Col %s/80' % (line + 1, self.lines(), index + 1)
         self.statusChanged.emit('cursor:%s' % cursor)
-
-    def isCopyAvailable(self):
-        return self.copy_available
 
     def isPasteAvailable(self):
         """ always return 1 in GTK+ """
@@ -645,6 +638,20 @@ class Editor(QsciScintilla):
             else:
                 self.setWrapMode(QsciScintilla.WrapNone)
 
+    def do_copy_available(self, value, widget):
+        widget.action('cut') \
+            and widget.action('cut').setEnabled(value and not self.isReadOnly())
+        widget.action('copy') \
+            and widget.action('copy').setEnabled(value)
+        widget.action('paste') \
+            and widget.action('paste').setEnabled(not self.isReadOnly())
+        widget.action('delete') \
+            and widget.action('delete').setEnabled(value and not self.isReadOnly())
+
+    def do_modification_changed(self, value, widget):
+        widget.action('undo').setEnabled(self.isUndoAvailable())
+        widget.action('redo').setEnabled(self.isRedoAvailable())
+
 
 class CodeViewer(Editor):
     """ code viewer, readonly """
@@ -654,6 +661,8 @@ class CodeViewer(Editor):
         self.setReadOnly(True)
         self.setFocusPolicy(QtCore.Qt.NoFocus)
         self._actions = self.createAction(self, self._onAction)
+        self.copyAvailable.connect(self.onCopyAvailable)
+        self.modificationChanged.connect(self.onModificationChanged)
 
     def setValue(self, text):
         """ set all readonly text """
