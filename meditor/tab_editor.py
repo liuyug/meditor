@@ -50,18 +50,19 @@ class TabEditor(QtWidgets.QTabWidget):
 
         self._actions = {}
         action = QtWidgets.QAction(self.tr('&Open'), self)
-        action.setShortcut('Ctrl+O')
+        action.setShortcut(QtGui.QKeySequence.Open)
         action.triggered.connect(self._onOpen)
         action.setIcon(QtGui.QIcon.fromTheme('document-open'))
         self._actions['open'] = action
 
         action = QtWidgets.QAction(self.tr('&Save'), self)
-        action.setShortcut('Ctrl+S')
+        action.setShortcut(QtGui.QKeySequence.Save)
         action.triggered.connect(self._onSave)
         action.setIcon(QtGui.QIcon.fromTheme('document-save'))
         self._actions['save'] = action
 
         action = QtWidgets.QAction(self.tr('Save as...'), self)
+        action.setShortcut(QtGui.QKeySequence.SaveAs)
         action.triggered.connect(self._onSaveAs)
         action.setIcon(QtGui.QIcon.fromTheme('document-save-as'))
         self._actions['save_as'] = action

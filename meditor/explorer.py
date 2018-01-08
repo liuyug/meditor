@@ -46,7 +46,7 @@ class Workspace(QtWidgets.QTreeWidget):
         self._actions = {}
         action = QtWidgets.QAction(self.tr('reStructuredText'), self)
         action.triggered.connect(partial(self.onNewFile, '.rst'))
-        action.setShortcut('Ctrl+N')
+        action.setShortcut(QtGui.QKeySequence.New)
         action.setIcon(QtGui.QIcon.fromTheme('document-new'))
         self._actions['new_rst'] = action
 

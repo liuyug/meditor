@@ -169,12 +169,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # action
         # file
         newwindowAction = QtWidgets.QAction(self.tr('New &window'), self)
-        newwindowAction.setShortcut('Ctrl+W')
         newwindowAction.triggered.connect(self.onMenuNewWindow)
         newwindowAction.setIcon(QtGui.QIcon.fromTheme('window-new'))
 
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
-        printAction.setShortcut('Ctrl+P')
+        printAction.setShortcut(QtGui.QKeySequence.Print)
         printAction.triggered.connect(self.onMenuPrint)
         printAction.setIcon(QtGui.QIcon.fromTheme('document-print'))
 
@@ -188,6 +187,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         exitAction = QtWidgets.QAction(self.tr('&Exit'), self)
         exitAction.setShortcut('Ctrl+Q')
+        exitAction.setShortcut(QtGui.QKeySequence.Quit)
         exitAction.setIcon(QtGui.QIcon.fromTheme('application-exit'))
         exitAction.triggered.connect(self.close)
         # edit
@@ -282,6 +282,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # help
         helpAction = QtWidgets.QAction(self.tr('&Help Documents'), self)
+        helpAction.setShortcut(QtGui.QKeySequence.HelpContents)
         helpAction.triggered.connect(self.onMenuHelp)
 
         aboutAction = QtWidgets.QAction(self.tr('&About'), self)

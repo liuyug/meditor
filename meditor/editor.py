@@ -83,64 +83,65 @@ class Editor(QsciScintilla):
     def createAction(cls, parent, do_action):
         actions = {}
         action = QtWidgets.QAction(parent.tr('&Undo'), parent)
-        action.setShortcut('Ctrl+Z')
+        action.setShortcut(QtGui.QKeySequence.Undo)
         action.triggered.connect(partial(do_action, 'undo'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-undo'))
         action.setEnabled(False)
         actions['undo'] = action
 
         action = QtWidgets.QAction(parent.tr('&Redo'), parent)
-        action.setShortcut('Shift+Ctrl+Z')
+        action.setShortcut(QtGui.QKeySequence.Redo)
         action.triggered.connect(partial(do_action, 'redo'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-redo'))
         action.setEnabled(False)
         actions['redo'] = action
 
         action = QtWidgets.QAction(parent.tr('Cu&t'), parent)
-        action.setShortcut('Ctrl+X')
+        action.setShortcut(QtGui.QKeySequence.Cut)
         action.triggered.connect(partial(do_action, 'cut'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-cut'))
         action.setEnabled(False)
         actions['cut'] = action
 
         action = QtWidgets.QAction(parent.tr('&Copy'), parent)
-        action.setShortcut('Ctrl+C')
+        action.setShortcut(QtGui.QKeySequence.Copy)
         action.triggered.connect(partial(do_action, 'copy'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-copy'))
         action.setEnabled(False)
         actions['copy'] = action
 
         action = QtWidgets.QAction(parent.tr('&Paste'), parent)
-        action.setShortcut('Ctrl+V')
+        action.setShortcut(QtGui.QKeySequence.Paste)
         action.triggered.connect(partial(do_action, 'paste'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-paste'))
         actions['paste'] = action
 
         action = QtWidgets.QAction(parent.tr('&Delete'), parent)
+        action.setShortcut(QtGui.QKeySequence.Delete)
         action.triggered.connect(partial(do_action, 'delete'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-delete'))
         action.setEnabled(False)
         actions['delete'] = action
 
         action = QtWidgets.QAction(parent.tr('Select &All'), parent)
-        action.setShortcut('Ctrl+A')
+        action.setShortcut(QtGui.QKeySequence.SelectAll)
         action.triggered.connect(partial(do_action, 'selectall'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-select-all'))
         actions['select_all'] = action
 
         action = QtWidgets.QAction(parent.tr('&Find or Replace'), parent)
-        action.setShortcut('Ctrl+F')
+        action.setShortcut(QtGui.QKeySequence.Find)
         action.triggered.connect(partial(do_action, 'find'))
         action.setIcon(QtGui.QIcon.fromTheme('edit-find-replace'))
         actions['find'] = action
 
         action = QtWidgets.QAction(parent.tr('Find Next'), parent)
-        action.setShortcut('F3')
+        action.setShortcut(QtGui.QKeySequence.FindNext)
         action.triggered.connect(partial(do_action, 'findnext'))
         actions['find_next'] = action
 
         action = QtWidgets.QAction(parent.tr('Find Previous'), parent)
-        action.setShortcut('Shift+F3')
+        action.setShortcut(QtGui.QKeySequence.FindPrevious)
         action.triggered.connect(partial(do_action, 'findprev'))
         actions['find_prev'] = action
 
