@@ -32,12 +32,7 @@ class FindReplaceDialog(QtWidgets.QDialog):
 
     def setReadOnly(self, readonly):
         self._readonly = readonly
-        if readonly:
-            self.ui.pushButton_replace.setEnabled(False)
-            self.ui.pushButton_replaceall.setEnabled(False)
-        else:
-            self.ui.pushButton_replace.setEnabled(True)
-            self.ui.pushButton_replaceall.setEnabled(True)
+        self.enableButton()
 
     def handleButton(self):
         if self.sender() == self.ui.pushButton_close:
@@ -55,7 +50,7 @@ class FindReplaceDialog(QtWidgets.QDialog):
                 self.ui.lineEdit_find.text(),
                 self.ui.lineEdit_replace.text())
 
-    def enableButton(self, text):
+    def enableButton(self):
         enable = True if self.getFindText() else False
         self.ui.pushButton_find_next.setEnabled(enable)
         self.ui.pushButton_find_previous.setEnabled(enable)

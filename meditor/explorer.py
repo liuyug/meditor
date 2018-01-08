@@ -6,7 +6,7 @@ import shutil
 import logging
 from functools import partial
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from .util import toUtf8
 
@@ -47,14 +47,17 @@ class Workspace(QtWidgets.QTreeWidget):
         action = QtWidgets.QAction(self.tr('reStructuredText'), self)
         action.triggered.connect(partial(self.onNewFile, '.rst'))
         action.setShortcut('Ctrl+N')
+        action.setIcon(QtGui.QIcon.fromTheme('document-new'))
         self._actions['new_rst'] = action
 
         action = QtWidgets.QAction(self.tr('Markdown'), self)
         action.triggered.connect(partial(self.onNewFile, '.md'))
+        action.setIcon(QtGui.QIcon.fromTheme('document-new'))
         self._actions['new_md'] = action
 
         action = QtWidgets.QAction(self.tr('New &directory'), self)
         action.triggered.connect(self.onNewDirectory)
+        action.setIcon(QtGui.QIcon.fromTheme('folder-new'))
         self._actions['new_dir'] = action
 
         action = QtWidgets.QAction(self.tr('&Rename...'), self)
@@ -66,6 +69,7 @@ class Workspace(QtWidgets.QTreeWidget):
         self._actions['delete'] = action
         action = QtWidgets.QAction(self.tr('Refresh'), self)
         action.triggered.connect(self.onRefresh)
+        action.setIcon(QtGui.QIcon.fromTheme('view-refresh'))
         self._actions['refresh'] = action
         action = QtWidgets.QAction(self.tr('Windows Explorer'), self)
         action.triggered.connect(self.onWindowsExplorer)

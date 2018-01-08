@@ -26,6 +26,7 @@ from . import output
 from . import globalvars
 from .util import toUtf8, toBytes, download, unzip
 from .findreplace import FindReplaceDialog
+from . import tango_theme
 
 
 requestPreview = threading.Event()
@@ -83,10 +84,14 @@ class MainWindow(QtWidgets.QMainWindow):
             __app_path__,
             'config'
         )
-        # No support fromTheme function in Qt4.6
         self._icon = os.path.join(__icon_path__, 'meditor-text-editor.ico')
         logger.info('icon path: %s' % __icon_path__)
-        self.setWindowIcon(QtGui.QIcon(self._icon))
+
+        QtGui.QIcon.setThemeName('Tango')
+
+        self.setWindowIcon(
+            QtGui.QIcon.fromTheme('accessories-text-editor', QtGui.QIcon(self._icon)))
+        # self.setWindowIcon(QtGui.QIcon(self._icon))
         self.setFont(QtGui.QFont('Monospace', 12))
         self.setAcceptDrops(True)
         # main window
@@ -166,12 +171,16 @@ class MainWindow(QtWidgets.QMainWindow):
         newwindowAction = QtWidgets.QAction(self.tr('New &window'), self)
         newwindowAction.setShortcut('Ctrl+W')
         newwindowAction.triggered.connect(self.onMenuNewWindow)
+        newwindowAction.setIcon(QtGui.QIcon.fromTheme('window-new'))
 
         printAction = QtWidgets.QAction(self.tr('&Print'), self)
         printAction.setShortcut('Ctrl+P')
         printAction.triggered.connect(self.onMenuPrint)
+        printAction.setIcon(QtGui.QIcon.fromTheme('document-print'))
+
         printPreviewAction = QtWidgets.QAction(self.tr('Print Preview'), self)
         printPreviewAction.triggered.connect(self.onMenuPrintPreview)
+        printPreviewAction.setIcon(QtGui.QIcon.fromTheme('document-print-preview'))
 
         fileAssociationAction = QtWidgets.QAction(self.tr('File associate'), self)
         fileAssociationAction.triggered.connect(self.onMenuFileAssociation)
@@ -272,10 +281,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mathjaxAction.setEnabled(not os.path.exists(__mathjax_full_path__))
 
         # help
-        helpAction = QtWidgets.QAction(self.tr('&Help'), self)
+        helpAction = QtWidgets.QAction(self.tr('&Help Documents'), self)
         helpAction.triggered.connect(self.onMenuHelp)
+
         aboutAction = QtWidgets.QAction(self.tr('&About'), self)
         aboutAction.triggered.connect(self.onMenuAbout)
+        aboutAction.setIcon(QtGui.QIcon.fromTheme('help-about'))
         aboutqtAction = QtWidgets.QAction(self.tr('About &Qt'), self)
         aboutqtAction.triggered.connect(QtWidgets.qApp.aboutQt)
 
@@ -357,15 +368,22 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(aboutqtAction)
 
     def setupToolbar(self):
-        # toolbar
-        # self.tb_normal = QtWidgets.QToolBar('normal')
-        # self.tb_normal.setObjectName('normal')
-        # self.tb_normal.addAction(newAction)
-        # self.tb_normal.addAction(openAction)
-        # self.tb_normal.addAction(saveAction)
-        # self.tb_normal.addAction(exitAction)
-        # self.addToolBar(self.tb_normal)
-        pass
+        tb_normal = QtWidgets.QToolBar('normal')
+        tb_normal.setObjectName('normal')
+        tb_normal.addAction(self.explorer.action('new_rst'))
+        tb_normal.addAction(self.explorer.action('new_md'))
+        tb_normal.addAction(self.tab_editor.action('open'))
+        tb_normal.addAction(self.tab_editor.action('save'))
+        tb_normal.addSeparator()
+        tb_normal.addAction(self.tab_editor.action('undo'))
+        tb_normal.addAction(self.tab_editor.action('redo'))
+        tb_normal.addSeparator()
+        tb_normal.addAction(self.tab_editor.action('cut'))
+        tb_normal.addAction(self.tab_editor.action('copy'))
+        tb_normal.addAction(self.tab_editor.action('paste'))
+        tb_normal.addSeparator()
+        tb_normal.addAction(self.tab_editor.action('find'))
+        self.addToolBar(tb_normal)
 
     def setupStatusBar(self):
         # status bar
@@ -624,11 +642,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for help_path in help_paths:
             if os.path.exists(help_path):
                 break
-        if self._app_exec.endswith('.py'):
-            subprocess.Popen(['python', self._app_exec, help_path])
-        else:
-            subprocess.Popen([self._app_exec, help_path])
-        return
+        self.explorer.appendRootPath(help_path)
+        self.tab_editor.loadFile(help_path)
 
     def onMenuAbout(self):
         title = self.tr('About %s') % (__app_name__)

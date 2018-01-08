@@ -2,7 +2,7 @@
 import os.path
 import logging
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from .editor import Editor
 from . import __default_basename__
@@ -62,15 +62,18 @@ class TabEditor(QtWidgets.QTabWidget):
         action = QtWidgets.QAction(self.tr('&Open'), self)
         action.setShortcut('Ctrl+O')
         action.triggered.connect(self._onOpen)
+        action.setIcon(QtGui.QIcon.fromTheme('document-open'))
         self._actions['open'] = action
 
         action = QtWidgets.QAction(self.tr('&Save'), self)
         action.setShortcut('Ctrl+S')
         action.triggered.connect(self._onSave)
+        action.setIcon(QtGui.QIcon.fromTheme('document-save'))
         self._actions['save'] = action
 
         action = QtWidgets.QAction(self.tr('Save as...'), self)
         action.triggered.connect(self._onSaveAs)
+        action.setIcon(QtGui.QIcon.fromTheme('document-save-as'))
         self._actions['save_as'] = action
 
         action = QtWidgets.QAction(self.tr('Close all'), self)

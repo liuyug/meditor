@@ -87,40 +87,48 @@ class Editor(QsciScintilla):
         action = QtWidgets.QAction(parent.tr('&Undo'), parent)
         action.setShortcut('Ctrl+Z')
         action.triggered.connect(partial(do_action, 'undo'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-undo'))
         actions['undo'] = action
 
         action = QtWidgets.QAction(parent.tr('&Redo'), parent)
         action.setShortcut('Shift+Ctrl+Z')
         action.triggered.connect(partial(do_action, 'redo'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-redo'))
         actions['redo'] = action
 
         action = QtWidgets.QAction(parent.tr('Cu&t'), parent)
         action.setShortcut('Ctrl+X')
         action.triggered.connect(partial(do_action, 'cut'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-cut'))
         actions['cut'] = action
 
         action = QtWidgets.QAction(parent.tr('&Copy'), parent)
         action.setShortcut('Ctrl+C')
         action.triggered.connect(partial(do_action, 'copy'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-copy'))
         actions['copy'] = action
 
         action = QtWidgets.QAction(parent.tr('&Paste'), parent)
         action.setShortcut('Ctrl+V')
         action.triggered.connect(partial(do_action, 'paste'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-paste'))
         actions['paste'] = action
 
         action = QtWidgets.QAction(parent.tr('&Delete'), parent)
         action.triggered.connect(partial(do_action, 'delete'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-delete'))
         actions['delete'] = action
 
         action = QtWidgets.QAction(parent.tr('Select &All'), parent)
         action.setShortcut('Ctrl+A')
         action.triggered.connect(partial(do_action, 'selectall'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-select-all'))
         actions['select_all'] = action
 
         action = QtWidgets.QAction(parent.tr('&Find or Replace'), parent)
         action.setShortcut('Ctrl+F')
         action.triggered.connect(partial(do_action, 'find'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-find-replace'))
         actions['find'] = action
 
         action = QtWidgets.QAction(parent.tr('Find Next'), parent)
@@ -141,11 +149,13 @@ class Editor(QsciScintilla):
         action = QtWidgets.QAction(parent.tr('Indent'), parent)
         action.setShortcut('TAB')
         action.triggered.connect(partial(do_action, 'indent'))
+        action.setIcon(QtGui.QIcon.fromTheme('format-indent-more'))
         actions['indent'] = action
 
         action = QtWidgets.QAction(parent.tr('Unindent'), parent)
         action.setShortcut('Shift+TAB')
         action.triggered.connect(partial(do_action, 'unindent'))
+        action.setIcon(QtGui.QIcon.fromTheme('format-indent-less'))
         actions['unindent'] = action
 
         action = QtWidgets.QAction(parent.tr('Wrap line'), parent, checkable=True)
