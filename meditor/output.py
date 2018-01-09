@@ -3,6 +3,10 @@ import logging
 import json
 from collections import OrderedDict
 
+from pygments import highlight
+from pygments.lexers import get_lexer_for_filename
+from pygments.formatters import HtmlFormatter
+
 import markdown
 import mdx_mathjax
 
@@ -284,3 +288,11 @@ def md2html(md_file, filename, theme):
     html = md2htmlcode(md_text, theme=theme, settings=settings)
     with open(filename, 'wt') as f:
         f.write(html)
+
+
+def htmlcode(text, filepath):
+    lexer = get_lexer_for_filename(filepath, stripall=True)
+    formatter = HtmlFormatter(linenos='inline', full=True, filename=filepath)
+
+    with open(filepath) as f:
+        return highlight(f.read(), lexer, formatter)

@@ -55,7 +55,7 @@ def previewWorker(self):
             self.previewHtml = output.md2htmlcode(self.previewText,
                                                   theme=self.md_theme)
         elif ext in EXTENSION_LEXER:
-            self.previewHtml = '<html><body><pre>%s</pre></body></html>' % self.previewText
+            self.previewHtml = output.htmlcode(self.previewText, self.previewPath)
         else:
             self.previewPath = '<html><body><h1>Error</h1><p>Unknown extension: %s</p></body></html>' % ext
         self.previewSignal.emit()
