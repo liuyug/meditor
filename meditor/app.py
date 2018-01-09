@@ -26,7 +26,6 @@ from . import output
 from . import globalvars
 from .util import toUtf8, toBytes, download, unzip
 from .findreplace import FindReplaceDialog
-from . import tango_theme
 
 
 requestPreview = threading.Event()
@@ -72,26 +71,24 @@ class MainWindow(QtWidgets.QMainWindow):
     previewQuit = False
     previewSignal = QtCore.pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, settings):
         super(MainWindow, self).__init__()
+        self.settings = settings
         self._app_exec = os.path.realpath(sys.argv[0])
         if sys.platform == 'win32':
             ext = os.path.splitext(self._app_exec)[1]
             if ext not in ['.py', '.exe']:
                 self._app_exec += '.exe'
         logger.info('app name: %s' % self._app_exec)
-        self.settings = settings = QtCore.QSettings(
-            __app_path__,
-            'config'
-        )
         self._icon = os.path.join(__icon_path__, 'meditor-text-editor.ico')
         logger.info('icon path: %s' % __icon_path__)
 
-        QtGui.QIcon.setThemeName('Tango')
+        if sys.platform == 'win32':
+            from . import nuoveXT2_icon_theme
+            QtGui.QIcon.setThemeName('nuoveXT2')
 
         self.setWindowIcon(
             QtGui.QIcon.fromTheme('accessories-text-editor', QtGui.QIcon(self._icon)))
-        # self.setWindowIcon(QtGui.QIcon(self._icon))
         self.setFont(QtGui.QFont('Monospace', 12))
         self.setAcceptDrops(True)
         # main window
@@ -101,21 +98,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.tab_editor)
 
         # left dock window
-        self.dock_explorer = QtWidgets.QDockWidget(self.tr('Explorer'), self)
+        self.dock_explorer = QtWidgets.QDockWidget(self.tr('Workspace'), self)
         self.dock_explorer.setObjectName('dock_explorer')
         self.explorer = explorer.Workspace(self.settings, self.dock_explorer)
         self.dock_explorer.setWidget(self.explorer)
         self.dock_explorer.visibilityChanged.connect(partial(self.onDockVisibility, 'explorer'))
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
         # right dock window
-        self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Viewer'), self)
+        self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Preview'), self)
         self.dock_webview.setObjectName('dock_webview')
         self.webview = webview.WebView(self.findDialog, self.dock_webview)
         self.dock_webview.setWidget(self.webview)
         self.dock_webview.visibilityChanged.connect(partial(self.onDockVisibility, 'webview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
 
-        self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code Viewer'), self)
+        self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code Preview'), self)
         self.dock_codeview.setObjectName('dock_codeview')
         self.codeview = CodeViewer(self.findDialog, self.dock_codeview)
         self.dock_codeview.setWidget(self.codeview)
@@ -193,8 +190,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # edit
         # view
         # preview
-        previewAction = QtWidgets.QAction(self.tr('Preview'), self)
-        previewAction.triggered.connect(partial(self.onMenuPreview, 'preview'))
+        # self.previewAction = QtWidgets.QAction(self.tr('Preview'), self)
+        # self.previewAction.triggered.connect(self.dock_webview.toggleViewAction())
 
         previewsaveAction = QtWidgets.QAction(self.tr('Preview on save'), self, checkable=True)
         previewsaveAction.triggered.connect(partial(self.onMenuPreview, 'previewonsave'))
@@ -280,6 +277,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mathjaxAction.triggered.connect(partial(self.onMenuMathJax, 'install'))
         self.mathjaxAction.setEnabled(not os.path.exists(__mathjax_full_path__))
 
+        # settings
+        self.highDpiAction = QtWidgets.QAction(self.tr('&High DPI support'), self, checkable=True)
+        self.highDpiAction.triggered.connect(partial(self.onMenuSettings, 'high_dpi'))
+        value = settings.value('highdpi', True, type=bool)
+        settings.setValue('highdpi', value)
+        self.highDpiAction.setChecked(value)
+
         # help
         helpAction = QtWidgets.QAction(self.tr('&Help Documents'), self)
         helpAction.setShortcut(QtGui.QKeySequence.HelpContents)
@@ -330,14 +334,6 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.dock_webview.toggleViewAction())
         menu.addAction(self.dock_codeview.toggleViewAction())
 
-        menu = menubar.addMenu(self.tr('&Preview'))
-        menu.addAction(previewAction)
-
-        menu.addSeparator()
-        menu.addAction(previewsaveAction)
-        menu.addAction(previewinputAction)
-        menu.addAction(previewsyncAction)
-
         menu = menubar.addMenu(self.tr('&Theme'))
         submenu = QtWidgets.QMenu(self.tr('reStructuredText'), menu)
         for act in rstThemeGroup.actions():
@@ -359,9 +355,18 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.mathjaxAction)
 
         menu = menubar.addMenu(self.tr('&Settings'))
-        menu.addAction(fileAssociationAction)
+        menu.addAction(self.highDpiAction)
+
+        menu.addSeparator()
+        menu.addAction(previewsaveAction)
+        menu.addAction(previewinputAction)
+        menu.addAction(previewsyncAction)
+
         menu.addSeparator()
         self.tab_editor.menuSetting(menu)
+
+        menu.addSeparator()
+        menu.addAction(fileAssociationAction)
 
         menu = menubar.addMenu(self.tr('&Help'))
         menu.addAction(helpAction)
@@ -386,6 +391,8 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.addAction(self.tab_editor.action('paste'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('find'))
+        tb_normal.addSeparator()
+        tb_normal.addAction(self.dock_webview.toggleViewAction())
         self.addToolBar(tb_normal)
 
     def setupStatusBar(self):
@@ -637,6 +644,27 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.mathjaxAction.setEnabled(success)
                 os.remove(dest_file)
 
+    def onMenuSettings(self, action, value):
+        if action == 'high_dpi':
+            self.settings.setValue('highdpi', value)
+            msgBox = QtWidgets.QMessageBox(self)
+            msgBox.setIcon(QtWidgets.QMessageBox.Question)
+            msgBox.setWindowTitle(self.tr('High DPI'))
+            if value:
+                message = self.tr('High DPI has been enabled.')
+            else:
+                message = self.tr('High DPI has been disabled.')
+            msgBox.setText(message)
+            msgBox.setInformativeText(self.tr('Restart it now?'))
+            msgBox.setStandardButtons(
+                QtWidgets.QMessageBox.Ok |
+                QtWidgets.QMessageBox.Cancel
+            )
+            msgBox.setDefaultButton(QtWidgets.QMessageBox.Cancel)
+            ret = msgBox.exec_()
+            if ret == QtWidgets.QMessageBox.Ok:
+                self.close()
+
     def onMenuHelp(self):
         help_paths = [
             os.path.join(__home_data_path__, 'docs', 'demo.rst'),
@@ -761,7 +789,7 @@ class MainWindow(QtWidgets.QMainWindow):
 def main():
     globalvars.init()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--style', choices=QtWidgets.QStyleFactory.keys())
+    parser.add_argument('--style', choices=list(QtWidgets.QStyleFactory.keys()))
     parser.add_argument('--version', action='version',
                         version='%%(prog)s %s' % __app_version__)
     parser.add_argument('-v', '--verbose', help='verbose help',
@@ -810,11 +838,15 @@ def main():
     # for pyinstaller
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5'))
 
+    settings = QtCore.QSettings(__app_path__, 'config')
+    value = settings.value('highdpi', True, type=bool)
+    settings.setValue('highdpi', value)
+    if value:
+        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     QtWidgets.QApplication.setStyle(args.style)
-    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     app = QtWidgets.QApplication(sys.argv)
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
-    win = MainWindow()
+    win = MainWindow(settings)
     if args.rstfile:
         win.tab_editor.loadFile(os.path.abspath(args.rstfile))
     win.show()
