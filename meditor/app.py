@@ -280,8 +280,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # settings
         self.highDpiAction = QtWidgets.QAction(self.tr('&High DPI support'), self, checkable=True)
         self.highDpiAction.triggered.connect(partial(self.onMenuSettings, 'high_dpi'))
-        value = settings.value('highdpi', True, type=bool)
-        settings.setValue('highdpi', value)
+        value = settings.value('highdpi', type=bool)
         self.highDpiAction.setChecked(value)
 
         # help
@@ -839,7 +838,7 @@ def main():
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5'))
 
     settings = QtCore.QSettings(__app_path__, 'config')
-    value = settings.value('highdpi', True, type=bool)
+    value = settings.value('highdpi', False, type=bool)
     settings.setValue('highdpi', value)
     if value:
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)

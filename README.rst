@@ -60,6 +60,9 @@ install with download from github::
     bash math.sh
     # for preview themes
     bash themes.sh
+    # for icon theme that is used under win32
+    bash icon_theme.sh list
+    bash icon_theme.sh <theme name>
     # install meditor
     python3 setup.py install . --user
 
