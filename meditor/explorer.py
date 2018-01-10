@@ -182,8 +182,9 @@ class Workspace(QtWidgets.QTreeWidget):
                     parent.removeChild(item)
                     del item
 
-    def onRefresh(self):
-        item = self.currentItem()
+    def onRefresh(self, item=None):
+        if item is None:
+            item = self.currentItem()
         if item:
             if item.type() == self.type_file:
                 item = item.parent()
@@ -436,7 +437,27 @@ class Workspace(QtWidgets.QTreeWidget):
         return path
 
     def refreshPath(self, path):
-        self.onRefresh()
+        if os.path.isfile(path):
+            path = os.path.dirname(path)
+        for index in range(self.topLevelItemCount()):
+            root = self.topLevelItem(index)
+            root_path = root.data(0, self.role_path)
+            if path.startswith(root_path):
+                break
+        node = root
+        path = path[len(root_path) + 1:]
+        paths = []
+        while path:
+            head, tail = os.path.split(path)
+            path = head
+            paths.insert(0, tail)
+        for path in paths:
+            for index in range(node.childCount()):
+                child = node.child(index)
+                if path == child.data(0, self.role_path):
+                    node = child
+                    break
+        self.onRefresh(node)
 
     def action(self, action):
         return self._actions.get(action)

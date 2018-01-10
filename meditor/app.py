@@ -747,6 +747,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.updateWindowTitle(x)
                     return
         elif self.sender() == self.tab_editor:
+            self.explorer.refreshPath(old_name)
             self.explorer.refreshPath(new_name)
 
     def moveCenter(self):
