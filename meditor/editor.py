@@ -73,7 +73,7 @@ class Editor(QsciScintilla):
         self.setCaretLineVisible(True)
 
         self.inputMethodEventCount = 0
-        self._imsupport = _SciImSupport(self)
+        # self._imsupport = _SciImSupport(self)
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
 
         self._timer = QtCore.QTimer(self)
@@ -200,10 +200,6 @@ class Editor(QsciScintilla):
         if self.isReadOnly():
             return
 
-        # disable preedit
-        # if event.preeditString() and not event.commitString():
-        #     return
-
         if event.preeditString():
             self.pauseLexer(True)
         else:
@@ -224,14 +220,10 @@ class Editor(QsciScintilla):
         else:
             super(Editor, self).inputMethodEvent(event)
 
-        # count commit string
-        if event.commitString():
-            commit_text = toUtf8(event.commitString())
-            if commit_text:
-                self.input_count += len(commit_text)
-            if self.input_count > 5:
-                self.inputPreviewRequest.emit()
-                self.input_count = 0
+        length = len(event.commitString())
+        self._latest_input_count += length
+        if length > 0:
+            self._timer.start()
 
     def keyPressEvent(self, event):
         super(Editor, self).keyPressEvent(event)
@@ -294,7 +286,7 @@ class Editor(QsciScintilla):
     def _onTimerTimeout(self):
         now = time.time()
         if self._latest_input_count > 0:
-            if (now - self._latest_input_time) > self._timer_interval:
+            if not self._pauseLexer and (now - self._latest_input_time) > self._timer_interval:
                 self.inputPreviewRequest.emit()
                 self._latest_input_count = 0
             else:
@@ -602,14 +594,6 @@ class Editor(QsciScintilla):
 
     def pauseLexer(self, pause=True):
         self._pauseLexer = pause
-        if pause:
-            self._lexerStart = 0
-            self._lexerEnd = 0
-        elif self.cur_lexer.__module__.startswith('rsteditor.scilib'):
-            self.cur_lexer.styleText(self._lexerStart, self._lexerEnd)
-        else:
-            # PyQt5.Qsci
-            pass
 
     def getScintillaVersion(self):
         version = '%s.%s.%s' % (
@@ -675,8 +659,8 @@ class CodeViewer(Editor):
         super(CodeViewer, self).__init__(parent)
         self._find_dialog = find_dialog
         self.setReadOnly(True)
-        self.setFocusPolicy(QtCore.Qt.NoFocus)
         self._actions = self.createAction(self, self._onAction)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.copyAvailable.connect(self.onCopyAvailable)
         self.modificationChanged.connect(self.onModificationChanged)
 

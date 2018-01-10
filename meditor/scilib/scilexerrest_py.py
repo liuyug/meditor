@@ -256,8 +256,6 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         if not self.editor():
             return
         if self.editor()._pauseLexer:
-            self.editor()._lexerStart = min(start, self.editor()._lexerStart)
-            self.editor()._lexerEnd = max(end, self.editor()._lexerEnd)
             return
         logger.debug('styling'.center(70, '-'))
         eol_mode = self.parent().eolMode()
