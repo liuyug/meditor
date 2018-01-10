@@ -83,7 +83,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._icon = os.path.join(__icon_path__, 'meditor-text-editor.ico')
         logger.info('icon path: %s' % __icon_path__)
 
-        if sys.platform == 'win32':
+        if sys.platform != 'linux':
             from . import nuoveXT2_icon_theme
             QtGui.QIcon.setThemeName('nuoveXT2')
 
