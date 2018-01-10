@@ -666,8 +666,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onMenuHelp(self):
         help_paths = [
-            os.path.join(__home_data_path__, 'docs', 'demo.rst'),
-            os.path.join(__data_path__, 'docs', 'demo.rst'),
+            os.path.join(__home_data_path__, 'help', 'demo.rst'),
+            os.path.join(__data_path__, 'help', 'demo.rst'),
         ]
         for help_path in help_paths:
             if os.path.exists(help_path):

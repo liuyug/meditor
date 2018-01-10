@@ -8,10 +8,10 @@ __default_basename__ = 'unknown'
 __app_path__ = 'meditor'
 
 prefixs = [
-    sys.prefix,
     os.path.join(os.path.expanduser('~'), '.local'),
     os.path.dirname(os.path.abspath(__file__)),
     getattr(sys, '_MEIPASS', ''),
+    sys.prefix,
 ]
 for prefix in prefixs:
     __data_path__ = os.path.join(prefix, 'share', __app_path__)
