@@ -31,12 +31,15 @@ class Editor(QsciScintilla):
     statusChanged = QtCore.pyqtSignal('QString')
     enable_lexer = True
     filename = None
-    input_count = 0
     find_text = None
     find_forward = True
     tabWidth = 4
-    _edgeColumn = 80
     cur_lexer = None
+    _latest_input_count = 0
+    _latest_input_time = 0
+    _timer_interval = 1
+    _timer = None
+    _edgeColumn = 80
     _pauseLexer = False
     _lexerStart = 0
     _lexerEnd = 0
@@ -52,6 +55,7 @@ class Editor(QsciScintilla):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
         font = QtGui.QFont('Monospace', 12)
+        self.setFont(font)
         self._fontmetrics = QtGui.QFontMetrics(font)
         # Scintilla
         self.setMarginsFont(font)
@@ -71,6 +75,11 @@ class Editor(QsciScintilla):
         self.inputMethodEventCount = 0
         self._imsupport = _SciImSupport(self)
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
+
+        self._timer = QtCore.QTimer(self)
+        self._timer.setInterval(self._timer_interval * 1000)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self._onTimerTimeout)
 
     @staticmethod
     def canOpened(filepath):
@@ -226,17 +235,14 @@ class Editor(QsciScintilla):
 
     def keyPressEvent(self, event):
         super(Editor, self).keyPressEvent(event)
-        input_text = toUtf8(event.text())
-        if (input_text or
-            (event.key() == QtCore.Qt.Key_Enter or
-             event.key() == QtCore.Qt.Key_Return)):
-            self.input_count += 1
-        if (self.input_count > 5 or
-            (event.key() == QtCore.Qt.Key_Enter or
-             event.key() == QtCore.Qt.Key_Return)):
-            self.inputPreviewRequest.emit()
-            self.input_count = 0
-        return
+        self._latest_input_time = time.time()
+        length = len(event.text())
+        if length > 0:
+            self._latest_input_count += length
+            self._timer.start()
+        elif event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return:
+            self._latest_input_count += 1
+            self._timer.start()
 
     def getCharAt(self, pos):
         return self.SendScintilla(QsciScintilla.SCI_GETCHARAT, pos)
@@ -284,6 +290,15 @@ class Editor(QsciScintilla):
 
     def _onAction(self, action, value):
         self.do_action(action, value)
+
+    def _onTimerTimeout(self):
+        now = time.time()
+        if self._latest_input_count > 0:
+            if (now - self._latest_input_time) > self._timer_interval:
+                self.inputPreviewRequest.emit()
+                self._latest_input_count = 0
+            else:
+                self._timer.start()
 
     def onCopyAvailable(self, value):
         self.do_copy_available(value, self)
