@@ -294,6 +294,10 @@ def htmlcode(text, filepath):
     formatter = HtmlFormatter(linenos='inline', full=True, filename=filepath)
 
     with open(filepath, 'rb') as f:
-        raw_text = f.read()
-        encoding = chardet.detect(raw_text).get('encoding')
-        return highlight(raw_text.decode(encoding), lexer, formatter)
+        data = f.read()
+        encoding = chardet.detect(data).get('encoding')
+        if encoding:
+            text = data.decode(encoding)
+        else:
+            text = ''
+    return highlight(text, lexer, formatter)
