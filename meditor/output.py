@@ -7,17 +7,16 @@ from pygments import highlight
 from pygments.lexers import get_lexer_for_filename
 from pygments.formatters import HtmlFormatter
 
+import chardet
+
 import markdown
 import mdx_mathjax
 
-try:
-    from docutils.core import publish_string
-    from docutils.core import publish_cmdline
-    from docutils.core import publish_cmdline_to_binary
-    from docutils.writers.odf_odt import Writer, Reader
-    from docutils.writers import html5_polyglot
-except:
-    raise Exception('Please install docutils firstly')
+from docutils.core import publish_string
+from docutils.core import publish_cmdline
+from docutils.core import publish_cmdline_to_binary
+from docutils.writers.odf_odt import Writer, Reader
+from docutils.writers import html5_polyglot
 
 from . import __data_path__, __home_data_path__, \
     __mathjax_full_path__, __mathjax_min_path__
@@ -294,5 +293,7 @@ def htmlcode(text, filepath):
     lexer = get_lexer_for_filename(filepath, stripall=True)
     formatter = HtmlFormatter(linenos='inline', full=True, filename=filepath)
 
-    with open(filepath) as f:
-        return highlight(f.read(), lexer, formatter)
+    with open(filepath, 'rb') as f:
+        raw_text = f.read()
+        encoding = chardet.detect(raw_text).get('encoding')
+        return highlight(raw_text.decode(encoding), lexer, formatter)

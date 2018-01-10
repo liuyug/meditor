@@ -51,7 +51,7 @@ def previewWorker(self):
         elif ext in ['.rst', '.rest']:
             self.previewHtml = output.rst2htmlcode(self.previewText,
                                                    theme=self.rst_theme)
-        elif ext in ['.md', '.markdown', '.txt']:
+        elif ext in ['.md', '.markdown']:
             self.previewHtml = output.md2htmlcode(self.previewText,
                                                   theme=self.md_theme)
         elif ext in EXTENSION_LEXER:

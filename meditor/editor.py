@@ -8,6 +8,7 @@ from functools import partial
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.Qsci import QSCINTILLA_VERSION, QsciScintilla, QsciPrinter
+import chardet
 
 from .scilib import _SciImSupport, EXTENSION_LEXER
 
@@ -397,20 +398,17 @@ class Editor(QsciScintilla):
         try:
             with open(filename, 'rb') as f:
                 data = f.read()
-                if not encoding:
-                    if data.startswith(codecs.BOM_UTF8):
-                        encoding = 'utf-8-sig'
-                    elif data.startswith(codecs.BOM_UTF16):
-                        encoding = 'utf-16'
-                    elif data.startswith(codecs.BOM_UTF32):
-                        encoding = 'utf-32'
-                    else:
-                        encoding = 'utf8'
-            text = data.decode(encoding)
-        except Exception:
-            encoding = sys.getfilesystemencoding()
-            logging.error('%s: %s' % (filename, encoding))
-            text = data.decode(encoding)
+                encoding = chardet.detect(data).get('encoding')
+                if not encoding or encoding == 'ascii':
+                    encoding = 'utf-8'
+                text = data.decode(encoding)
+        except Exception as err:
+            QtWidgets.QMessageBox.information(
+                self,
+                self.tr('Read file'),
+                self.tr('Do not open "%s": %s') % (filename, err),
+            )
+            return False
         self._file_encoding = encoding
         self.setFileName(filename)
         self.setValue(text)
@@ -423,10 +421,19 @@ class Editor(QsciScintilla):
         else:
             filename = self.getFileName()
         if filename:
+            try:
+                data = text.encode(self._file_encoding)
+            except Exception as err:
+                QtWidgets.QMessageBox.information(
+                    self,
+                    self.tr('Write file'),
+                    self.tr('Do not write "%s": %s') % (filename, err),
+                )
+                return False
             with open(filename, 'wb') as f:
-                f.write(text.encode(self._file_encoding))
+                f.write(data)
                 self.setModified(False)
-                return True
+            return True
         return False
 
     def newFile(self, filepath):
@@ -452,7 +459,7 @@ class Editor(QsciScintilla):
                 with open(skeleton, 'r', encoding='utf-8') as f:
                     text = f.read()
                 break
-        self._file_encoding = 'utf8'
+        self._file_encoding = 'utf-8'
         self.setFileName(filepath)
         self.setValue(text)
 

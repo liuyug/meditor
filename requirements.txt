@@ -1,6 +1,7 @@
 PyQt5
 QScintilla
 Pygments
+chardet
 
 # markup text
 docutils
