@@ -74,7 +74,7 @@ class Editor(QsciScintilla):
         self.setCaretLineVisible(True)
 
         self.inputMethodEventCount = 0
-        # self._imsupport = _SciImSupport(self)
+        self._imsupport = _SciImSupport(self)
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
 
         self._timer = QtCore.QTimer(self)
@@ -181,7 +181,7 @@ class Editor(QsciScintilla):
         if self._actions:
             return self._actions.get(action)
 
-    def inputMethodQuery(self, query):
+    def inputMethodQuery2(self, query):
         if query == QtCore.Qt.ImMicroFocus:
             l, i = self.getCursorPosition()
             p = self.positionFromLineIndex(l, i)
@@ -207,7 +207,7 @@ class Editor(QsciScintilla):
             self.pauseLexer(False)
 
         # input with preedit, from TortoiseHg
-        if self._imsupport:
+        if not self._imsupport:
             self.removeSelectedText()
             self._imsupport.removepreedit()
             self._imsupport.commitstr(event.replacementStart(),

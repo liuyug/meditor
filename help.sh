@@ -15,14 +15,7 @@ share_help=`pwd`/meditor/share/meditor/help
 
 rm -rf help
 
-(
-mkdir -p help
-cd help
-wget http://docutils.sourceforge.net/sandbox/jensj/latex_math/docs/latex_math.txt
-
-rename .txt .rst
-)
-
+# reStructuredText
 (
 mkdir -p help/ref
 cd help/ref
@@ -43,6 +36,7 @@ wget http://docutils.sourceforge.net/docs/user/rst/demo.txt
 wget http://docutils.sourceforge.net/docs/user/rst/quickstart.txt
 
 rename .txt .rst
+
 mkdir -p images
 (
 cd images
@@ -51,10 +45,22 @@ wget http://docutils.sourceforge.net/docs/user/rst/images/title.png
 )
 )
 
+# Markdown
+(
+cd help
+wget https://daringfireball.net/projects/markdown/basics.text
+wget https://daringfireball.net/projects/markdown/syntax.text
+
+rename .text .md
+)
+
+# copy help to application
 mkdir -p $share_help
 (
 cd help
 cp -rf * $share_help
 )
+
+
 
 # vim: tabstop=4 shiftwidth=4 expandtab

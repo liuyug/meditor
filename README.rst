@@ -55,7 +55,7 @@ install with download from github::
     # ui window
     bash ui.sh
     # fetch reStructuredText documents
-    bash docs.sh
+    bash help.sh
     # for Simple MathJax
     bash math.sh
     # for preview themes
