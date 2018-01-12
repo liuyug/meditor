@@ -80,14 +80,14 @@ class MainWindow(QtWidgets.QMainWindow):
             if ext not in ['.py', '.exe']:
                 self._app_exec += '.exe'
         logger.info('app name: %s' % self._app_exec)
-        self._icon = os.path.join(__data_path__, '..', 'pixmaps', 'meditor-text-editor.ico')
+        self._icon_path = os.path.join(__data_path__, 'meditor-text-editor.ico')
 
         if sys.platform != 'linux':
             from . import nuoveXT2_icon_theme
             QtGui.QIcon.setThemeName('nuoveXT2')
 
         self.setWindowIcon(
-            QtGui.QIcon.fromTheme('accessories-text-editor', QtGui.QIcon(self._icon)))
+            QtGui.QIcon.fromTheme('accessories-text-editor', QtGui.QIcon(self._icon_path)))
         self.setFont(QtGui.QFont('Monospace', 12))
         self.setAcceptDrops(True)
         # main window
@@ -553,7 +553,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 'Markup Editor for %s' % ext[1:])
             settings.setValue(
                 '/%s/DefaultIcon/.' % file_type,
-                self._icon)
+                self._icon_path)
             settings.setValue(
                 '/%s/shell/open/command/.' % file_type,
                 '"%s" "%%1"' % self._app_exec)
@@ -679,8 +679,8 @@ class MainWindow(QtWidgets.QMainWindow):
         text = self.tr("%s %s\n\nThe editor for Markup Text\n\n"
                        ) % (__app_name__, __app_version__)
         text += self.tr('Platform: %s\n') % (sys.platform)
-        text += self.tr('Home path: %s\n') % (__home_data_path__)
-        text += self.tr('Application path: %s\n') % (__data_path__)
+        text += self.tr('Home data path: %s\n') % (__home_data_path__)
+        text += self.tr('Application data path: %s\n') % (__data_path__)
         widget = self.tab_editor.currentWidget()
         text += self.tr('Editor lexer: %s\n') % widget.cur_lexer.__module__
         text += self.tr('\n')

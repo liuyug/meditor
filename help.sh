@@ -11,7 +11,7 @@ rename()
     done
 }
 
-share_help=`pwd`/meditor/share/meditor/help
+share_help=`pwd`/meditor/data/help
 
 rm -rf help
 

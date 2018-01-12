@@ -47,7 +47,7 @@ def get_data_files(dest, src, patterns=None):
     if not patterns:
         patterns = ['*']
     data_files = []
-    for root, dirnames, filenames in os.walk(src):
+    for root, dirnames, filenames in os.walk(os.path.abspath(src)):
         if not filenames:
             continue
         files = []
@@ -55,8 +55,11 @@ def get_data_files(dest, src, patterns=None):
             for filename in fnmatch.filter(filenames, pattern):
                 files.append(os.path.join(root, filename))
         if files:
-            dest_path = os.path.join(dest, os.path.relpath(root, src))
-            data_files.append([dest_path, files])
+            if dest:
+                dest_path = os.path.join(dest, os.path.relpath(root, src))
+                data_files.append([dest_path, files])
+            else:
+                data_files += files
     return data_files
 
 
@@ -73,9 +76,10 @@ setup(
     python_requires='>=3',
     platforms=['noarch'],
     packages=find_packages(),
+    package_data={'meditor': get_data_files(None, 'meditor/data', '*')},
     data_files=[
         ('share/applications', ['meditor.desktop']),
-    ] + get_data_files('share', 'meditor/share', '*'),
+    ],
     entry_points={
         'gui_scripts': [
             'meditor = meditor.app:main',

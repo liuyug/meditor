@@ -16,7 +16,7 @@
 !define SHORTCUT_APP_NAME "${PRODUCT_NAME}.lnk"
 !define SHORTCUT_UNINSTALL_NAME "${PRODUCT_NAME} Uninstall.lnk"
 !define EXEC_NAME "meditor.exe"
-!define EXEC_ICON "$INSTDIR\share\pixmaps\meditor-text-editor.ico"
+!define EXEC_ICON "$INSTDIR\data\meditor-text-editor.ico"
 ;
 !define DIST_PATH '..\dist'
 

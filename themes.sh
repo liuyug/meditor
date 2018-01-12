@@ -5,7 +5,7 @@ set -x
 
 
 echo "Get reStructuredText themes..."
-share_theme="`pwd`/meditor/share/meditor/themes"
+share_theme="`pwd`/meditor/data/themes"
 
 mkdir -p themes/reStructuredText
 mkdir -p themes/Markdown

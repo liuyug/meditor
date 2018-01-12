@@ -6,7 +6,10 @@ include requirements.txt
 include screenshot.png
 include setup.py
 include run.py
+include icon_theme.py
+include icon_theme.sh
 include themes.sh
 include ui.sh
 include demo.sh
 include math.sh
+include help.sh

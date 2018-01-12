@@ -60,15 +60,14 @@ def get_theme_settings(theme):
     """
     stylesheet = {}
     search_paths = [
-        '/usr/share/docutils/writers',
         os.path.abspath(os.path.dirname(os.path.dirname(html5_polyglot.__file__))),
-        os.path.abspath(os.path.join(__data_path__, 'docutils', 'writers')),
     ]
     docutils_theme_path = ''
     for path in search_paths:
         if os.path.exists(os.path.join(path, 'html5_polyglot', 'template.txt')):
             docutils_theme_path = path
             break
+    logger.debug('docutils theme path:', docutils_theme_path)
     stylesheet['stylesheet_dirs'] = [
         os.path.join(docutils_theme_path, 'html4css1'),
         os.path.join(docutils_theme_path, 'html5_polyglot'),
