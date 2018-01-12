@@ -220,13 +220,18 @@ def md2htmlcode(markup_file, theme=None, settings={}):
         'markdown.extensions.smarty',
         'markdown.extensions.toc',
         'markdown.extensions.wikilinks',
-        mdx_mathjax.MathJaxExtension(),
+        mdx_mathjax.MathJaxExtension(asciimath_escape=True),
     ]
+    extension_configs = {
+    }
     try:
         overrides = {}
         logger.debug(overrides)
         body = markdown.markdown(
-            markup_file, output_format='html5', extensions=extensions)
+            markup_file, output_format='html5',
+            extensions=extensions,
+            extension_configs=extension_configs,
+        )
     except Exception as err:
         logger.error(err)
         body = err
