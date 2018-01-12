@@ -3,7 +3,7 @@ import os.path
 from collections import OrderedDict
 
 __app_name__ = 'Markup Editor'
-__app_version__ = '2.12.15'
+__app_version__ = '2.12.16'
 __default_basename__ = 'unknown'
 __app_path__ = 'meditor'
 
@@ -12,12 +12,15 @@ prefixs = [
     os.path.dirname(os.path.abspath(__file__)),
     getattr(sys, '_MEIPASS', ''),
     sys.prefix,
+    os.path.join(sys.prefix, 'local'),
 ]
+__data_path__ = ''
 for prefix in prefixs:
     __data_path__ = os.path.join(prefix, 'share', __app_path__)
     if os.path.exists(__data_path__):
-        __icon_path__ = os.path.join(prefix, 'share', 'pixmaps')
         break
+if not __data_path__:
+    raise OSError('Could not find data path!!??')
 # ~/.config/meditor
 __home_data_path__ = os.path.join(os.path.expanduser('~'), '.config', __app_path__)
 

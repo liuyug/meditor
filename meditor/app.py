@@ -15,7 +15,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from pygments.formatters import get_formatter_by_name
 
 from . import __app_name__, __app_version__, __app_path__, \
-    __data_path__, __home_data_path__, __icon_path__, __mathjax_full_path__, \
+    __data_path__, __home_data_path__, __mathjax_full_path__, \
     pygments_styles
 from .editor import Editor, CodeViewer
 from .tab_editor import TabEditor
@@ -80,8 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if ext not in ['.py', '.exe']:
                 self._app_exec += '.exe'
         logger.info('app name: %s' % self._app_exec)
-        self._icon = os.path.join(__icon_path__, 'meditor-text-editor.ico')
-        logger.info('icon path: %s' % __icon_path__)
+        self._icon = os.path.join(__data_path__, '..', 'pixmaps', 'meditor-text-editor.ico')
 
         if sys.platform != 'linux':
             from . import nuoveXT2_icon_theme
