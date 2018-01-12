@@ -17,7 +17,8 @@ prefixs = [
 __data_path__ = ''
 for prefix in prefixs:
     __data_path__ = os.path.join(prefix, 'share', __app_path__)
-    if os.path.exists(__data_path__):
+    help_path = os.path.join(__data_path__, 'help')
+    if os.path.exists(help_path):
         break
 if not __data_path__:
     raise OSError('Could not find data path!!??')

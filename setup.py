@@ -6,7 +6,6 @@ import fnmatch
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
-from meditor import __app_name__
 from meditor import __app_version__
 
 
@@ -16,7 +15,7 @@ Name=Markup Editor
 Comment=Editor for reStructuredText and Markdown
 Exec=meditor
 MimeType=text/plain;
-Icon=meditor-text-editor
+Icon=accessories-text-editor
 Terminal=false
 Type=Application
 Categories=Application;Office;
@@ -62,7 +61,7 @@ def get_data_files(dest, src, patterns=None):
 
 
 setup(
-    name=__app_name__.lower(),
+    name='meditor',
     version=__app_version__,
     author='Yugang LIU',
     author_email='liuyug@gmail.com',
