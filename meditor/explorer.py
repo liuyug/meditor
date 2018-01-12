@@ -100,11 +100,19 @@ class Workspace(QtWidgets.QTreeWidget):
         self.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
         value = self._settings.value('explorer/workspace', type=str)
-        for path in value.split(';'):
-            self.appendRootPath(path)
+        for v in value.split(';'):
+            if not v:
+                continue
+            path, _, expand = v.rpartition(':')
+            self.appendRootPath(path, expand == 'True')
 
     def closeEvent(self, event):
-        self._settings.setValue('explorer/workspace', ';'.join(self.getRootPaths()))
+        root_paths = []
+        for index in range(self.topLevelItemCount()):
+            root = self.topLevelItem(index)
+            path = root.data(0, self.role_path)
+            root_paths.append('%s:%s' % (path, root.isExpanded()))
+        self._settings.setValue('explorer/workspace', ';'.join(root_paths))
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -200,7 +208,7 @@ class Workspace(QtWidgets.QTreeWidget):
             self, self.tr('Open a folder'), '',
         )
         if path:
-            self.appendRootPath(path)
+            self.appendRootPath(path, expand=True)
 
     def dragMoveEvent(self, event):
         super(Workspace, self).dragMoveEvent(event)
@@ -310,7 +318,7 @@ class Workspace(QtWidgets.QTreeWidget):
             children.append(self.createNode(path, d))
         parent.addChildren(children)
 
-    def appendRootPath(self, path):
+    def appendRootPath(self, path, expand=False):
         if not os.path.exists(path):
             return
         if os.path.isfile(path):
@@ -325,9 +333,11 @@ class Workspace(QtWidgets.QTreeWidget):
         root_name = os.path.basename(root_path)
         root_item = self.createRoot(root_path, root_name)
 
-        self.expandDir(root_item)
         self.addTopLevelItem(root_item)
-        self.setCurrentItem(root_item)
+        self.expandDir(root_item)
+        root_item.setExpanded(expand)
+        if not self.currentItem():
+            self.setCurrentItem(root_item)
 
     def getFileIcon(self, path, style=None):
         if path == '/':

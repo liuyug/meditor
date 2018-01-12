@@ -672,7 +672,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for help_path in help_paths:
             if os.path.exists(help_path):
                 break
-        self.explorer.appendRootPath(help_path)
+        self.explorer.appendRootPath(help_path, expand=True)
         self.tab_editor.loadFile(help_path)
 
     def onMenuAbout(self):
