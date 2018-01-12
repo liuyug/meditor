@@ -11,8 +11,6 @@ prefixs = [
     os.path.join(os.path.expanduser('~'), '.local'),
     os.path.dirname(os.path.abspath(__file__)),
     getattr(sys, '_MEIPASS', ''),
-    sys.prefix,
-    os.path.join(sys.prefix, 'local'),
 ]
 __data_path__ = ''
 for prefix in prefixs:
