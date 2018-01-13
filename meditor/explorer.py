@@ -191,7 +191,7 @@ class Workspace(QtWidgets.QTreeWidget):
                     del item
 
     def onRefresh(self, item=None):
-        if item is None:
+        if not item:
             item = self.currentItem()
         if item:
             if item.type() == self.type_file:
