@@ -2,7 +2,6 @@
 import sys
 import time
 import os.path
-import codecs
 import logging
 from functools import partial
 
@@ -181,8 +180,8 @@ class Editor(QsciScintilla):
         if self._actions:
             return self._actions.get(action)
 
-    def inputMethodQuery2(self, query):
-        if query == QtCore.Qt.ImMicroFocus:
+    def inputMethodQuery(self, query):
+        if False and query == QtCore.Qt.ImMicroFocus:
             l, i = self.getCursorPosition()
             p = self.positionFromLineIndex(l, i)
             x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, p)
@@ -207,7 +206,7 @@ class Editor(QsciScintilla):
             self.pauseLexer(False)
 
         # input with preedit, from TortoiseHg
-        if not self._imsupport:
+        if False and self._imsupport:
             self.removeSelectedText()
             self._imsupport.removepreedit()
             self._imsupport.commitstr(event.replacementStart(),
