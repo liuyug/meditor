@@ -56,7 +56,7 @@ class Editor(QsciScintilla):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
         font = QtGui.QFont('Monospace', 12)
-        self.setFont(font)
+        # self.setFont(font)
         self._fontmetrics = QtGui.QFontMetrics(font)
         # Scintilla
         self.setMarginsFont(font)

@@ -88,7 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setWindowIcon(
             QtGui.QIcon.fromTheme('accessories-text-editor', QtGui.QIcon(self._icon_path)))
-        self.setFont(QtGui.QFont('Monospace', 12))
+        # self.setFont(QtGui.QFont('Monospace', 12))
         self.setAcceptDrops(True)
         # main window
         self.findDialog = FindReplaceDialog(self)
@@ -159,6 +159,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewWorker.start()
         self.tab_editor.loadFile(self.tab_editor.filepath())
         self.previewCurrentText(force=True)
+
+        print('mainwindow', self.devicePixelRatio())
+        print('explorer', self.explorer.devicePixelRatio())
+        print('codeview', self.codeview.devicePixelRatio())
+        print('webview', self.webview.page().view().devicePixelRatio())
 
     def setupMenu(self):
         settings = self.settings
@@ -846,6 +851,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
+    print('app', app.devicePixelRatio())
     if args.rstfile:
         win.tab_editor.loadFile(os.path.abspath(args.rstfile))
     win.show()
