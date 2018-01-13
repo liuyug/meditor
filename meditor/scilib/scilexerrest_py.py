@@ -270,26 +270,28 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         logger.debug('prev style: %s' % self.rstyles.get(pre_style) or self.inline_rstyles.get(pre_style))
         while pos > 0:
             style = self.parent().getStyleAt(pos)
-            newline = self.parent().text(pos, pos + len(eol))
+            newline = self.parent().text(pos, min(pos + len(eol), self.parent().length()))
             next_pos = max(pos - len(eol), 0)
             if newline == eol \
-                    and newline == self.parent().text(next_pos, next_pos + len(eol)) \
+                    and newline == self.parent().text(
+                        next_pos, min(next_pos + len(eol), self.parent().length())) \
                     and style != pre_style:
                 break
-            pos -= len(eol)
+            pos = next_pos
         fix_start = pos
         pos = min(end + len(eol), self.parent().length())
         suf_style = self.parent().getStyleAt(pos)
         logger.debug('next style: %s' % self.rstyles.get(suf_style) or self.inline_rstyles.get(suf_style))
         while pos < self.parent().length():
             style = self.parent().getStyleAt(pos)
-            newline = self.parent().text(pos, pos + len(eol))
             next_pos = min(pos + len(eol), self.parent().length())
+            newline = self.parent().text(pos, next_pos)
             if newline == eol \
-                    and newline == self.parent().text(next_pos, next_pos + len(eol)) \
+                    and newline == self.parent().text(
+                        next_pos, min(next_pos + len(eol), self.parent().length())) \
                     and style != suf_style:
                 break
-            pos += len(eol)
+            pos = next_pos
         fix_end = pos
         text = self.parent().text(start, end)
         fix_text = self.parent().text(fix_start, fix_end)
