@@ -639,7 +639,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if success:
                 dlg.setLabelText('Uncompress MathJax...')
                 success = unzip(dest_file, __home_data_path__, dlg)
-                self.mathjaxAction.setEnabled(success)
+                self.mathjaxAction.setEnabled(False)
                 os.remove(dest_file)
 
     def onMenuSettings(self, action, value):
