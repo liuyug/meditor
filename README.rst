@@ -27,7 +27,7 @@ Install
 =======
 in Linux::
 
-    pip3 install markup_meditor --user
+    pip3 install meditor --user
 
 install with download from github::
 
