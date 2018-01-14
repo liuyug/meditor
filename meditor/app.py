@@ -88,7 +88,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setWindowIcon(
             QtGui.QIcon.fromTheme('accessories-text-editor', QtGui.QIcon(self._icon_path)))
-        # self.setFont(QtGui.QFont('Monospace', 12))
         self.setAcceptDrops(True)
         # main window
         self.findDialog = FindReplaceDialog(self)
@@ -852,6 +851,7 @@ def main():
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
     print('app', app.devicePixelRatio())
+    print('desktop', app.desktop().devicePixelRatio())
     if args.rstfile:
         win.tab_editor.loadFile(os.path.abspath(args.rstfile))
     win.show()

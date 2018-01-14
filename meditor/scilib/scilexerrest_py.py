@@ -175,11 +175,9 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
 
     def __init__(self, parent=None):
         super(QsciLexerRest, self).__init__(parent)
-        self.setDefaultColor(QtGui.QColor('#000000'))
-        self.setDefaultPaper(QtGui.QColor('#ffffff'))
-        self.setDefaultFont(QtGui.QFont('Monospace', 12))
         self.rstyles = dict(zip(*(self.styles.values(), self.styles.keys())))
         self.inline_rstyles = dict(zip(*(self.inline_styles.values(), self.inline_styles.keys())))
+
         self.block_tokens = []
         self.inline_tokens = []
         for key, regex in self.token_regex:
@@ -205,7 +203,8 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             logger.debug('Loading %s', rst_prop_file)
             self.readConfig(rst_prop_file)
         else:
-            logger.info('Not found %s', rst_prop_file)
+            logger.debug('Loading properties')
+            self.readProperties()
 
     def language(self):
         return 'reStructuredText'
@@ -302,76 +301,44 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
     def defaultStyle(self):
         return self.styles['string']
 
-    def defaultColor(self, style):
-        prop_list = self.getProperty(style)
-        for prop in prop_list:
-            if prop.startswith('fore:'):
-                color = prop.split(':')[1]
-                return QtGui.QColor(color)
-        return super(QsciLexerRest, self).defaultColor(style)
-
-    def defaultPaper(self, style):
-        prop_list = self.getProperty(style)
-        for prop in prop_list:
-            if prop.startswith('back:'):
-                color = prop.split(':')[1]
-                return QtGui.QColor(color)
-        return super(QsciLexerRest, self).defaultPaper(style)
-
-    def defaultFont(self, style):
-        prop_list = self.getProperty(style)
-        font = super(QsciLexerRest, self).defaultFont(style)
-        for prop in prop_list:
-            if ':' in prop:
-                continue
-            if prop.startswith('$(font.'):
-                mo = re.match(r'^\$\(font\.(.+)\)', prop)
-                font = QtGui.QFont(mo.group(1))
-            elif prop == 'bold':
-                font.setBold(True)
-            elif prop == 'italic':
-                font.setItalic(True)
-            elif prop == 'underline':
-                font.setUnderline(True)
-        return font
-
-    def getProperty(self, style):
-        if style in self.properties:
-            prop_list = self.properties[style].split(',')
-            return prop_list
-        return []
-
     def setDebugLevel(self, logging_level):
         pass
 
+    def do_read_style(self, prop_list, style):
+        font = self.font(style)
+        for prop in prop_list:
+            if prop.startswith('face:'):
+                fgcolor = QtGui.QColor(prop.split(':')[1])
+                self.setColor(fgcolor, style)
+            elif prop.startswith('back:'):
+                bgcolor = QtGui.QColor(prop.split(':')[1])
+                self.setPaper(bgcolor, style)
+            else:
+                if ':' in prop:
+                    continue
+                if prop.startswith('$(font.'):
+                    mo = re.match(r'^\$\(font\.(.+)\)', prop)
+                    font = QtGui.QFont(mo.group(1))
+                elif prop == 'bold':
+                    font.setBold(True)
+                elif prop == 'italic':
+                    font.setItalic(True)
+                elif prop == 'underline':
+                    font.setUnderline(True)
+                self.setFont(font, style)
+
+    def readProperties(self, style):
+        for style, value in self.properties.items():
+            self.do_read_style(value.split(','), style)
+
     def readConfig(self, rst_prop_file):
         prop_settings = QtCore.QSettings(rst_prop_file, QtCore.QSettings.IniFormat)
-        for num in range(len(self.properties)):
-            value = prop_settings.value('style.rst.%s' % num, type=str,)
+        for style in self.properties.keys():
+            value = prop_settings.value('style.rst.%s' % style, type=str)
             if not value:
                 continue
             if isinstance(value, str):
-                prop_list = value.split(',')
+                v = value.split(',')
             else:
-                prop_list = value
-            fgcolor = self.defaultColor(num)
-            bgcolor = self.defaultPaper(num)
-            font = self.defaultFont(num)
-            for prop in prop_list:
-                if prop.startswith('face:'):
-                    fgcolor = QtGui.QColor(prop.split(':')[1])
-                    self.setColor(fgcolor, num)
-                elif prop.startswith('back:'):
-                    bgcolor = QtGui.QColor(prop.split(':')[1])
-                    self.setPaper(bgcolor, num)
-                else:
-                    if prop.startswith('$(font.'):
-                        mo = re.match(r'^\$\(font\.(.+)\)', prop)
-                        font = QtGui.QFont(mo.group(1))
-                    elif prop == 'bold':
-                        font.setBold(True)
-                    elif prop == 'italic':
-                        font.setItalic(True)
-                    elif prop == 'underline':
-                        font.setUnderline(True)
-                    self.setFont(font, num)
+                v = value
+            self.do_read_style(v, style)

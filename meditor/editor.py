@@ -13,7 +13,7 @@ import chardet
 from .scilib import _SciImSupport, EXTENSION_LEXER
 
 from .util import toUtf8
-from . import __home_data_path__, __data_path__, __default_basename__
+from . import __home_data_path__, __data_path__, __default_basename__, __font_name__
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +55,12 @@ class Editor(QsciScintilla):
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
-        font = QtGui.QFont('Monospace', 12)
-        # self.setFont(font)
-        self._fontmetrics = QtGui.QFontMetrics(font)
+        self.setFont(QtGui.QFont(__font_name__))
         # Scintilla
-        self.setMarginsFont(font)
+        self.setMarginsFont(self.font())
         self.setMarginType(0, QsciScintilla.NumberMargin)
-        self.setMarginWidth(0, self._fontmetrics.width('0000'))
-        self.setMarginWidth(1, 5)
+        self.setMarginWidth(0, self._fontmetrics.width('000') + 6)
+        # self.setMarginWidth(1, 5)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
         self.setTabWidth(self.tabWidth)
@@ -181,8 +179,8 @@ class Editor(QsciScintilla):
         if self._actions:
             return self._actions.get(action)
 
-    def inputMethodQuery2(self, query):
-        if query == QtCore.Qt.ImMicroFocus:
+    def inputMethodQuery(self, query):
+        if False and query == QtCore.Qt.ImMicroFocus:
             l, i = self.getCursorPosition()
             p = self.positionFromLineIndex(l, i)
             x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, p)
@@ -207,7 +205,7 @@ class Editor(QsciScintilla):
             self.pauseLexer(False)
 
         # input with preedit, from TortoiseHg
-        if not self._imsupport:
+        if False and  self._imsupport:
             self.removeSelectedText()
             self._imsupport.removepreedit()
             self._imsupport.commitstr(event.replacementStart(),
@@ -236,6 +234,14 @@ class Editor(QsciScintilla):
         elif event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return:
             self._latest_input_count += 1
             self._timer.start()
+
+    def setFont(self, font):
+        super(Editor, self).setFont(font)
+        self.setMarginsFont(font)
+        self._fontmetrics = QtGui.QFontMetrics(font)
+
+    def getZoom(self):
+        return self.SendScintilla(QsciScintilla.SCI_GETZOOM)
 
     def getCharAt(self, pos):
         return self.SendScintilla(QsciScintilla.SCI_GETCHARAT, pos)
@@ -581,15 +587,25 @@ class Editor(QsciScintilla):
         return
 
     def setStyle(self, filename):
+        """
+        1. lookup font from style: font(font, style)
+        2. or return default font from defaultfont()
+        """
         lexer = None
         t1 = time.clock()
         if filename:
             _, ext = os.path.splitext(filename)
             ext = ext.lower()
             LexerClass = EXTENSION_LEXER.get(ext)
-            lexer = LexerClass(self)
-            if lexer.language() not in ['reStructuredText', 'Default']:
-                lexer.setFont(QtGui.QFont('Monospace', 12))
+            if LexerClass:
+                lexer = LexerClass(self)
+                lexer.setFont(self.font())
+
+                style = QsciScintilla.STYLE_DEFAULT
+                while style < QsciScintilla.STYLE_LASTPREDEFINED:
+                    lexer.setFont(self.font(), style)
+                    style += 1
+
         self.setLexer(lexer)
         if lexer:
             self.statusChanged.emit('lexer:%s' % lexer.language())
@@ -663,8 +679,7 @@ class Editor(QsciScintilla):
 class CodeViewer(Editor):
     """ code viewer, readonly """
     def __init__(self, find_dialog, parent=None):
-        super(CodeViewer, self).__init__(parent)
-        self._find_dialog = find_dialog
+        super(CodeViewer, self).__init__(find_dialog, parent)
         self.setReadOnly(True)
         self._actions = self.createAction(self, self._onAction)
         self.setFocusPolicy(QtCore.Qt.NoFocus)

@@ -23,6 +23,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.page().setHtml('')
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
+        self.setZoomFactor(1.5)
 
         self._actions = {}
         action = self.pageAction(self.page().Copy)
