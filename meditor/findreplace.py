@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class FindReplaceDialog(QtWidgets.QDialog):
-    find_next = QtCore.pyqtSignal(str)
-    find_previous = QtCore.pyqtSignal(str)
-    replace_next = QtCore.pyqtSignal(str, str)
-    replace_all = QtCore.pyqtSignal(str, str)
+    find_next = QtCore.pyqtSignal(str, bool, bool)
+    find_previous = QtCore.pyqtSignal(str, bool, bool)
+    replace_next = QtCore.pyqtSignal(str, str, bool, bool)
+    replace_all = QtCore.pyqtSignal(str, str, bool, bool)
     _readonly = False
 
     def __init__(self, *args, **kwargs):
@@ -29,6 +29,7 @@ class FindReplaceDialog(QtWidgets.QDialog):
         self.ui.pushButton_find_previous.clicked.connect(self.handleButton)
         self.ui.pushButton_replace.clicked.connect(self.handleButton)
         self.ui.pushButton_replaceall.clicked.connect(self.handleButton)
+        self.setMinimumWidth(640)
 
     def setReadOnly(self, readonly):
         self._readonly = readonly
@@ -38,17 +39,31 @@ class FindReplaceDialog(QtWidgets.QDialog):
         if self.sender() == self.ui.pushButton_close:
             self.close()
         elif self.sender() == self.ui.pushButton_find_next:
-            self.find_next.emit(self.ui.lineEdit_find.text())
+            self.find_next.emit(
+                self.getFindText(),
+                self.isCaseSensitive(),
+                self.isWholeWord(),
+            )
         elif self.sender() == self.ui.pushButton_find_previous:
-            self.find_previous.emit(self.ui.lineEdit_find.text())
+            self.find_previous.emit(
+                self.getFindText(),
+                self.isCaseSensitive(),
+                self.isWholeWord(),
+            )
         elif not self._readonly and self.sender() == self.ui.pushButton_replace:
             self.replace_next.emit(
-                self.ui.lineEdit_find.text(),
-                self.ui.lineEdit_replace.text())
+                self.getFindText(),
+                self.getReplaceText(),
+                self.isCaseSensitive(),
+                self.isWholeWord(),
+            )
         elif not self._readonly and self.sender() == self.ui.pushButton_replaceall:
             self.replace_all.emit(
-                self.ui.lineEdit_find.text(),
-                self.ui.lineEdit_replace.text())
+                self.getFindText(),
+                self.getReplaceText(),
+                self.isCaseSensitive(),
+                self.isWholeWord(),
+            )
 
     def enableButton(self):
         enable = True if self.getFindText() else False

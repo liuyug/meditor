@@ -44,8 +44,6 @@ class Editor(QsciScintilla):
     _lexerStart = 0
     _lexerEnd = 0
     _imsupport = None
-    _case_sensitive = False
-    _whole_word = False
     _file_encoding = 'utf8'
     _modified = False
     _actions = None
@@ -54,14 +52,12 @@ class Editor(QsciScintilla):
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
-        font = QtGui.QFont('Monospace', 12)
-        self.setFont(font)
-        self._fontmetrics = QtGui.QFontMetrics(font)
         # Scintilla
-        self.setMarginsFont(font)
+        self._fontmetrics = QtGui.QFontMetrics(self.font())
+        self.setMarginsFont(self.font())
         self.setMarginType(0, QsciScintilla.NumberMargin)
-        self.setMarginWidth(0, self._fontmetrics.width('0000'))
-        self.setMarginWidth(1, 5)
+        self.setMarginWidth(0, self._fontmetrics.width('000') + 6)
+        # self.setMarginWidth(1, 5)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
         self.setTabWidth(self.tabWidth)
@@ -171,6 +167,23 @@ class Editor(QsciScintilla):
         action.setIcon(QtGui.QIcon.fromTheme('format-indent-less'))
         actions['unindent'] = action
 
+        action = QtWidgets.QAction(parent.tr('Zoom In'), parent)
+        action.setShortcut(QtGui.QKeySequence.ZoomIn)
+        action.triggered.connect(partial(do_action, 'zoom_in'))
+        action.setIcon(QtGui.QIcon.fromTheme('zoom-in'))
+        actions['zoom_in'] = action
+
+        action = QtWidgets.QAction(parent.tr('Zoom Original'), parent)
+        action.triggered.connect(partial(do_action, 'zoom_original'))
+        action.setIcon(QtGui.QIcon.fromTheme('zoom-original'))
+        actions['zoom_original'] = action
+
+        action = QtWidgets.QAction(parent.tr('Zoom Out'), parent)
+        action.setShortcut(QtGui.QKeySequence.ZoomOut)
+        action.triggered.connect(partial(do_action, 'zoom_out'))
+        action.setIcon(QtGui.QIcon.fromTheme('zoom-out'))
+        actions['zoom_out'] = action
+
         action = QtWidgets.QAction(parent.tr('Wrap line'), parent, checkable=True)
         action.triggered.connect(partial(do_action, 'wrap_line'))
         actions['wrap_line'] = action
@@ -236,6 +249,28 @@ class Editor(QsciScintilla):
             self._latest_input_count += 1
             self._timer.start()
 
+    def font(self):
+        font = super(Editor, self).font()
+        lexer = self.lexer()
+        if lexer:
+            font = lexer.font(QsciScintilla.STYLE_DEFAULT)
+        return font
+
+    def setFont(self, font):
+        super(Editor, self).setFont(font)
+        self._fontmetrics = QtGui.QFontMetrics(font)
+        self.setMarginsFont(font)
+        lexer = self.lexer()
+        if lexer:
+            lexer.setFont(font)
+            style = QsciScintilla.STYLE_DEFAULT
+            while style < QsciScintilla.STYLE_LASTPREDEFINED:
+                lexer.setFont(font, style)
+                style += 1
+
+    def zoom(self):
+        return self.SendScintilla(QsciScintilla.SCI_GETZOOM)
+
     def getCharAt(self, pos):
         return self.SendScintilla(QsciScintilla.SCI_GETCHARAT, pos)
 
@@ -268,6 +303,10 @@ class Editor(QsciScintilla):
         menu.addSeparator()
         menu.addAction(widget.action('indent'))
         menu.addAction(widget.action('unindent'))
+        menu.addSeparator()
+        menu.addAction(widget.action('zoom_in'))
+        menu.addAction(widget.action('zoom_original'))
+        menu.addAction(widget.action('zoom_out'))
 
     def menuAboutToShow(self, widget=None):
         if not widget:
@@ -354,7 +393,7 @@ class Editor(QsciScintilla):
         self.setEolMode(self._qsciEolModeFromLine(self.text(0)))
         length = len('%s' % self.lines())
         if length > 3:
-            self.setMarginWidth(0, self._fontmetrics.width('0' * (length + 1)))
+            self.setMarginWidth(0, self._fontmetrics.width('0' * (length + 1)) + 6)
 
     def _qsciEolModeFromOs(self):
         if sys.platform == 'win32':
@@ -498,15 +537,12 @@ class Editor(QsciScintilla):
             finddialog.replace_next.disconnect(self.replaceNext)
             finddialog.replace_all.disconnect(self.replaceAll)
 
-        self._case_sensitive = finddialog.isCaseSensitive()
-        self._whole_word = finddialog.isWholeWord()
-
-    def findNext(self, text):
+    def findNext(self, text, cs, wo):
         bfind = self.findFirst(
             text,
             False,  # re
-            self._case_sensitive,   # cs
-            self._whole_word,       # wo
+            cs,
+            wo,
             True,   # wrap
             True,   # forward
             -1, -1  # from current cursor position
@@ -519,14 +555,14 @@ class Editor(QsciScintilla):
             )
         return
 
-    def findPrevious(self, text):
+    def findPrevious(self, text, cs, wo):
         line, index = self.getCursorPosition()
         index -= len(text)
         bfind = self.findFirst(
             text,
             False,  # re
-            self._case_sensitive,   # cs
-            self._whole_word,       # wo
+            cs,
+            wo,
             True,   # wrap
             False,  # forward
             line, index,
@@ -539,14 +575,14 @@ class Editor(QsciScintilla):
             )
         return
 
-    def replaceNext(self, text, text2):
+    def replaceNext(self, text, text2, cs, wo):
         line, index = self.getCursorPosition()
         index -= len(text)
         bfind = self.findFirst(
             text,
             False,  # re
-            self._case_sensitive,   # cs
-            self._whole_word,       # wo
+            cs,
+            wo,
             True,   # wrap
             True,   # forward
             line, index,
@@ -561,15 +597,15 @@ class Editor(QsciScintilla):
             )
         return
 
-    def replaceAll(self, text, text2):
+    def replaceAll(self, text, text2, cs, wo):
         bfind = True
         while bfind:
             # line, index = self.getCursorPosition()
             bfind = self.findFirst(
                 text,
                 False,  # re
-                self._case_sensitive,   # cs
-                self._whole_word,       # wo
+                cs,
+                wo,
                 True,   # wrap
                 True,   # forward
                 -1, -1,
@@ -580,15 +616,25 @@ class Editor(QsciScintilla):
         return
 
     def setStyle(self, filename):
+        """
+        1. lookup font from style: font(font, style)
+        2. or return default font from defaultfont()
+        """
         lexer = None
         t1 = time.clock()
         if filename:
             _, ext = os.path.splitext(filename)
             ext = ext.lower()
             LexerClass = EXTENSION_LEXER.get(ext)
-            lexer = LexerClass(self)
-            if lexer.language() not in ['reStructuredText', 'Default']:
-                lexer.setFont(QtGui.QFont('Monospace', 12))
+            if LexerClass:
+                lexer = LexerClass(self)
+                lexer.setFont(self.font())
+
+                style = QsciScintilla.STYLE_DEFAULT
+                while style < QsciScintilla.STYLE_LASTPREDEFINED:
+                    lexer.setFont(self.font(), style)
+                    style += 1
+
         self.setLexer(lexer)
         if lexer:
             self.statusChanged.emit('lexer:%s' % lexer.language())
@@ -627,17 +673,34 @@ class Editor(QsciScintilla):
         elif action == 'find':
             self.find(self._find_dialog)
         elif action == 'findnext':
-            self.findNext(self._find_dialog.getFindText())
+            self.findNext(
+                self._find_dialog.getFindText(),
+                self._find_dialog.isCaseSensitive(),
+                self._find_dialog.isWholeWord(),
+            )
         elif action == 'findprev':
-            self.findPrevious(self._find_dialog.getFindText())
+            self.findPrevious(
+                self._find_dialog.getFindText(),
+                self._find_dialog.isCaseSensitive(),
+                self._find_dialog.isWholeWord(),
+            )
         elif action == 'replacenext':
             self.replaceNext(
                 self._find_dialog.getFindText(),
-                self._find_dialog.getReplaceText())
+                self._find_dialog.getReplaceText(),
+                self._find_dialog.isCaseSensitive(),
+                self._find_dialog.isWholeWord(),
+            )
         elif action == 'indent':
             self.indentLines(True)
         elif action == 'unindent':
             self.indentLines(False)
+        elif action == 'zoom_in':
+            self.zoomIn()
+        elif action == 'zoom_original':
+            self.zoomTo(0)
+        elif action == 'zoom_out':
+            self.zoomOut()
         elif action == 'wrap_line':
             if value:
                 self.setWrapMode(QsciScintilla.WrapCharacter)
@@ -662,8 +725,7 @@ class Editor(QsciScintilla):
 class CodeViewer(Editor):
     """ code viewer, readonly """
     def __init__(self, find_dialog, parent=None):
-        super(CodeViewer, self).__init__(parent)
-        self._find_dialog = find_dialog
+        super(CodeViewer, self).__init__(find_dialog, parent)
         self.setReadOnly(True)
         self._actions = self.createAction(self, self._onAction)
         self.setFocusPolicy(QtCore.Qt.NoFocus)

@@ -19,16 +19,12 @@ class QsciLexerDefault(Qsci.QsciLexerCustom):
         super(QsciLexerDefault, self).__init__(parent)
         self.setDefaultColor(QColor('#000000'))
         self.setDefaultPaper(QColor('#ffffff'))
-        self.setDefaultFont(QFont('Monospace', 12))
 
         self.setColor(QColor('#000000'), self.styles['Default'])
         self.setColor(QColor('#007f00'), self.styles['Comment'])
         self.setColor(QColor('#00007f'), self.styles['Keyword'])
         self.setColor(QColor('#7f007f'), self.styles['String'])
         self.setColor(QColor('#007f7f'), self.styles['Number'])
-        for k, v in self.styles.items():
-            self.setPaper(QColor('#ffffff'), v)
-            self.setFont(QFont('Monospace', 12), v)
 
     def language(self):
         return 'Defaut Text'
