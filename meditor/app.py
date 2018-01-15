@@ -151,7 +151,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.previewSignal.connect(self.onUpdatePreviewView)
         self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
-        logger.debug('Preview worker start')
+        logger.debug(' Preview worker start '.center(80, '-'))
         self.previewWorker.start()
         self.tab_editor.loadFile(self.tab_editor.filepath())
         self.previewCurrentText(force=True)
@@ -844,7 +844,7 @@ def main():
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)
-    logger.info('app scale factor: %s' %  app.devicePixelRatio())
+    logger.info('app scale factor: %s' % app.devicePixelRatio())
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
     if args.rstfile:
