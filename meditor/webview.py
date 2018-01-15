@@ -8,8 +8,6 @@ from .util import toUtf8
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
     exportHtml = QtCore.pyqtSignal()
-    _case_sensitive = False
-    _whole_word = False
     _actions = None
     _settings = None
     _find_dialog = None
@@ -87,9 +85,17 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         if action == 'find':
             self.find(self._find_dialog)
         elif action == 'findnext':
-            self.findNext(self._find_dialog.getFindText())
+            self.findNext(
+                self._find_dialog.getFindText(),
+                self._find_dialog.isCaseSensitive(),
+                self._find_dialog.isWholeWord(),
+            )
         elif action == 'findprev':
-            self.findPrevious(self._find_dialog.getFindText())
+            self.findPrevious(
+                self._find_dialog.getFindText(),
+                self._find_dialog.isCaseSensitive(),
+                self._find_dialog.isWholeWord(),
+            )
         elif action == 'export_pdf':
             self.do_export_pdf()
         elif action == 'export_html':
@@ -168,14 +174,19 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         finddialog.exec_()
         finddialog.find_next.disconnect(self.findNext)
         finddialog.find_previous.disconnect(self.findPrevious)
-        self._case_sensitive = finddialog.isCaseSensitive()
-        self._whole_word = finddialog.isWholeWord()
 
-    def findNext(self, text):
-        self.page().findText(text, self.page().FindFlags())
+    def findNext(self, text, cs, wo):
+        flags = self.page().FindFlags()
+        if cs:
+            flags |= self.page().FindCaseSensitively
+        self.page().findText(text, flags)
 
-    def findPrevious(self, text):
-        self.page().findText(text, self.page().FindBackward)
+    def findPrevious(self, text, cs, wo):
+        flags = self.page().FindFlags()
+        flags |= self.page().FindBackward
+        if cs:
+            flags |= self.page().FindCaseSensitively
+        self.page().findText(text, flags)
 
     def do_export_pdf(self):
         pdf_file = '%s.pdf' % self.title()

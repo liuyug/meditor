@@ -44,8 +44,6 @@ class Editor(QsciScintilla):
     _lexerStart = 0
     _lexerEnd = 0
     _imsupport = None
-    _case_sensitive = False
-    _whole_word = False
     _file_encoding = 'utf8'
     _modified = False
     _actions = None
@@ -255,7 +253,7 @@ class Editor(QsciScintilla):
         font = super(Editor, self).font()
         lexer = self.lexer()
         if lexer:
-            font = lexer.font(32)
+            font = lexer.font(QsciScintilla.STYLE_DEFAULT)
         return font
 
     def setFont(self, font):
@@ -539,15 +537,12 @@ class Editor(QsciScintilla):
             finddialog.replace_next.disconnect(self.replaceNext)
             finddialog.replace_all.disconnect(self.replaceAll)
 
-        self._case_sensitive = finddialog.isCaseSensitive()
-        self._whole_word = finddialog.isWholeWord()
-
-    def findNext(self, text):
+    def findNext(self, text, cs, wo):
         bfind = self.findFirst(
             text,
             False,  # re
-            self._case_sensitive,   # cs
-            self._whole_word,       # wo
+            cs,
+            wo,
             True,   # wrap
             True,   # forward
             -1, -1  # from current cursor position
@@ -560,14 +555,14 @@ class Editor(QsciScintilla):
             )
         return
 
-    def findPrevious(self, text):
+    def findPrevious(self, text, cs, wo):
         line, index = self.getCursorPosition()
         index -= len(text)
         bfind = self.findFirst(
             text,
             False,  # re
-            self._case_sensitive,   # cs
-            self._whole_word,       # wo
+            cs,
+            wo,
             True,   # wrap
             False,  # forward
             line, index,
@@ -580,14 +575,14 @@ class Editor(QsciScintilla):
             )
         return
 
-    def replaceNext(self, text, text2):
+    def replaceNext(self, text, text2, cs, wo):
         line, index = self.getCursorPosition()
         index -= len(text)
         bfind = self.findFirst(
             text,
             False,  # re
-            self._case_sensitive,   # cs
-            self._whole_word,       # wo
+            cs,
+            wo,
             True,   # wrap
             True,   # forward
             line, index,
@@ -602,15 +597,15 @@ class Editor(QsciScintilla):
             )
         return
 
-    def replaceAll(self, text, text2):
+    def replaceAll(self, text, text2, cs, wo):
         bfind = True
         while bfind:
             # line, index = self.getCursorPosition()
             bfind = self.findFirst(
                 text,
                 False,  # re
-                self._case_sensitive,   # cs
-                self._whole_word,       # wo
+                cs,
+                wo,
                 True,   # wrap
                 True,   # forward
                 -1, -1,
@@ -678,13 +673,24 @@ class Editor(QsciScintilla):
         elif action == 'find':
             self.find(self._find_dialog)
         elif action == 'findnext':
-            self.findNext(self._find_dialog.getFindText())
+            self.findNext(
+                self._find_dialog.getFindText(),
+                self._find_dialog.isCaseSensitive(),
+                self._find_dialog.isWholeWord(),
+            )
         elif action == 'findprev':
-            self.findPrevious(self._find_dialog.getFindText())
+            self.findPrevious(
+                self._find_dialog.getFindText(),
+                self._find_dialog.isCaseSensitive(),
+                self._find_dialog.isWholeWord(),
+            )
         elif action == 'replacenext':
             self.replaceNext(
                 self._find_dialog.getFindText(),
-                self._find_dialog.getReplaceText())
+                self._find_dialog.getReplaceText(),
+                self._find_dialog.isCaseSensitive(),
+                self._find_dialog.isWholeWord(),
+            )
         elif action == 'indent':
             self.indentLines(True)
         elif action == 'unindent':
