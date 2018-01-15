@@ -30,9 +30,6 @@ from .findreplace import FindReplaceDialog
 
 requestPreview = threading.Event()
 
-# for debug
-LOG_FILENAME = os.path.join(__home_data_path__, 'rsteditor.log')
-
 # for logger
 logger = None
 
@@ -91,6 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAcceptDrops(True)
         # main window
         self.findDialog = FindReplaceDialog(self)
+        self.findDialog.setMinimumWidth(640)
 
         self.tab_editor = TabEditor(self.settings, self.findDialog, self)
         self.setCentralWidget(self.tab_editor)
@@ -105,7 +103,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # right dock window
         self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Preview'), self)
         self.dock_webview.setObjectName('dock_webview')
-        self.webview = webview.WebView(self.findDialog, self.dock_webview)
+        self.webview = webview.WebView(self.settings, self.findDialog, self.dock_webview)
         self.dock_webview.setWidget(self.webview)
         self.dock_webview.visibilityChanged.connect(partial(self.onDockVisibility, 'webview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
@@ -158,11 +156,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewWorker.start()
         self.tab_editor.loadFile(self.tab_editor.filepath())
         self.previewCurrentText(force=True)
-
-        print('mainwindow', self.devicePixelRatio())
-        print('explorer', self.explorer.devicePixelRatio())
-        print('codeview', self.codeview.devicePixelRatio())
-        print('webview', self.webview.page().view().devicePixelRatio())
 
     def setupMenu(self):
         settings = self.settings
@@ -393,6 +386,10 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.addAction(self.tab_editor.action('paste'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('find'))
+        tb_normal.addSeparator()
+        tb_normal.addAction(self.tab_editor.action('zoom_in'))
+        tb_normal.addAction(self.tab_editor.action('zoom_original'))
+        tb_normal.addAction(self.tab_editor.action('zoom_out'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.dock_webview.toggleViewAction())
         self.addToolBar(tb_normal)
@@ -797,6 +794,7 @@ def main():
                         version='%%(prog)s %s' % __app_version__)
     parser.add_argument('-v', '--verbose', help='verbose help',
                         action='count', default=0)
+    parser.add_argument('--log-file', help='output to log file')
     parser.add_argument('rstfile', nargs='?', help='rest file')
     args = parser.parse_args()
 
@@ -807,32 +805,31 @@ def main():
     else:
         formatter = logging.Formatter('%(message)s')
 
-    file_handler = logging.handlers.TimedRotatingFileHandler(
-        filename=LOG_FILENAME,
-        when='D',
-        interval=1,
-        backupCount=7,
-        utc=False,
-    )
-
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(globalvars.logging_level)
-
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
     console_handler.setLevel(globalvars.logging_level)
 
     app_logger = logging.getLogger(__name__.partition('.')[0])
     app_logger.setLevel(logging.DEBUG)
-    app_logger.addHandler(file_handler)
     app_logger.addHandler(console_handler)
+
+    if args.log_file:
+        file_handler = logging.handlers.TimedRotatingFileHandler(
+            filename=args.log_file,
+            when='D',
+            interval=1,
+            backupCount=7,
+            utc=False,
+        )
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(globalvars.logging_level)
+        app_logger.addHandler(file_handler)
 
     global logger
     logger = logging.getLogger(__name__)
 
     logger.info('=== %s v%s begin ===' % (__app_name__, __app_version__))
     logger.debug(args)
-    logger.info('Log: %s' % LOG_FILENAME)
     logger.info('app  data path: ' + __data_path__)
     logger.info('home data path: ' + __home_data_path__)
 
@@ -848,10 +845,9 @@ def main():
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)
+    logger.info('app scale factor: %s' %  app.devicePixelRatio())
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
-    print('app', app.devicePixelRatio())
-    print('desktop', app.desktop().devicePixelRatio())
     if args.rstfile:
         win.tab_editor.loadFile(os.path.abspath(args.rstfile))
     win.show()

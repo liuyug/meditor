@@ -178,6 +178,9 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         self.rstyles = dict(zip(*(self.styles.values(), self.styles.keys())))
         self.inline_rstyles = dict(zip(*(self.inline_styles.values(), self.inline_styles.keys())))
 
+        self.setDefaultColor(QtGui.QColor('#000000'))
+        self.setDefaultPaper(QtGui.QColor('#ffffff'))
+
         self.block_tokens = []
         self.inline_tokens = []
         for key, regex in self.token_regex:
@@ -191,7 +194,12 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                     regex,
                     re.UNICODE | re.MULTILINE | re.IGNORECASE,
                 )))
+
         self.setDebugLevel(globalvars.logging_level)
+
+        logger.debug('Loading properties')
+        self.readProperties()
+
         rst_prop_files = [
             os.path.join(__home_data_path__, 'rst.properties'),
             os.path.join(__data_path__, 'rst.properties'),
@@ -202,9 +210,6 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         if os.path.exists(rst_prop_file):
             logger.debug('Loading %s', rst_prop_file)
             self.readConfig(rst_prop_file)
-        else:
-            logger.debug('Loading properties')
-            self.readProperties()
 
     def language(self):
         return 'reStructuredText'
@@ -327,7 +332,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                     font.setUnderline(True)
                 self.setFont(font, style)
 
-    def readProperties(self, style):
+    def readProperties(self):
         for style, value in self.properties.items():
             self.do_read_style(value.split(','), style)
 

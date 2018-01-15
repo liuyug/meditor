@@ -13,7 +13,7 @@ import chardet
 from .scilib import _SciImSupport, EXTENSION_LEXER
 
 from .util import toUtf8
-from . import __home_data_path__, __data_path__, __default_basename__, __font_name__
+from . import __home_data_path__, __data_path__, __default_basename__, __monospace__
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class Editor(QsciScintilla):
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
-        self.setFont(QtGui.QFont(__font_name__))
+        self.setFont(QtGui.QFont(__monospace__))
         # Scintilla
         self.setMarginsFont(self.font())
         self.setMarginType(0, QsciScintilla.NumberMargin)
@@ -170,6 +170,23 @@ class Editor(QsciScintilla):
         action.setIcon(QtGui.QIcon.fromTheme('format-indent-less'))
         actions['unindent'] = action
 
+        action = QtWidgets.QAction(parent.tr('Zoom In'), parent)
+        action.setShortcut(QtGui.QKeySequence.ZoomIn)
+        action.triggered.connect(partial(do_action, 'zoom_in'))
+        action.setIcon(QtGui.QIcon.fromTheme('zoom-in'))
+        actions['zoom_in'] = action
+
+        action = QtWidgets.QAction(parent.tr('Zoom Original'), parent)
+        action.triggered.connect(partial(do_action, 'zoom_original'))
+        action.setIcon(QtGui.QIcon.fromTheme('zoom-original'))
+        actions['zoom_original'] = action
+
+        action = QtWidgets.QAction(parent.tr('Zoom Out'), parent)
+        action.setShortcut(QtGui.QKeySequence.ZoomOut)
+        action.triggered.connect(partial(do_action, 'zoom_out'))
+        action.setIcon(QtGui.QIcon.fromTheme('zoom-out'))
+        actions['zoom_out'] = action
+
         action = QtWidgets.QAction(parent.tr('Wrap line'), parent, checkable=True)
         action.triggered.connect(partial(do_action, 'wrap_line'))
         actions['wrap_line'] = action
@@ -239,8 +256,15 @@ class Editor(QsciScintilla):
         super(Editor, self).setFont(font)
         self.setMarginsFont(font)
         self._fontmetrics = QtGui.QFontMetrics(font)
+        lexer = self.lexer()
+        if lexer:
+            lexer.setFont(font)
+            style = QsciScintilla.STYLE_DEFAULT
+            while style < QsciScintilla.STYLE_LASTPREDEFINED:
+                lexer.setFont(font, style)
+                style += 1
 
-    def getZoom(self):
+    def zoom(self):
         return self.SendScintilla(QsciScintilla.SCI_GETZOOM)
 
     def getCharAt(self, pos):
@@ -275,6 +299,10 @@ class Editor(QsciScintilla):
         menu.addSeparator()
         menu.addAction(widget.action('indent'))
         menu.addAction(widget.action('unindent'))
+        menu.addSeparator()
+        menu.addAction(widget.action('zoom_in'))
+        menu.addAction(widget.action('zoom_original'))
+        menu.addAction(widget.action('zoom_out'))
 
     def menuAboutToShow(self, widget=None):
         if not widget:
@@ -361,7 +389,7 @@ class Editor(QsciScintilla):
         self.setEolMode(self._qsciEolModeFromLine(self.text(0)))
         length = len('%s' % self.lines())
         if length > 3:
-            self.setMarginWidth(0, self._fontmetrics.width('0' * (length + 1)))
+            self.setMarginWidth(0, self._fontmetrics.width('0' * (length + 1)) + 6)
 
     def _qsciEolModeFromOs(self):
         if sys.platform == 'win32':
@@ -655,6 +683,12 @@ class Editor(QsciScintilla):
             self.indentLines(True)
         elif action == 'unindent':
             self.indentLines(False)
+        elif action == 'zoom_in':
+            self.zoomIn()
+        elif action == 'zoom_original':
+            self.zoomTo(0)
+        elif action == 'zoom_out':
+            self.zoomOut()
         elif action == 'wrap_line':
             if value:
                 self.setWrapMode(QsciScintilla.WrapCharacter)

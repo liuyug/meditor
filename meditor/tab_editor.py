@@ -72,6 +72,10 @@ class TabEditor(QtWidgets.QTabWidget):
         action.triggered.connect(self._onCloseAll)
         self._actions['close_all'] = action
 
+        action = QtWidgets.QAction(self.tr('Default font'), self)
+        action.triggered.connect(self._onDefaultFont)
+        self._actions['default_font'] = action
+
         action = QtWidgets.QAction(self.tr('One editor'), self, checkable=True)
         action.triggered.connect(self._onOneEditor)
         action.setChecked(self._one_editor)
@@ -81,10 +85,12 @@ class TabEditor(QtWidgets.QTabWidget):
         self.action('wrap_line').setChecked(self._wrap_mode > 0)
 
         value = self._settings.value('editor/opened_files', type=str)
-        for filepath in value.split(';')[::-1]:
+        for v in value.split(';')[::-1]:
+            filepath, zoom = v.split(':')
             if not os.path.exists(filepath):
                 continue
-            self.open(os.path.abspath(filepath))
+            index = self.open(os.path.abspath(filepath))
+            self.widget(index).zoomTo(int(zoom) if zoom else 0)
             if self._one_editor:
                 break
         if self.count() == 0:
@@ -95,7 +101,12 @@ class TabEditor(QtWidgets.QTabWidget):
             if not self._saveAndContinue(x):
                 event.ignore()
                 return
-        self._settings.setValue('editor/opened_files', ';'.join(self.openedFiles()))
+
+        opened = []
+        for x in range(self.count()):
+            editor = self.widget(x)
+            opened.append('%s:%s' % (editor.getFileName(), editor.zoom()))
+        self._settings.setValue('editor/opened_files', ';'.join(opened))
         self._settings.setValue('editor/wrap_mode', self._wrap_mode)
         self._settings.setValue('editor/one_editor', self._one_editor)
 
@@ -232,6 +243,11 @@ class TabEditor(QtWidgets.QTabWidget):
         self.do_close_all()
         self.new('.rst')
 
+    def _onDefaultFont(self):
+        return
+        for x in range(self.count()):
+            self.widget(x).setFont()
+
     def _onOneEditor(self, value):
         self._one_editor = value
 
@@ -303,7 +319,10 @@ class TabEditor(QtWidgets.QTabWidget):
         return editor.status()
 
     def openedFiles(self):
-        return [self.filepath(x) for x in range(self.count())]
+        opened = []
+        for x in range(self.count()):
+            opened.append(self.filepath(x))
+        return opened
 
     def title(self, index=None, full=False):
         if index is None:
@@ -355,6 +374,7 @@ class TabEditor(QtWidgets.QTabWidget):
         widget.menuEdit(menu, self)
 
     def menuSetting(self, menu):
+        menu.addAction(self.action('default_font'))
         menu.addAction(self.action('wrap_line'))
         menu.addAction(self.action('one_editor'))
 

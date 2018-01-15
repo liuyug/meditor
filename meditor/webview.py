@@ -11,10 +11,12 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     _case_sensitive = False
     _whole_word = False
     _actions = None
+    _settings = None
     _find_dialog = None
 
-    def __init__(self, find_dialog, parent=None):
+    def __init__(self, settings, find_dialog, parent=None):
         super(WebView, self).__init__(parent)
+        self._settings = settings
         self._find_dialog = find_dialog
         self.settings().setAttribute(self.settings().PluginsEnabled, False)
         self.setAcceptDrops(False)
@@ -23,15 +25,12 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.page().setHtml('')
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
-        self.setZoomFactor(1.5)
 
         self._actions = {}
         action = self.pageAction(self.page().Copy)
-        action.setShortcut(QtGui.QKeySequence.Copy)
         self._actions['copy'] = action
 
         action = self.pageAction(self.page().SelectAll)
-        action.setShortcut(QtGui.QKeySequence.SelectAll)
         self._actions['select_all'] = action
 
         action = QtWidgets.QAction(self.tr('Export to PDF'), self)
@@ -43,25 +42,41 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self._actions['export_html'] = action
 
         action = QtWidgets.QAction(self.tr('Find'), self)
-        action.setShortcut(QtGui.QKeySequence.Find)
         action.triggered.connect(partial(self._onAction, 'find'))
         self._actions['find'] = action
 
         action = QtWidgets.QAction(self.tr('Find Next'), self)
-        action.setShortcut(QtGui.QKeySequence.FindNext)
         action.triggered.connect(partial(self._onAction, 'findnext'))
         self._actions['find_next'] = action
 
         action = QtWidgets.QAction(self.tr('Find Previous'), self)
-        action.setShortcut(QtGui.QKeySequence.FindPrevious)
         action.triggered.connect(partial(self._onAction, 'findprev'))
         self._actions['find_prev'] = action
+
+        action = QtWidgets.QAction(self.tr('Zoom In'), self)
+        action.triggered.connect(partial(self._onAction, 'zoom_in'))
+        self._actions['zoom_in'] = action
+
+        action = QtWidgets.QAction(self.tr('Zoom Original'), self)
+        action.triggered.connect(partial(self._onAction, 'zoom_original'))
+        self._actions['zoom_original'] = action
+
+        action = QtWidgets.QAction(self.tr('Zoom Out'), self)
+        action.triggered.connect(partial(self._onAction, 'zoom_out'))
+        self._actions['zoom_out'] = action
 
         # popup menu
         self.popupMenu = QtWidgets.QMenu(self)
         self.menuEdit(self.popupMenu)
         self.popupMenu.addSeparator()
         self.menuExport(self.popupMenu)
+
+        # zoom
+        scale = self._settings.value('webview/scale', 1.0, type=float)
+        self.setZoomFactor(scale)
+
+    def closeEvent(self, event):
+        self._settings.setValue('webview/scale', self.zoomFactor())
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -79,6 +94,14 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
             self.do_export_pdf()
         elif action == 'export_html':
             self.exportHtml.emit()
+        elif action == 'zoom_in':
+            factor = self.zoomFactor()
+            self.setZoomFactor(factor + 0.1)
+        elif action == 'zoom_original':
+            self.setZoomFactor(1.0)
+        elif action == 'zoom_out':
+            factor = self.zoomFactor()
+            self.setZoomFactor(factor - 0.1)
 
     def onLoadFinished(self, ok):
         pass
@@ -92,6 +115,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     def menuAboutToShow(self):
         self.action('export_pdf').setEnabled(self.isVisible())
         self.action('export_html').setEnabled(self.isVisible())
+        # page widget will set enabled
 
     def menuEdit(self, menu):
         menu.addAction(self.action('copy'))
@@ -103,7 +127,11 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         menu.addAction(self.action('find'))
         menu.addAction(self.action('find_next'))
         menu.addAction(self.action('find_prev'))
-        # page widget will set enabled
+
+        menu.addSeparator()
+        menu.addAction(self.action('zoom_in'))
+        menu.addAction(self.action('zoom_original'))
+        menu.addAction(self.action('zoom_out'))
 
     def menuExport(self, menu):
         menu.addAction(self.action('export_pdf'))
