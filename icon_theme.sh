@@ -10,7 +10,7 @@ fi
 
 theme=$1
 
-theme_py=${theme}_icon_theme.py
+theme_py=qrc_icon_theme.py
 theme_qrc=theme.qrc
 
 

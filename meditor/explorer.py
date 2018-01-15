@@ -41,7 +41,6 @@ class Workspace(QtWidgets.QTreeWidget):
         self.setExpandsOnDoubleClick(True)
 
         self.itemActivated.connect(self.onItemActivated)
-        # self.pathLoaded.connect(self.onPathLoaded)
         # popup menu
         self._actions = {}
         action = QtWidgets.QAction(self.tr('reStructuredText'), self)
@@ -52,7 +51,6 @@ class Workspace(QtWidgets.QTreeWidget):
 
         action = QtWidgets.QAction(self.tr('Markdown'), self)
         action.triggered.connect(partial(self.onNewFile, '.md'))
-        action.setIcon(QtGui.QIcon.fromTheme('document-new'))
         self._actions['new_md'] = action
 
         action = QtWidgets.QAction(self.tr('New &directory'), self)
@@ -80,7 +78,8 @@ class Workspace(QtWidgets.QTreeWidget):
         self._actions['open_workspace'] = action
 
         self.popupMenu = QtWidgets.QMenu(self)
-        submenu = QtWidgets.QMenu(self.tr('New'), self.popupMenu)
+
+        submenu = self.popupMenu.addMenu(self.tr('New'))
         submenu.addAction(self.action('new_rst'))
         submenu.addAction(self.action('new_md'))
         self.popupMenu.addMenu(submenu)

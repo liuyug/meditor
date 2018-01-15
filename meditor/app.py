@@ -80,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._icon_path = os.path.join(__data_path__, 'meditor-text-editor.ico')
 
         if sys.platform != 'linux':
-            from . import nuoveXT2_icon_theme
+            from . import qrc_icon_theme
             QtGui.QIcon.setThemeName('nuoveXT2')
 
         self.setWindowIcon(
@@ -185,8 +185,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # edit
         # view
         # preview
-        # self.previewAction = QtWidgets.QAction(self.tr('Preview'), self)
-        # self.previewAction.triggered.connect(self.dock_webview.toggleViewAction())
+        self.previewAction = QtWidgets.QAction(self.tr('Preview'), self, checkable=True)
+        self.previewAction.triggered.connect(partial(self.onMenuPreview, 'preview'))
+        self.previewAction.setChecked(
+            settings.value('view/webview', True, type=bool) or
+            settings.value('view/codeview', True, type=bool))
 
         previewsaveAction = QtWidgets.QAction(self.tr('Preview on save'), self, checkable=True)
         previewsaveAction.triggered.connect(partial(self.onMenuPreview, 'previewonsave'))
@@ -294,10 +297,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # menu
         menubar = self.menuBar()
         menu = menubar.addMenu(self.tr('&File'))
-        submenu = QtWidgets.QMenu(self.tr('&New'), menu)
+        submenu = menu.addMenu(self.tr('&New'))
         submenu.addAction(self.explorer.action('new_rst'))
         submenu.addAction(self.explorer.action('new_md'))
-
         menu.addMenu(submenu)
         menu.addAction(newwindowAction)
         menu.addAction(self.tab_editor.action('open'))
@@ -372,8 +374,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def setupToolbar(self):
         tb_normal = QtWidgets.QToolBar('normal')
         tb_normal.setObjectName('normal')
-        tb_normal.addAction(self.explorer.action('new_rst'))
-        tb_normal.addAction(self.explorer.action('new_md'))
+
+        newButton = QtWidgets.QToolButton(self)
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(self.explorer.action('new_rst'))
+        menu.addAction(self.explorer.action('new_md'))
+        newButton.setMenu(menu)
+        newButton.setPopupMode(newButton.MenuButtonPopup)
+        newButton.setDefaultAction(self.explorer.action('new_rst'))
+        tb_normal.addWidget(newButton)
+
+        # tb_normal.addAction(self.explorer.action('new_rst'))
+        # tb_normal.addAction(self.explorer.action('new_md'))
         tb_normal.addAction(self.tab_editor.action('open'))
         tb_normal.addAction(self.tab_editor.action('save'))
         tb_normal.addSeparator()
@@ -390,7 +402,7 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.addAction(self.tab_editor.action('zoom_original'))
         tb_normal.addAction(self.tab_editor.action('zoom_out'))
         tb_normal.addSeparator()
-        tb_normal.addAction(self.dock_webview.toggleViewAction())
+        tb_normal.addAction(self.previewAction)
         self.addToolBar(tb_normal)
 
     def setupStatusBar(self):
@@ -575,7 +587,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onMenuPreview(self, label, checked):
         if label == 'preview':
-            self.previewCurrentText(force=True)
+            if checked:
+                self.dock_webview.setVisible(True)
+            else:
+                self.dock_webview.setVisible(False)
+                self.dock_codeview.setVisible(False)
         elif label == 'previewonsave':
             self.settings.setValue('preview/onsave', checked)
         elif label == 'previewoninput':
