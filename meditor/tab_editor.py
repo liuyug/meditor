@@ -32,6 +32,7 @@ class TabEditor(QtWidgets.QTabWidget):
     _settings = None
     _wrap_mode = 0
     _one_editor = False
+    _editor_font = None
 
     def __init__(self, settings, find_dialog, parent=None):
         super(TabEditor, self).__init__(parent)
@@ -83,9 +84,15 @@ class TabEditor(QtWidgets.QTabWidget):
         self._actions.update(Editor.createAction(self, self._onAction))
         self.action('wrap_line').setChecked(self._wrap_mode > 0)
 
+        value = self._settings.value('editor/font', __monospace__, type=str)
+        self._editor_font = QtGui.QFont()
+        self._editor_font.fromString(value)
+        self.do_set_font(self._editor_font)
+        logger.info('editor font: %s' % (self._editor_font.toString()))
+
         value = self._settings.value('editor/opened_files', type=str)
         for v in value.split(';')[::-1]:
-            filepath, zoom = v.split(':')
+            filepath, _, zoom = v.rpartition(':')
             if not os.path.exists(filepath):
                 continue
             index = self.open(os.path.abspath(filepath))
@@ -94,11 +101,6 @@ class TabEditor(QtWidgets.QTabWidget):
                 break
         if self.count() == 0:
             self.new('.rst')
-        value = self._settings.value('editor/font', __monospace__, type=str)
-        font = QtGui.QFont()
-        font.fromString(value)
-        self.do_set_font(font)
-        logger.info('editor font: %s' % (font.toString()))
 
     def closeEvent(self, event):
         for x in range(self.count()):
@@ -106,10 +108,7 @@ class TabEditor(QtWidgets.QTabWidget):
                 event.ignore()
                 return
 
-        font = self.currentWidget().font()
-        widget = self.currentWidget()
-        font = widget.font()
-        self._settings.setValue('editor/font', font.toString())
+        self._settings.setValue('editor/font', self._editor_font.toString())
         opened = []
         for x in range(self.count()):
             editor = self.widget(x)
@@ -252,12 +251,10 @@ class TabEditor(QtWidgets.QTabWidget):
         self.new('.rst')
 
     def _onDefaultFont(self):
-        widget = self.currentWidget()
-        if not widget:
-            return
-        font, ok = QtWidgets.QFontDialog.getFont(widget.font(), self)
+        font, ok = QtWidgets.QFontDialog.getFont(self._editor_font, self)
         if ok:
-            self.do_set_font(font)
+            self._editor_font = font
+            self.do_set_font(self._editor_font)
 
     def _onOneEditor(self, value):
         self._one_editor = value
@@ -281,6 +278,7 @@ class TabEditor(QtWidgets.QTabWidget):
             self.do_close_all()
         editor = self._newEditor()
         editor.newFile(ext)
+        editor.setFont(self._editor_font)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
         self.setCurrentIndex(index)
@@ -294,6 +292,7 @@ class TabEditor(QtWidgets.QTabWidget):
             self.do_close_all()
         editor = self._newEditor()
         editor.readFile(filepath)
+        editor.setFont(self._editor_font)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
         self.setCurrentIndex(index)
@@ -385,9 +384,10 @@ class TabEditor(QtWidgets.QTabWidget):
         widget.menuEdit(menu, self)
 
     def menuSetting(self, menu):
-        menu.addAction(self.action('default_font'))
         menu.addAction(self.action('wrap_line'))
         menu.addAction(self.action('one_editor'))
+        menu.addSeparator()
+        menu.addAction(self.action('default_font'))
 
     def _onAction(self, action, value):
         widget = self.currentWidget()
