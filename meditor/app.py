@@ -88,7 +88,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAcceptDrops(True)
         # main window
         self.findDialog = FindReplaceDialog(self)
-        self.findDialog.setMinimumWidth(640)
 
         self.tab_editor = TabEditor(self.settings, self.findDialog, self)
         self.setCentralWidget(self.tab_editor)

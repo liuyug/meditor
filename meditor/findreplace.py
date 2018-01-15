@@ -29,6 +29,7 @@ class FindReplaceDialog(QtWidgets.QDialog):
         self.ui.pushButton_find_previous.clicked.connect(self.handleButton)
         self.ui.pushButton_replace.clicked.connect(self.handleButton)
         self.ui.pushButton_replaceall.clicked.connect(self.handleButton)
+        self.setMinimumWidth(640)
 
     def setReadOnly(self, readonly):
         self._readonly = readonly

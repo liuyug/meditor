@@ -1,12 +1,11 @@
 
-import sys
 import os.path
 import logging
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from .editor import Editor
-from . import __default_basename__
+from . import __default_basename__, __monospace__
 
 
 logger = logging.getLogger(__name__)
@@ -95,6 +94,11 @@ class TabEditor(QtWidgets.QTabWidget):
                 break
         if self.count() == 0:
             self.new('.rst')
+        value = self._settings.value('editor/font', __monospace__, type=str)
+        font = QtGui.QFont()
+        font.fromString(value)
+        self.do_set_font(font)
+        logger.info('editor font: %s' % (font.toString()))
 
     def closeEvent(self, event):
         for x in range(self.count()):
@@ -102,6 +106,10 @@ class TabEditor(QtWidgets.QTabWidget):
                 event.ignore()
                 return
 
+        font = self.currentWidget().font()
+        widget = self.currentWidget()
+        font = widget.font()
+        self._settings.setValue('editor/font', font.toString())
         opened = []
         for x in range(self.count()):
             editor = self.widget(x)
@@ -244,9 +252,12 @@ class TabEditor(QtWidgets.QTabWidget):
         self.new('.rst')
 
     def _onDefaultFont(self):
-        return
-        for x in range(self.count()):
-            self.widget(x).setFont()
+        widget = self.currentWidget()
+        if not widget:
+            return
+        font, ok = QtWidgets.QFontDialog.getFont(widget.font(), self)
+        if ok:
+            self.do_set_font(font)
 
     def _onOneEditor(self, value):
         self._one_editor = value
@@ -394,3 +405,7 @@ class TabEditor(QtWidgets.QTabWidget):
                 return
             self.removeTab(x)
             del widget
+
+    def do_set_font(self, font):
+        for x in range(self.count()):
+            self.widget(x).setFont(font)

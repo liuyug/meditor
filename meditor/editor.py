@@ -2,7 +2,6 @@
 import sys
 import time
 import os.path
-import codecs
 import logging
 from functools import partial
 
@@ -13,7 +12,7 @@ import chardet
 from .scilib import _SciImSupport, EXTENSION_LEXER
 
 from .util import toUtf8
-from . import __home_data_path__, __data_path__, __default_basename__, __monospace__
+from . import __home_data_path__, __data_path__, __default_basename__
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +54,8 @@ class Editor(QsciScintilla):
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
-        self.setFont(QtGui.QFont(__monospace__))
         # Scintilla
+        self._fontmetrics = QtGui.QFontMetrics(self.font())
         self.setMarginsFont(self.font())
         self.setMarginType(0, QsciScintilla.NumberMargin)
         self.setMarginWidth(0, self._fontmetrics.width('000') + 6)
@@ -222,7 +221,7 @@ class Editor(QsciScintilla):
             self.pauseLexer(False)
 
         # input with preedit, from TortoiseHg
-        if False and  self._imsupport:
+        if False and self._imsupport:
             self.removeSelectedText()
             self._imsupport.removepreedit()
             self._imsupport.commitstr(event.replacementStart(),
@@ -252,10 +251,17 @@ class Editor(QsciScintilla):
             self._latest_input_count += 1
             self._timer.start()
 
+    def font(self):
+        font = super(Editor, self).font()
+        lexer = self.lexer()
+        if lexer:
+            font = lexer.font(32)
+        return font
+
     def setFont(self, font):
         super(Editor, self).setFont(font)
-        self.setMarginsFont(font)
         self._fontmetrics = QtGui.QFontMetrics(font)
+        self.setMarginsFont(font)
         lexer = self.lexer()
         if lexer:
             lexer.setFont(font)
