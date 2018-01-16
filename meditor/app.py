@@ -376,7 +376,7 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.setObjectName('normal')
 
         newButton = QtWidgets.QToolButton(self)
-        menu = QtWidgets.QMenu(self)
+        menu = QtWidgets.QMenu(self.tr('New'), self)
         menu.addAction(self.explorer.action('new_rst'))
         menu.addAction(self.explorer.action('new_md'))
         newButton.setMenu(menu)
