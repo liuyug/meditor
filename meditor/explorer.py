@@ -328,6 +328,7 @@ class Workspace(QtWidgets.QTreeWidget):
             item = self.topLevelItem(index)
             if root_path == item.data(0, self.role_path):
                 self.setCurrentItem(item)
+                self.scrollToItem(item)
                 return
         root_name = os.path.basename(root_path)
         root_item = self.createRoot(root_path, root_name)
@@ -337,6 +338,7 @@ class Workspace(QtWidgets.QTreeWidget):
         root_item.setExpanded(expand)
         if not self.currentItem():
             self.setCurrentItem(root_item)
+            self.scrollToItem(root_item)
 
     def getFileIcon(self, path, style=None):
         if path == '/':

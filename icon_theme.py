@@ -20,9 +20,8 @@ def collect_iconames(source_dir):
 
 
 def create_qrc(theme_dir, qrc_file, added_icons=None):
-    theme_name = os.path.basename(theme_dir)
     tree = etree.Element('RCC', version='1.0')
-    element_qresource = etree.SubElement(tree, 'qresource', prefix='icons/%s' % theme_name)
+    element_qresource = etree.SubElement(tree, 'qresource', prefix='icons/embed_qrc')
 
     element = etree.SubElement(element_qresource, 'file', alias='index.theme')
     element.text = os.path.relpath(os.path.join(theme_dir, 'index.theme'))

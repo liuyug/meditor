@@ -83,7 +83,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if sys.platform != 'linux':
             from . import qrc_icon_theme
-            QtGui.QIcon.setThemeName('nuoveXT2')
+            QtGui.QIcon.setThemeName('embed_qrc')
 
         self.setWindowIcon(
             QtGui.QIcon.fromTheme(
