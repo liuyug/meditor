@@ -104,6 +104,10 @@ class Workspace(QtWidgets.QTreeWidget):
                 continue
             path, _, expand = v.rpartition(':')
             self.appendRootPath(path, expand == 'True')
+        # first root item is currrent item.
+        if self.topLevelItemCount() > 0:
+            root = self.topLevelItem(0)
+            self.setCurrentItem(root)
 
     def closeEvent(self, event):
         root_paths = []
@@ -336,9 +340,8 @@ class Workspace(QtWidgets.QTreeWidget):
         self.addTopLevelItem(root_item)
         self.expandDir(root_item)
         root_item.setExpanded(expand)
-        if not self.currentItem():
-            self.setCurrentItem(root_item)
-            self.scrollToItem(root_item)
+        self.setCurrentItem(root_item)
+        self.scrollToItem(root_item)
 
     def getFileIcon(self, path, style=None):
         if path == '/':
