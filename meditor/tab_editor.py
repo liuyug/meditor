@@ -144,6 +144,10 @@ class TabEditor(QtWidgets.QTabWidget):
         widget = self.currentWidget()
         widget and widget.do_copy_available(value, self)
 
+    def _onFilesDropped(self, value):
+        for fname in value.split(';'):
+            self.loadFile(fname)
+
     def _onVerticalScrollBarChanged(self, value):
         index = self.currentIndex()
         if index < 0:
@@ -266,6 +270,8 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.inputPreviewRequest.connect(self._onInputPreview)
         editor.modificationChanged.connect(self._onModificationChanged)
         editor.copyAvailable.connect(self._onCopyAvailable)
+        editor.filesDropped.connect(self._onFilesDropped)
+
         editor.enableLexer(self._enable_lexer)
         editor.setWrapMode(self._wrap_mode)
         return editor
