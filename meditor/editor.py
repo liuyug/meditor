@@ -48,6 +48,7 @@ class Editor(QsciScintilla):
     _modified = False
     _actions = None
     _find_dialog = None
+    _margin_width = 3
 
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
@@ -56,8 +57,7 @@ class Editor(QsciScintilla):
         self._fontmetrics = QtGui.QFontMetrics(self.font())
         self.setMarginsFont(self.font())
         self.setMarginType(0, QsciScintilla.NumberMargin)
-        self.setMarginWidth(0, self._fontmetrics.width('000') + 6)
-        # self.setMarginWidth(1, 5)
+        self.setMarginWidth(0, self._fontmetrics.width('0' * self._margin_width) + 6)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
         self.setTabWidth(self.tabWidth)
@@ -70,7 +70,9 @@ class Editor(QsciScintilla):
 
         self.inputMethodEventCount = 0
         self._imsupport = _SciImSupport(self)
+
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
+        self.linesChanged.connect(self.onLinesChanged)
 
         self._timer = QtCore.QTimer(self)
         self._timer.setInterval(self._timer_interval * 1000)
@@ -341,6 +343,9 @@ class Editor(QsciScintilla):
         cursor = 'Ln %s/%s Col %s/80' % (line + 1, self.lines(), index + 1)
         self.statusChanged.emit('cursor:%s' % cursor)
 
+    def onLinesChanged(self):
+        self.do_set_margin_width()
+
     def isPasteAvailable(self):
         """ always return 1 in GTK+ """
         result = self.SendScintilla(QsciScintilla.SCI_CANPASTE)
@@ -391,17 +396,17 @@ class Editor(QsciScintilla):
         self.setCursorPosition(0, 0)
         self.setModified(False)
         self.setEolMode(self._qsciEolModeFromLine(self.text(0)))
-        length = len('%s' % self.lines())
-        if length > 3:
-            self.setMarginWidth(0, self._fontmetrics.width('0' * (length + 1)) + 6)
+        self.do_set_margin_width()
 
     def _qsciEolModeFromOs(self):
         if sys.platform == 'win32':
             return QsciScintilla.EolWindows
         if sys.platform == 'linux':
             return QsciScintilla.EolUnix
-        else:
+        elif sys.platform == 'darwin':
             return QsciScintilla.EolMac
+        else:
+            return QsciScintilla.EolUnix
 
     def _qsciEolModeFromLine(self, line):
         if line.endswith('\r\n'):
@@ -720,6 +725,12 @@ class Editor(QsciScintilla):
     def do_modification_changed(self, value, widget):
         widget.action('undo').setEnabled(self.isUndoAvailable())
         widget.action('redo').setEnabled(self.isRedoAvailable())
+
+    def do_set_margin_width(self):
+        length = len('%s' % self.lines())
+        if length > self._margin_width:
+            self._margin_width = length
+            self.setMarginWidth(0, self._fontmetrics.width('0' * self._margin_width) + 6)
 
 
 class CodeViewer(Editor):
