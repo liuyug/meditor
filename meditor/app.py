@@ -54,7 +54,9 @@ def previewWorker(self):
         elif ext in EXTENSION_LEXER:
             self.previewHtml = output.htmlcode(self.previewText, self.previewPath)
         else:
-            self.previewPath = '<html><body><h1>Error</h1><p>Unknown extension: %s</p></body></html>' % ext
+            self.previewPath = \
+                '<html><body><h1>Error</h1><p>Unknown extension: %s</p></body></html>' \
+                % ext
         self.previewSignal.emit()
     return
 
@@ -84,7 +86,10 @@ class MainWindow(QtWidgets.QMainWindow):
             QtGui.QIcon.setThemeName('nuoveXT2')
 
         self.setWindowIcon(
-            QtGui.QIcon.fromTheme('accessories-text-editor', QtGui.QIcon(self._icon_path)))
+            QtGui.QIcon.fromTheme(
+                'accessories-text-editor',
+                QtGui.QIcon(self._icon_path)
+            ))
         self.setAcceptDrops(True)
         # main window
         self.findDialog = FindReplaceDialog(self)
@@ -97,21 +102,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_explorer.setObjectName('dock_explorer')
         self.explorer = explorer.Workspace(self.settings, self.dock_explorer)
         self.dock_explorer.setWidget(self.explorer)
-        self.dock_explorer.visibilityChanged.connect(partial(self.onDockVisibility, 'explorer'))
+        self.dock_explorer.visibilityChanged.connect(
+            partial(self.onDockVisibility, 'explorer'))
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
         # right dock window
         self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Preview'), self)
         self.dock_webview.setObjectName('dock_webview')
-        self.webview = webview.WebView(self.settings, self.findDialog, self.dock_webview)
+        self.webview = webview.WebView(
+            self.settings, self.findDialog, self.dock_webview)
         self.dock_webview.setWidget(self.webview)
-        self.dock_webview.visibilityChanged.connect(partial(self.onDockVisibility, 'webview'))
+        self.dock_webview.visibilityChanged.connect(
+            partial(self.onDockVisibility, 'webview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
 
         self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code Preview'), self)
         self.dock_codeview.setObjectName('dock_codeview')
         self.codeview = CodeViewer(self.findDialog, self.dock_codeview)
         self.dock_codeview.setWidget(self.codeview)
-        self.dock_codeview.visibilityChanged.connect(partial(self.onDockVisibility, 'codeview'))
+        self.dock_codeview.visibilityChanged.connect(
+            partial(self.onDockVisibility, 'codeview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
 
         value = settings.value('view/explorer', True, type=bool)
@@ -188,27 +197,35 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.previewAction = QtWidgets.QAction(self.tr('Preview'), self)
         # self.previewAction.triggered.connect(self.dock_webview.toggleViewAction())
 
-        previewsaveAction = QtWidgets.QAction(self.tr('Preview on save'), self, checkable=True)
-        previewsaveAction.triggered.connect(partial(self.onMenuPreview, 'previewonsave'))
+        previewsaveAction = QtWidgets.QAction(
+            self.tr('Preview on save'), self, checkable=True)
+        previewsaveAction.triggered.connect(
+            partial(self.onMenuPreview, 'previewonsave'))
         value = settings.value('preview/onsave', True, type=bool)
         settings.setValue('preview/onsave', value)
         previewsaveAction.setChecked(value)
 
-        previewinputAction = QtWidgets.QAction(self.tr('Preview on input'), self, checkable=True)
-        previewinputAction.triggered.connect(partial(self.onMenuPreview, 'previewoninput'))
+        previewinputAction = QtWidgets.QAction(
+            self.tr('Preview on input'), self, checkable=True)
+        previewinputAction.triggered.connect(
+            partial(self.onMenuPreview, 'previewoninput'))
         value = settings.value('preview/oninput', True, type=bool)
         settings.setValue('preview/oninput', value)
         previewinputAction.setChecked(value)
 
-        previewsyncAction = QtWidgets.QAction(self.tr('Scroll synchronize'), self, checkable=True)
-        previewsyncAction.triggered.connect(partial(self.onMenuPreview, 'previewsync'))
+        previewsyncAction = QtWidgets.QAction(
+            self.tr('Scroll synchronize'), self, checkable=True)
+        previewsyncAction.triggered.connect(
+            partial(self.onMenuPreview, 'previewsync'))
         value = settings.value('preview/sync', True, type=bool)
         settings.setValue('preview/sync', value)
         previewsyncAction.setChecked(value)
         # theme
         # docutils theme
-        default_cssAction = QtWidgets.QAction('Default theme', self, checkable=True)
-        default_cssAction.triggered.connect(partial(self.onMenuRstThemeChanged, 'default'))
+        default_cssAction = QtWidgets.QAction(
+            'Default theme', self, checkable=True)
+        default_cssAction.triggered.connect(
+            partial(self.onMenuRstThemeChanged, 'default'))
 
         rstThemeGroup = QtWidgets.QActionGroup(self)
         rstThemeGroup.setExclusive(True)
@@ -230,8 +247,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 act.setChecked(True)
                 break
         # markdown theme
-        default_cssAction = QtWidgets.QAction('Default theme', self, checkable=True)
-        default_cssAction.triggered.connect(partial(self.onMenuMdThemeChanged, 'default'))
+        default_cssAction = QtWidgets.QAction(
+            'Default theme', self, checkable=True)
+        default_cssAction.triggered.connect(
+            partial(self.onMenuMdThemeChanged, 'default'))
 
         mdThemeGroup = QtWidgets.QActionGroup(self)
         mdThemeGroup.setExclusive(True)
@@ -273,8 +292,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mathjaxAction.setEnabled(not os.path.exists(__mathjax_full_path__))
 
         # settings
-        self.highDpiAction = QtWidgets.QAction(self.tr('&High DPI support'), self, checkable=True)
-        self.highDpiAction.triggered.connect(partial(self.onMenuSettings, 'high_dpi'))
+        self.highDpiAction = QtWidgets.QAction(
+            self.tr('&High DPI support'), self, checkable=True)
+        self.highDpiAction.triggered.connect(
+            partial(self.onMenuSettings, 'high_dpi'))
         value = settings.value('highdpi', type=bool)
         self.highDpiAction.setChecked(value)
 

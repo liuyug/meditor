@@ -29,6 +29,7 @@ class Editor(QsciScintilla):
     """
     inputPreviewRequest = QtCore.pyqtSignal()
     statusChanged = QtCore.pyqtSignal('QString')
+    filesDropped = QtCore.pyqtSignal('QString')
     enable_lexer = True
     filename = None
     find_text = None
@@ -248,6 +249,31 @@ class Editor(QsciScintilla):
         elif event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return:
             self._latest_input_count += 1
             self._timer.start()
+
+    def dragEnterEvent(self, event):
+        mimedata = event.mimeData()
+        if mimedata.hasUrls():
+            for url in mimedata.urls():
+                if not url.isLocalFile():
+                    return
+                if not self.canOpened(os.path.abspath(url.toLocalFile())):
+                    return
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        mimedata = event.mimeData()
+        urls = mimedata.urls()
+        if urls:
+            files = []
+            for url in urls:
+                fname = os.path.abspath(url.toLocalFile())
+                if not self.canOpened(fname):
+                    return
+                files.append(fname)
+            if files:
+                self.filesDropped.emit(';'.join(files))
+        else:
+            return super(Editor, self).dropEvent(event)
 
     def font(self):
         font = super(Editor, self).font()
