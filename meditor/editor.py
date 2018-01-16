@@ -262,6 +262,16 @@ class Editor(QsciScintilla):
                     return
             event.acceptProposedAction()
 
+    def dragMoveEvent(self, event):
+        mimedata = event.mimeData()
+        if mimedata.hasUrls():
+            for url in mimedata.urls():
+                if not url.isLocalFile():
+                    return
+                if not self.canOpened(os.path.abspath(url.toLocalFile())):
+                    return
+            event.acceptProposedAction()
+
     def dropEvent(self, event):
         mimedata = event.mimeData()
         urls = mimedata.urls()

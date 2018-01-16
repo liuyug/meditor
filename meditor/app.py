@@ -478,6 +478,16 @@ class MainWindow(QtWidgets.QMainWindow):
                     return
             event.acceptProposedAction()
 
+    def dragMoveEvent(self, event):
+        mimedata = event.mimeData()
+        if mimedata.hasUrls():
+            for url in mimedata.urls():
+                if not url.isLocalFile():
+                    return
+                if not Editor.canOpened(os.path.abspath(url.toLocalFile())):
+                    return
+            event.acceptProposedAction()
+
     def dropEvent(self, event):
         mimedata = event.mimeData()
         for url in mimedata.urls():
