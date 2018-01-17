@@ -33,7 +33,6 @@ class Editor(QsciScintilla):
     _enable_lexer = True
     _filename = None
     _tab_width = 4
-    _cur_lexer = None
     _latest_input_count = 0
     _latest_input_time = 0
     _timer_interval = 1
@@ -676,7 +675,6 @@ class Editor(QsciScintilla):
             self.statusChanged.emit('lexer:--')
         t2 = time.clock()
         logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
-        self._cur_lexer = lexer
 
     def pauseLexer(self, pause=True):
         self._pauseLexer = pause

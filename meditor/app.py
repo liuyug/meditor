@@ -729,7 +729,8 @@ class MainWindow(QtWidgets.QMainWindow):
         text += self.tr('Home data path: %s\n') % (__home_data_path__)
         text += self.tr('Application data path: %s\n') % (__data_path__)
         widget = self.tab_editor.currentWidget()
-        text += self.tr('Editor lexer: %s\n') % widget.cur_lexer.__module__
+        if widget.lexer():
+            text += self.tr('Editor lexer: %s\n') % widget.lexer().__module__
         text += self.tr('\n')
         text += self.tr('QScintilla: %s\n') % widget.getScintillaVersion()
         QtWidgets.QMessageBox.about(self, title, text)
