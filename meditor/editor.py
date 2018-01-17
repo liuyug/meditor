@@ -67,6 +67,7 @@ class Editor(QsciScintilla):
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setUtf8(True)
         self.setCaretLineVisible(True)
+        self.setWrapVisualFlags(QsciScintilla.WrapFlagByBorder)
 
         self.inputMethodEventCount = 0
         self._imsupport = _SciImSupport(self)
@@ -189,6 +190,10 @@ class Editor(QsciScintilla):
         action = QtWidgets.QAction(parent.tr('Wrap line'), parent, checkable=True)
         action.triggered.connect(partial(do_action, 'wrap_line'))
         actions['wrap_line'] = action
+
+        action = QtWidgets.QAction(parent.tr('Show WS and EOL'), parent, checkable=True)
+        action.triggered.connect(partial(do_action, 'show_ws_eol'))
+        actions['show_ws_eol'] = action
         return actions
 
     def action(self, action):
@@ -660,7 +665,7 @@ class Editor(QsciScintilla):
         """
         lexer = None
         t1 = time.clock()
-        if filename:
+        if self._enable_lexer and filename:
             _, ext = os.path.splitext(filename)
             ext = ext.lower()
             LexerClass = EXTENSION_LEXER.get(ext)
@@ -738,6 +743,9 @@ class Editor(QsciScintilla):
                 self.setWrapMode(QsciScintilla.WrapCharacter)
             else:
                 self.setWrapMode(QsciScintilla.WrapNone)
+        elif action == 'show_ws_eol':
+            self.setWhitespaceVisibility(value)
+            self.setEolVisibility(value)
 
     def do_copy_available(self, value, widget):
         widget.action('cut') \

@@ -31,6 +31,7 @@ class TabEditor(QtWidgets.QTabWidget):
     _find_dialog = None
     _settings = None
     _wrap_mode = 0
+    _show_ws_eol = False
     _one_editor = False
     _editor_font = None
 
@@ -47,6 +48,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self.tabCloseRequested.connect(self._onTabCloseRequested)
 
         self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
+        self._show_ws_eol = self._settings.value('editor/show_ws_eol', False, type=bool)
         self._one_editor = self._settings.value('editor/one_editor', False, type=bool)
 
         self._actions = {}
@@ -83,6 +85,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
         self._actions.update(Editor.createAction(self, self._onAction))
         self.action('wrap_line').setChecked(self._wrap_mode > 0)
+        self.action('show_ws_eol').setChecked(self._show_ws_eol)
 
         value = self._settings.value('editor/font', __monospace__, type=str)
         self._editor_font = QtGui.QFont()
@@ -114,6 +117,7 @@ class TabEditor(QtWidgets.QTabWidget):
             opened.append('%s:%s' % (editor.getFileName(), editor.zoom()))
         self._settings.setValue('editor/opened_files', ';'.join(opened))
         self._settings.setValue('editor/wrap_mode', self._wrap_mode)
+        self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
         self._settings.setValue('editor/one_editor', self._one_editor)
 
     def _onStatusChanged(self, status):
@@ -270,9 +274,11 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.modificationChanged.connect(self._onModificationChanged)
         editor.copyAvailable.connect(self._onCopyAvailable)
         editor.filesDropped.connect(self._onFilesDropped)
+        editor.enableLexer(self._enable_lexer)
         editor.setFont(self._editor_font)
 
         editor.setWrapMode(self._wrap_mode)
+        editor.do_action('show_ws_eol', self._show_ws_eol)
         return editor
 
     def action(self, action):
@@ -388,16 +394,18 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def menuSetting(self, menu):
         menu.addAction(self.action('wrap_line'))
+        menu.addAction(self.action('show_ws_eol'))
         menu.addAction(self.action('one_editor'))
         menu.addSeparator()
         menu.addAction(self.action('default_font'))
 
     def _onAction(self, action, value):
         widget = self.currentWidget()
-        if action == 'wrap_line':
+        if action in ['wrap_line', 'show_ws_eol']:
             for x in range(self.count()):
                 self.widget(x).do_action(action, value)
             self._wrap_mode = widget.wrapMode()
+            self._show_ws_eol = value
         else:
             widget.do_action(action, value)
 
