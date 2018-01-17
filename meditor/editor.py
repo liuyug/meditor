@@ -301,10 +301,14 @@ class Editor(QsciScintilla):
         self.setMarginsFont(self._font)
         lexer = self.lexer()
         if lexer:
-            lexer.setFont(self._font)
-            style = QsciScintilla.STYLE_DEFAULT
+            style = 0
             while style < QsciScintilla.STYLE_LASTPREDEFINED:
-                lexer.setFont(self._font, style)
+                font = QtGui.QFont(self._font)
+                lexer_font = lexer.font(style)
+                font.setBold(lexer_font.bold())
+                font.setItalic(lexer_font.italic())
+                font.setUnderline(lexer_font.underline())
+                lexer.setFont(font, style)
                 style += 1
 
     def zoom(self):
