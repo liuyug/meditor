@@ -781,17 +781,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.do_preview(index)
 
     def onFileRenamed(self, old_name, new_name):
+        self.showMessage(
+            self.tr('rename "%s" => "%s"' % (old_name, new_name)))
         if self.sender() == self.explorer:
-            for x in range(self.tab_editor.count()):
-                editor = self.tab_editor.widget(x)
-                if old_name == editor.getFileName():
-                    editor.setFileName(new_name)
-                    self.tab_editor.updateTitle(x)
-                    self.showMessage(
-                        self.tr('rename "%s" => "%s"' % (old_name, new_name)))
-                    if x == self.tab_editor.currentIndex():
-                        self.updateWindowTitle(x)
-                    return
+            self.tab_editor.rename(old_name, new_name)
         elif self.sender() == self.tab_editor:
             self.explorer.refreshPath(old_name)
             self.explorer.refreshPath(new_name)

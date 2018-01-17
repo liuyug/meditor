@@ -30,12 +30,10 @@ class Editor(QsciScintilla):
     inputPreviewRequest = QtCore.pyqtSignal()
     statusChanged = QtCore.pyqtSignal('QString')
     filesDropped = QtCore.pyqtSignal('QString')
-    enable_lexer = True
-    filename = None
-    find_text = None
-    find_forward = True
-    tabWidth = 4
-    cur_lexer = None
+    _enable_lexer = True
+    _filename = None
+    _tab_width = 4
+    _cur_lexer = None
     _latest_input_count = 0
     _latest_input_time = 0
     _timer_interval = 1
@@ -50,18 +48,20 @@ class Editor(QsciScintilla):
     _actions = None
     _find_dialog = None
     _margin_width = 3
+    _font = None
 
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
         # Scintilla
-        self._fontmetrics = QtGui.QFontMetrics(self.font())
-        self.setMarginsFont(self.font())
+        self._font = self.font()
+        self._fontmetrics = QtGui.QFontMetrics(self._font)
+        self.setMarginsFont(self._font)
         self.setMarginType(0, QsciScintilla.NumberMargin)
         self.setMarginWidth(0, self._fontmetrics.width('0' * self._margin_width) + 6)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
-        self.setTabWidth(self.tabWidth)
+        self.setTabWidth(self._tab_width)
         self.setIndentationGuides(True)
         self.setEdgeMode(QsciScintilla.EdgeLine)
         self.setEdgeColumn(self._edgeColumn)
@@ -287,23 +287,20 @@ class Editor(QsciScintilla):
         else:
             return super(Editor, self).dropEvent(event)
 
-    def font(self):
-        font = super(Editor, self).font()
-        lexer = self.lexer()
-        if lexer:
-            font = lexer.font(QsciScintilla.STYLE_DEFAULT)
-        return font
-
     def setFont(self, font):
+        """
+        setFont will be failure if has set lexer.
+        """
         super(Editor, self).setFont(font)
-        self._fontmetrics = QtGui.QFontMetrics(font)
-        self.setMarginsFont(font)
+        self._font = font
+        self._fontmetrics = QtGui.QFontMetrics(self._font)
+        self.setMarginsFont(self._font)
         lexer = self.lexer()
         if lexer:
-            lexer.setFont(font)
+            lexer.setFont(self._font)
             style = QsciScintilla.STYLE_DEFAULT
             while style < QsciScintilla.STYLE_LASTPREDEFINED:
-                lexer.setFont(font, style)
+                lexer.setFont(self._font, style)
                 style += 1
 
     def zoom(self):
@@ -399,18 +396,19 @@ class Editor(QsciScintilla):
         return self.verticalScrollBar().maximum()
 
     def getFileName(self):
-        return self.filename
+        return self._filename
 
     def setFileName(self, path):
         """
         set filename and enable lexer
         """
-        self.filename = path
-        self.setStyle(self.filename)
+        self._filename = path
+        self.setStyle(self._filename)
 
     def enableLexer(self, enable=True):
-        self.enable_lexer = enable
-        self.setStyle(self.filename)
+        self._enable_lexer = enable
+        if self._filename:
+            self.setStyle(self._filename)
 
     def setModified(self, m):
         super(Editor, self).setModified(m)
@@ -463,9 +461,9 @@ class Editor(QsciScintilla):
             line, index = self.getCursorPosition()
             action(line)
             if inc:
-                self.setCursorPosition(line, index + self.tabWidth)
+                self.setCursorPosition(line, index + self._tab_width)
             else:
-                self.setCursorPosition(line, max(0, index - self.tabWidth))
+                self.setCursorPosition(line, max(0, index - self._tab_width))
         else:
             lineFrom, indexFrom, lineTo, indexTo = self.getSelection()
             self.pauseLexer(True)
@@ -551,7 +549,7 @@ class Editor(QsciScintilla):
         status = [
             'encoding:%s' % self._file_encoding.upper(),
             'eol:%s' % EOL_DESCRIPTION[self.eolMode()],
-            'lexer:%s' % self.lexer().language(),
+            'lexer:%s' % (self.lexer().language() if self.lexer() else '--'),
             'cursor:%s' % cursor,
         ]
         return ';'.join(status)
@@ -669,21 +667,16 @@ class Editor(QsciScintilla):
             LexerClass = EXTENSION_LEXER.get(ext)
             if LexerClass:
                 lexer = LexerClass(self)
-                lexer.setFont(self.font())
-
-                style = QsciScintilla.STYLE_DEFAULT
-                while style < QsciScintilla.STYLE_LASTPREDEFINED:
-                    lexer.setFont(self.font(), style)
-                    style += 1
 
         self.setLexer(lexer)
         if lexer:
+            self.setFont(self._font)
             self.statusChanged.emit('lexer:%s' % lexer.language())
         else:
-            self.statusChanged.emit('lexer:')
+            self.statusChanged.emit('lexer:--')
         t2 = time.clock()
         logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
-        self.cur_lexer = lexer
+        self._cur_lexer = lexer
 
     def pauseLexer(self, pause=True):
         self._pauseLexer = pause

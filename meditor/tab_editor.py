@@ -87,7 +87,6 @@ class TabEditor(QtWidgets.QTabWidget):
         value = self._settings.value('editor/font', __monospace__, type=str)
         self._editor_font = QtGui.QFont()
         self._editor_font.fromString(value)
-        self.do_set_font(self._editor_font)
         logger.info('editor font: %s' % (self._editor_font.toString()))
 
         value = self._settings.value('editor/opened_files', type=str)
@@ -271,8 +270,8 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.modificationChanged.connect(self._onModificationChanged)
         editor.copyAvailable.connect(self._onCopyAvailable)
         editor.filesDropped.connect(self._onFilesDropped)
+        editor.setFont(self._editor_font)
 
-        editor.enableLexer(self._enable_lexer)
         editor.setWrapMode(self._wrap_mode)
         return editor
 
@@ -284,7 +283,6 @@ class TabEditor(QtWidgets.QTabWidget):
             self.do_close_all()
         editor = self._newEditor()
         editor.newFile(ext)
-        editor.setFont(self._editor_font)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
         self.setCurrentIndex(index)
@@ -298,7 +296,6 @@ class TabEditor(QtWidgets.QTabWidget):
             self.do_close_all()
         editor = self._newEditor()
         editor.readFile(filepath)
-        editor.setFont(self._editor_font)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
         self.setCurrentIndex(index)
@@ -415,3 +412,12 @@ class TabEditor(QtWidgets.QTabWidget):
     def do_set_font(self, font):
         for x in range(self.count()):
             self.widget(x).setFont(font)
+
+    def rename(self, old, new):
+        for x in range(self.count()):
+            editor = self.widget(x)
+            if old == editor.getFileName():
+                editor.setFileName(new)
+                self.updateTitle(x)
+                self.fileLoaded.emit(x)
+                return
