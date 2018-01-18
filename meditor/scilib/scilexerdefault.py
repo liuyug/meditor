@@ -19,6 +19,7 @@ class QsciLexerDefault(Qsci.QsciLexerCustom):
         super(QsciLexerDefault, self).__init__(parent)
         self.setDefaultColor(QColor('#000000'))
         self.setDefaultPaper(QColor('#ffffff'))
+        self.setDefaultFont(QFont())
 
         self.setColor(QColor('#000000'), self.styles['Default'])
         self.setColor(QColor('#007f00'), self.styles['Comment'])

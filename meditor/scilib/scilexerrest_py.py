@@ -180,6 +180,10 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
 
         self.setDefaultColor(QtGui.QColor('#000000'))
         self.setDefaultPaper(QtGui.QColor('#ffffff'))
+        default_font = QtGui.QFont()
+        default_font.setPointSize(12)
+        self.setDefaultFont(default_font)
+        self.setFont(default_font, QsciScintilla.STYLE_DEFAULT)
 
         self.block_tokens = []
         self.inline_tokens = []
