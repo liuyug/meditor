@@ -46,18 +46,23 @@ class Editor(QsciScintilla):
     _modified = False
     _actions = None
     _find_dialog = None
-    _margin_width = 3
+    _margin_width = 2
     _font = None
+    _margin_font = None
 
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
         self._find_dialog = find_dialog
         # Scintilla
         self._font = self.font()
-        self._fontmetrics = QtGui.QFontMetrics(self._font)
-        self.setMarginsFont(self._font)
+        self._margin_font = QtGui.QFont(self._font)
+        self._margin_font.setPointSize(self._font.pointSize() - 2)
+        self._margin_font.setWeight(self._margin_font.Light)
+        self.setMarginsFont(self._margin_font)
         self.setMarginType(0, QsciScintilla.NumberMargin)
-        self.setMarginWidth(0, self._fontmetrics.width('0' * self._margin_width) + 6)
+        fontmetrics = QtGui.QFontMetrics(self._margin_font)
+        self.setMarginWidth(0, fontmetrics.width('0' * self._margin_width))
+        self.setMarginWidth(1, 0)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
         self.setTabWidth(self._tab_width)
@@ -293,23 +298,27 @@ class Editor(QsciScintilla):
 
     def setFont(self, font):
         """
-        setFont will be failure if has set lexer.
+        setFont have no action if Lexer set
         """
         super(Editor, self).setFont(font)
         lexer = self.lexer()
         if lexer:
+            # set style 0 also will set STYLE_DEFAULT
             style = 0
-            while style < QsciScintilla.STYLE_LASTPREDEFINED:
-                new_font = QtGui.QFont(font)
-                style_font = lexer.font(style)
-                new_font.setBold(style_font.bold())
-                new_font.setItalic(style_font.italic())
-                new_font.setUnderline(style_font.underline())
-                lexer.setFont(new_font, style)
+            while style < QsciScintilla.STYLE_DEFAULT:
+                if lexer.description(style):
+                    new_font = QtGui.QFont(font)
+                    old_font = lexer.font(style)
+                    new_font.setBold(old_font.bold())
+                    new_font.setItalic(old_font.italic())
+                    new_font.setUnderline(old_font.underline())
+                    lexer.setFont(new_font, style)
                 style += 1
         self._font = font
-        self._fontmetrics = QtGui.QFontMetrics(self._font)
-        self.setMarginsFont(self._font)
+        self._margin_font = QtGui.QFont(self._font)
+        self._margin_font.setPointSize(self._font.pointSize() - 2)
+        self._margin_font.setWeight(self._margin_font.Light)
+        self.setMarginsFont(self._margin_font)
 
     def zoom(self):
         return self.SendScintilla(QsciScintilla.SCI_GETZOOM)
@@ -663,10 +672,6 @@ class Editor(QsciScintilla):
         return
 
     def setStyle(self, filename):
-        """
-        1. lookup font from style: font(font, style)
-        2. or return default font from defaultfont()
-        """
         lexer = None
         t1 = time.clock()
         if self._enable_lexer and filename:
@@ -766,10 +771,11 @@ class Editor(QsciScintilla):
         widget.action('redo').setEnabled(self.isRedoAvailable())
 
     def do_set_margin_width(self):
-        length = len('%s' % self.lines())
+        length = len('%s' % self.lines()) + 1
         if length > self._margin_width:
             self._margin_width = length
-            self.setMarginWidth(0, self._fontmetrics.width('0' * self._margin_width) + 6)
+            fontmetrics = QtGui.QFontMetrics(self._margin_font)
+            self.setMarginWidth(0, fontmetrics.width('0' * self._margin_width))
 
 
 class CodeViewer(Editor):

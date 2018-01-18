@@ -32,7 +32,7 @@ class TabEditor(QtWidgets.QTabWidget):
     _settings = None
     _wrap_mode = 0
     _show_ws_eol = False
-    _one_editor = False
+    _single_instance = False
     _editor_font = None
 
     def __init__(self, settings, find_dialog, parent=None):
@@ -49,7 +49,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
         self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
         self._show_ws_eol = self._settings.value('editor/show_ws_eol', False, type=bool)
-        self._one_editor = self._settings.value('editor/one_editor', False, type=bool)
+        self._single_instance = self._settings.value('editor/single_instance', False, type=bool)
 
         self._actions = {}
         action = QtWidgets.QAction(self.tr('&Open'), self)
@@ -78,10 +78,10 @@ class TabEditor(QtWidgets.QTabWidget):
         action.triggered.connect(self._onDefaultFont)
         self._actions['default_font'] = action
 
-        action = QtWidgets.QAction(self.tr('One editor'), self, checkable=True)
+        action = QtWidgets.QAction(self.tr('Single Instance'), self, checkable=True)
         action.triggered.connect(self._onOneEditor)
-        action.setChecked(self._one_editor)
-        self._actions['one_editor'] = action
+        action.setChecked(self._single_instance)
+        self._actions['single_instance'] = action
 
         self._actions.update(Editor.createAction(self, self._onAction))
         self.action('wrap_line').setChecked(self._wrap_mode > 0)
@@ -99,7 +99,7 @@ class TabEditor(QtWidgets.QTabWidget):
                 continue
             index = self.open(os.path.abspath(filepath))
             self.widget(index).zoomTo(int(zoom) if zoom else 0)
-            if self._one_editor:
+            if self._single_instance:
                 break
         if self.count() == 0:
             self.new('.rst')
@@ -118,7 +118,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self._settings.setValue('editor/opened_files', ';'.join(opened))
         self._settings.setValue('editor/wrap_mode', self._wrap_mode)
         self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
-        self._settings.setValue('editor/one_editor', self._one_editor)
+        self._settings.setValue('editor/single_instance', self._single_instance)
 
     def _onStatusChanged(self, status):
         widget = self.sender()
@@ -264,7 +264,7 @@ class TabEditor(QtWidgets.QTabWidget):
             self.do_set_font(self._editor_font)
 
     def _onOneEditor(self, value):
-        self._one_editor = value
+        self._single_instance = value
 
     def _newEditor(self):
         editor = Editor(self._find_dialog, self)
@@ -285,7 +285,7 @@ class TabEditor(QtWidgets.QTabWidget):
         return self._actions.get(action)
 
     def new(self, ext):
-        if self._one_editor:
+        if self._single_instance:
             self.do_close_all()
         editor = self._newEditor()
         editor.newFile(ext)
@@ -298,7 +298,7 @@ class TabEditor(QtWidgets.QTabWidget):
         return index
 
     def open(self, filepath):
-        if self._one_editor:
+        if self._single_instance:
             self.do_close_all()
         editor = self._newEditor()
         editor.readFile(filepath)
@@ -395,7 +395,7 @@ class TabEditor(QtWidgets.QTabWidget):
     def menuSetting(self, menu):
         menu.addAction(self.action('wrap_line'))
         menu.addAction(self.action('show_ws_eol'))
-        menu.addAction(self.action('one_editor'))
+        menu.addAction(self.action('single_instance'))
         menu.addSeparator()
         menu.addAction(self.action('default_font'))
 

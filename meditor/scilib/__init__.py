@@ -28,6 +28,8 @@ EXTENSION_LEXER = {
     '.f77': Qsci.QsciLexerFortran77,
     '.html': Qsci.QsciLexerHTML,
     '.htm': Qsci.QsciLexerHTML,
+    '.asp': Qsci.QsciLexerHTML,
+    '.php': Qsci.QsciLexerHTML,
     '.idl': Qsci.QsciLexerIDL,
     '.json': Qsci.QsciLexerJSON,
     '.java': Qsci.QsciLexerJava,
@@ -62,4 +64,5 @@ EXTENSION_LEXER = {
     '.rst': QsciLexerRest,
     '.rest': QsciLexerRest,
     '.txt': QsciLexerDefault,
+    '.log': QsciLexerDefault,
 }

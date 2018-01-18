@@ -31,10 +31,10 @@ class QsciLexerDefault(Qsci.QsciLexerCustom):
         return 'Defaut Text'
 
     def description(self, style_idx):
-        if style_idx < len(self.styles):
-            return 'Default Lexer'
-        else:
-            return ''
+        for description, idx in self.styles.items():
+            if idx == style_idx:
+                return description
+        return ''
 
     def styleText(self, start, end):
         if not self.editor():
