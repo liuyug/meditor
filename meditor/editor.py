@@ -491,43 +491,41 @@ class Editor(QsciScintilla):
     def readFile(self, filename, encoding=None):
         try:
             with open(filename, 'rb') as f:
-                data = f.read()
-                encoding = chardet.detect(data).get('encoding')
+                encoding = chardet.detect(f.read(4096)).get('encoding')
                 if not encoding or encoding == 'ascii':
                     encoding = 'utf-8'
-                text = data.decode(encoding)
+            with open(filename, 'rt', encoding=encoding, newline='') as f:
+                text = f.read()
+            self._file_encoding = encoding
+            self.setFileName(filename)
+            self.setValue(text)
+            return True
         except Exception as err:
             QtWidgets.QMessageBox.information(
                 self,
                 self.tr('Read file'),
                 self.tr('Do not open "%s": %s') % (filename, err),
             )
-            return False
-        self._file_encoding = encoding
-        self.setFileName(filename)
-        self.setValue(text)
-        return True
+        return False
 
     def writeFile(self, filename=None):
-        text = self.getValue()
         if filename:
             self.setFileName(filename)
         else:
             filename = self.getFileName()
         if filename:
             try:
-                data = text.encode(self._file_encoding)
+                text = self.getValue()
+                with open(filename, 'wt', encoding=self._file_encoding, newline='') as f:
+                    f.write(text)
+                self.setModified(False)
+                return True
             except Exception as err:
                 QtWidgets.QMessageBox.information(
                     self,
                     self.tr('Write file'),
                     self.tr('Do not write "%s": %s') % (filename, err),
                 )
-                return False
-            with open(filename, 'wb') as f:
-                f.write(data)
-                self.setModified(False)
-            return True
         return False
 
     def newFile(self, filepath):
