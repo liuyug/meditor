@@ -296,24 +296,20 @@ class Editor(QsciScintilla):
         setFont will be failure if has set lexer.
         """
         super(Editor, self).setFont(font)
+        lexer = self.lexer()
+        if lexer:
+            style = 0
+            while style < QsciScintilla.STYLE_LASTPREDEFINED:
+                new_font = QtGui.QFont(font)
+                style_font = lexer.font(style)
+                new_font.setBold(style_font.bold())
+                new_font.setItalic(style_font.italic())
+                new_font.setUnderline(style_font.underline())
+                lexer.setFont(new_font, style)
+                style += 1
         self._font = font
         self._fontmetrics = QtGui.QFontMetrics(self._font)
         self.setMarginsFont(self._font)
-        lexer = self.lexer()
-        if lexer:
-            print('new font', self._font.toString())
-            lexer.setDefaultFont(self._font)
-            lexer.setFont(self._font, QsciScintilla.STYLE_DEFAULT)
-            style = 0
-            while style < QsciScintilla.STYLE_LASTPREDEFINED:
-                # font = QtGui.QFont(self._font)
-                # lexer_font = lexer.font(style)
-                # font.setBold(lexer_font.bold())
-                # font.setItalic(lexer_font.italic())
-                # font.setUnderline(lexer_font.underline())
-                # lexer.setFont(font, style)
-                print(style, lexer.font(style).toString())
-                style += 1
 
     def zoom(self):
         return self.SendScintilla(QsciScintilla.SCI_GETZOOM)
