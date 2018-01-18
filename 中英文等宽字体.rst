@@ -3,17 +3,17 @@
 ==============
 Linux 字体
 ----------
-:Bitstream Vera Sans Mono:  等宽字体，但不于中文字体等宽
-:Liberation Mono:           等宽字体，但不于中文字体等宽
-:Nimbus Mono L:             等宽字体，但不于中文字体等宽
-:DejaVu Sans Mono:          等宽字体，但不于中文字体等宽
-:Noto Mono:                 等宽字体，但不于中文字体等宽
+:Bitstream Vera Sans Mono:  等宽字体，但不予中文字体等宽
+:Liberation Mono:           等宽字体，但不予中文字体等宽
+:Nimbus Mono L:             等宽字体，但不予中文字体等宽
+:DejaVu Sans Mono:          等宽字体，但不予中文字体等宽
+:Noto Mono:                 等宽字体，但不予中文字体等宽
 :Inconsolata:               等宽字体，中英文等宽
 
 Windows 字体
 ------------
-:Courier:       等宽字体，但不于中文字体等宽
-:Consolas:      等宽字体，但不于中文字体等宽
+:Courier:       等宽字体，但不予中文字体等宽
+:Consolas:      等宽字体，但不予中文字体等宽
 :YaHei:         微软雅黑，中英文完美等宽，但 ``1liIL0oO`` 不能识别
 :SimSun:        宋体，情形同上
 :Inconsolata:   等宽字体，中英文等宽
