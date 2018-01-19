@@ -65,4 +65,5 @@ EXTENSION_LEXER = {
     '.rest': QsciLexerRest,
     '.txt': QsciLexerDefault,
     '.log': QsciLexerDefault,
+    '.csv': QsciLexerDefault,
 }
