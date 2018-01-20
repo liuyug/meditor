@@ -189,7 +189,7 @@ class MainWindow(QtWidgets.QMainWindow):
         exitAction = QtWidgets.QAction(self.tr('&Exit'), self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setShortcut(QtGui.QKeySequence.Quit)
-        exitAction.setIcon(QtGui.QIcon.fromTheme('system-log-out'))
+        exitAction.setIcon(QtGui.QIcon.fromTheme('application-exit'))
         exitAction.triggered.connect(self.close)
         # edit
         # view
