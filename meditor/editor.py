@@ -323,6 +323,9 @@ class Editor(QsciScintilla):
     def zoom(self):
         return self.SendScintilla(QsciScintilla.SCI_GETZOOM)
 
+    def getEndStyled(self):
+        return self.SendScintilla(QsciScintilla.SCI_GETENDSTYLED)
+
     def getCharAt(self, pos):
         return self.SendScintilla(QsciScintilla.SCI_GETCHARAT, pos)
 

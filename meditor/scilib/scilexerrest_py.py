@@ -125,7 +125,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         31: 'fore:#000000',
     }
     token_regex = [
-        ('title',       r'''^([=`'"~^_*+#-]+)(\r\n?|\n)[^\|\r\n]+\2\1\2'''),
+        ('title',       r'''^([=`'"~^_*+#-]+)(\r\n?|\n)\w.+\2\1\2'''),
         ('section',     r'''^\w.*(\r\n?|\n)[=`'"~^_*+#-]+\1'''),
         ('transition',  r'''^(\r\n?|\n)[=`'"~^_*+#-]{4,}\1\1'''),
         ('bullet',      r'''^[\-+*] +.+([\r\n]+ {2,}.+)*(\r\n?|\n)'''),
@@ -222,6 +222,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         text = self.parent().text(start, end)
         self.startStyling(start)
         offset = 0
+        b_offset = start
         while offset < len(text):
             # logger.debug('try match: %s %s' % (offset, repr(text[offset:])))
             mo = None
@@ -233,10 +234,12 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             # !! must match a style
             m_string = mo.group(0)
             length = len(m_string.encode('utf8'))
+            b_offset += length
             logger.debug('match: %s, %s, %s' % (key, length, m_string))
             self.setStyling(length, self.styles[key])
             offset = mo.end()
         self.do_InlineStylingText(start, end)
+        logger.debug('end styled: %s(%s)' % (self.editor().getEndStyled(), end))
 
     def do_InlineStylingText(self, start, end):
         start_line, _ = self.editor().lineIndexFromPosition(start)
@@ -252,17 +255,25 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                     m_string = mo.group(1)
                     length = len(m_string.encode('utf8'))
                     m_start = self.editor().positionFromLineIndex(x, mo.start(1))
-                    logger.debug('inline match: %s, %s, %s' % (key, length, repr(m_string)))
+                    logger.debug('inline match: %s, %s' % (key, length))
+                    # logger.debug('inline match: %s, %s, %s' % (key, length, repr(m_string)))
                     self.startStyling(m_start)
                     self.setStyling(length, self.inline_styles[key])
+        # fix, set last styled char
+        self.startStyling(end - 1)
+        self.setStyling(1, self.editor().getStyleAt(end - 1))
 
     def styleText(self, start, end):
-        """start and end is based bytes """
+        """start and end is based bytes
+        SCI_GETENDSTYLED: get last styled char position.
+        start: first character at line.
+        """
         if not self.editor():
             return
         if self.editor()._pauseLexer:
             return
-        logger.debug('styling'.center(70, '-'))
+        logger.debug(('styling %s:%s' % (start, end)).center(70, '-'))
+        logger.debug('end styled: %s' % self.editor().getEndStyled())
         eol_mode = self.parent().eolMode()
         if eol_mode == QsciScintilla.EolWindows:
             eol = '\r\n'
@@ -284,6 +295,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                 break
             pos = next_pos
         fix_start = pos
+
         pos = min(end + len(eol), self.parent().length())
         suf_style = self.parent().getStyleAt(pos)
         logger.debug('next style: %s' % self.rstyles.get(suf_style) or self.inline_rstyles.get(suf_style))
@@ -298,6 +310,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                 break
             pos = next_pos
         fix_end = pos
+
         text = self.parent().text(start, end)
         fix_text = self.parent().text(fix_start, fix_end)
         logger.debug('text: %s %s %s' % (start, end, text))
