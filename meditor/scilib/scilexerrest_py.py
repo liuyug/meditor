@@ -85,7 +85,6 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         'in_url': 19,
         'in_url1': 19,
         'in_url2': 19,
-        'in_url3': 19,
         'in_link': 20,
         'in_link1': 20,
         'in_link2': 20,
@@ -158,8 +157,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         ('in_strong',   r'''(\*{2}\w[^*\r\n]*\*{2})'''),
         ('in_literal',  r'''(`{2}\w[^`\r\n]*`{2})'''),
         ('in_url1',     r'''\W(\w+://[\w\-\.:/]+)\W'''),
-        ('in_url2',     r'''(`[^<\r\n]+<[^>\r\n]+>`_)'''),
-        ('in_url3',     r'''^(\w+://[\w\-\.:/]+)\W'''),
+        ('in_url2',     r'''^(\w+://[\w\-\.:/]+)\W'''),
         ('in_link1',    r'''\W(\w+_)\W'''),
         ('in_link2',    r'''(`\w[^`\r\n]*`_)'''),
         ('in_footnote', r'''(\[[\w*#]+\]_)'''),
@@ -235,7 +233,8 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             m_string = mo.group(0)
             length = len(m_string.encode('utf8'))
             b_offset += length
-            logger.debug('match: %s, %s, %s' % (key, length, m_string))
+            logger.info('match range: %s, %s' % (key, length))
+            logger.debug('match text: %s' % (m_string))
             self.setStyling(length, self.styles[key])
             offset = mo.end()
         self.do_InlineStylingText(start, end)
@@ -255,8 +254,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
                     m_string = mo.group(1)
                     length = len(m_string.encode('utf8'))
                     m_start = self.editor().positionFromLineIndex(x, mo.start(1))
-                    logger.debug('inline match: %s, %s' % (key, length))
-                    # logger.debug('inline match: %s, %s, %s' % (key, length, repr(m_string)))
+                    logger.debug('inline match: %s:%s: %s' % (key, length, m_string))
                     self.startStyling(m_start)
                     self.setStyling(length, self.inline_styles[key])
         # fix, set last styled char
@@ -274,47 +272,39 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
             return
         logger.debug(('styling %s:%s' % (start, end)).center(70, '-'))
         logger.debug('end styled: %s' % self.editor().getEndStyled())
-        eol_mode = self.parent().eolMode()
-        if eol_mode == QsciScintilla.EolWindows:
-            eol = '\r\n'
-        if eol_mode == QsciScintilla.EolUnix:
-            eol = '\n'
-        if eol_mode == QsciScintilla.EolMac:
-            eol = '\r'
-        pos = max(start - len(eol), 0)
-        pre_style = self.parent().getStyleAt(pos)
-        logger.debug('prev style: %s' % self.rstyles.get(pre_style) or self.inline_rstyles.get(pre_style))
+        # for multiple line syntax
+        # fix start
+        line_no, _ = self.editor().lineIndexFromPosition(start)
+        line_no = max(line_no - 1, 0)
+        pos = self.editor().positionFromLineIndex(line_no, 0)
         while pos > 0:
-            style = self.parent().getStyleAt(pos)
-            newline = self.parent().text(pos, min(pos + len(eol), self.parent().length()))
-            next_pos = max(pos - len(eol), 0)
-            if newline == eol \
-                    and newline == self.parent().text(
-                        next_pos, min(next_pos + len(eol), self.parent().length())) \
-                    and style != pre_style:
+            style = self.editor().getStyleAt(pos)
+            if style == self.styles['newline']:
                 break
-            pos = next_pos
+            line_no = max(line_no - 1, 0)
+            pos = self.editor().positionFromLineIndex(line_no, 0)
         fix_start = pos
-
-        pos = min(end + len(eol), self.parent().length())
-        suf_style = self.parent().getStyleAt(pos)
-        logger.debug('next style: %s' % self.rstyles.get(suf_style) or self.inline_rstyles.get(suf_style))
-        while pos < self.parent().length():
-            style = self.parent().getStyleAt(pos)
-            next_pos = min(pos + len(eol), self.parent().length())
-            newline = self.parent().text(pos, next_pos)
-            if newline == eol \
-                    and newline == self.parent().text(
-                        next_pos, min(next_pos + len(eol), self.parent().length())) \
-                    and style != suf_style:
+        # fix end
+        line_max = self.editor().lines()
+        line_no, _ = self.editor().lineIndexFromPosition(end)
+        line_no = min(line_no + 1, line_max)
+        pos = self.editor().positionFromLineIndex(line_no, 0)
+        while line_no < line_max:
+            style = self.editor().getStyleAt(pos)
+            if style == self.styles['newline']:
                 break
-            pos = next_pos
+            line_no = min(line_no + 1, line_max)
+            pos = self.editor().positionFromLineIndex(line_no, 0)
+        if line_no == line_max:
+            pos = self.editor().length()
         fix_end = pos
 
-        text = self.parent().text(start, end)
-        fix_text = self.parent().text(fix_start, fix_end)
-        logger.debug('text: %s %s %s' % (start, end, text))
-        logger.debug('fix range text: %s %s %s' % (fix_start, fix_end, fix_text))
+        text = self.editor().text(start, end)
+        fix_text = self.editor().text(fix_start, fix_end)
+        logger.info('text range: %s %s' % (start, end))
+        logger.debug(text)
+        logger.info('text range: %s %s' % (fix_start, fix_end))
+        logger.debug(fix_text)
         self.do_StylingText(fix_start, fix_end)
 
     def defaultStyle(self):
