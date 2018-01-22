@@ -8,6 +8,7 @@ from functools import partial
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.Qsci import QSCINTILLA_VERSION, QsciScintilla, QsciPrinter
 import chardet
+from mtable import MarkupTable
 
 from .scilib import _SciImSupport, EXTENSION_LEXER
 
@@ -199,29 +200,17 @@ class Editor(QsciScintilla):
         action = QtWidgets.QAction(parent.tr('Show WS and EOL'), parent, checkable=True)
         action.triggered.connect(partial(do_action, 'show_ws_eol'))
         actions['show_ws_eol'] = action
+
+        action = QtWidgets.QAction(parent.tr('Format Table'), parent)
+        action.triggered.connect(partial(do_action, 'format_table'))
+        actions['format_table'] = action
         return actions
 
     def action(self, action):
         if self._actions:
             return self._actions.get(action)
 
-    def inputMethodQuery(self, query):
-        if False and query == QtCore.Qt.ImMicroFocus:
-            l, i = self.getCursorPosition()
-            p = self.positionFromLineIndex(l, i)
-            x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, p)
-            y = self.SendScintilla(QsciScintilla.SCI_POINTYFROMPOSITION, 0, p)
-            w = self.SendScintilla(QsciScintilla.SCI_GETCARETWIDTH)
-            return QtCore.QRect(x, y, w, self.textHeight(l))
-        else:
-            return super(Editor, self).inputMethodQuery(query)
-
     def inputMethodEvent(self, event):
-        """
-        Use default input method event handler and don't show preeditstring
-
-        See http://doc.trolltech.com/4.7/qinputmethodevent.html
-        """
         if self.isReadOnly():
             return
 
@@ -230,20 +219,7 @@ class Editor(QsciScintilla):
         else:
             self.pauseLexer(False)
 
-        # input with preedit, from TortoiseHg
-        if False and self._imsupport:
-            self.removeSelectedText()
-            self._imsupport.removepreedit()
-            self._imsupport.commitstr(event.replacementStart(),
-                                      event.replacementLength(),
-                                      event.commitString())
-            self._imsupport.insertpreedit(event.preeditString())
-            for a in event.attributes():
-                if a.type == QtGui.QInputMethodEvent.Cursor:
-                    self._imsupport.movepreeditcursor(a.start)
-            event.accept()
-        else:
-            super(Editor, self).inputMethodEvent(event)
+        super(Editor, self).inputMethodEvent(event)
 
         length = len(event.commitString())
         self._latest_input_count += length
@@ -359,6 +335,8 @@ class Editor(QsciScintilla):
         menu.addAction(widget.action('indent'))
         menu.addAction(widget.action('unindent'))
         menu.addSeparator()
+        menu.addAction(widget.action('format_table'))
+        menu.addSeparator()
         menu.addAction(widget.action('zoom_in'))
         menu.addAction(widget.action('zoom_original'))
         menu.addAction(widget.action('zoom_out'))
@@ -369,6 +347,7 @@ class Editor(QsciScintilla):
         widget.action('replace_next').setEnabled(True and not self.isReadOnly())
         widget.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
         widget.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
+        widget.action('format_table').setEnabled(self.hasSelectedText())
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -756,6 +735,31 @@ class Editor(QsciScintilla):
         elif action == 'show_ws_eol':
             self.setWhitespaceVisibility(value)
             self.setEolVisibility(value)
+        elif action == 'format_table':
+            if not self.hasSelectedText():
+                return
+            text = self.selectedText()
+            mt = None
+            if self.lexer():
+                tables = None
+                if self.lexer().language() == 'reStructuredText':
+                    tables = MarkupTable.from_rst(text)
+                elif self.lexer().language() == 'Markdown':
+                    tables = MarkupTable.from_md(text)
+                if tables:
+                    mt = tables[0]
+            if not mt or mt.is_empty():
+                logger.debug('Format text table: %s' % text)
+                mt = MarkupTable.from_txt(text)
+            if self.lexer():
+                if self.lexer().language() == 'reStructuredText':
+                    replaced_text = mt.to_rst()
+                elif self.lexer().language() == 'Markdown':
+                    replaced_text = mt.to_md()
+            else:
+                replaced_text = mt.to_rst()
+            if replaced_text:
+                self.replaceSelectedText(replaced_text)
 
     def do_copy_available(self, value, widget):
         widget.action('cut') \
