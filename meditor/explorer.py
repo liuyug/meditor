@@ -73,8 +73,9 @@ class Workspace(QtWidgets.QTreeWidget):
         action.triggered.connect(self.onWindowsExplorer)
         self._actions['explorer'] = action
 
-        action = QtWidgets.QAction(self.tr('Open folder'), self)
+        action = QtWidgets.QAction(self.tr('Open Workspace'), self)
         action.triggered.connect(self.onOpenWorkspace)
+        action.setIcon(QtGui.QIcon.fromTheme('folder-open'))
         self._actions['open_workspace'] = action
 
         self.popupMenu = QtWidgets.QMenu(self)

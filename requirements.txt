@@ -7,3 +7,4 @@ chardet
 docutils
 Markdown
 python-markdown-mathjax
+mtable

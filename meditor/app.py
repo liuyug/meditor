@@ -405,9 +405,8 @@ class MainWindow(QtWidgets.QMainWindow):
         newButton.setDefaultAction(self.explorer.action('new_rst'))
         tb_normal.addWidget(newButton)
 
-        # tb_normal.addAction(self.explorer.action('new_rst'))
-        # tb_normal.addAction(self.explorer.action('new_md'))
         tb_normal.addAction(self.tab_editor.action('open'))
+        tb_normal.addAction(self.explorer.action('open_workspace'))
         tb_normal.addAction(self.tab_editor.action('save'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('undo'))
@@ -418,6 +417,7 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.addAction(self.tab_editor.action('paste'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('find'))
+        tb_normal.addAction(self.tab_editor.action('format_table'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('zoom_in'))
         tb_normal.addAction(self.tab_editor.action('zoom_out'))

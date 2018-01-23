@@ -10,7 +10,7 @@ from PyQt5.Qsci import QSCINTILLA_VERSION, QsciScintilla, QsciPrinter
 import chardet
 from mtable import MarkupTable
 
-from .scilib import _SciImSupport, EXTENSION_LEXER
+from .scilib import EXTENSION_LEXER
 
 from .util import toUtf8
 from . import __home_data_path__, __data_path__, __default_basename__
@@ -74,9 +74,6 @@ class Editor(QsciScintilla):
         self.setUtf8(True)
         self.setCaretLineVisible(True)
         self.setWrapVisualFlags(QsciScintilla.WrapFlagByBorder)
-
-        self.inputMethodEventCount = 0
-        self._imsupport = _SciImSupport(self)
 
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
         self.linesChanged.connect(self.onLinesChanged)
@@ -146,7 +143,7 @@ class Editor(QsciScintilla):
         action = QtWidgets.QAction(parent.tr('&Find or Replace'), parent)
         action.setShortcut(QtGui.QKeySequence.Find)
         action.triggered.connect(partial(do_action, 'find'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-find-replace'))
+        action.setIcon(QtGui.QIcon.fromTheme('edit-find'))
         actions['find'] = action
 
         action = QtWidgets.QAction(parent.tr('Find Next'), parent)
@@ -743,12 +740,14 @@ class Editor(QsciScintilla):
             if self.lexer():
                 tables = None
                 if self.lexer().language() == 'reStructuredText':
+                    logger.debug('Format rst table: %s' % text)
                     tables = MarkupTable.from_rst(text)
                 elif self.lexer().language() == 'Markdown':
+                    logger.debug('Format md table: %s' % text)
                     tables = MarkupTable.from_md(text)
                 if tables:
                     mt = tables[0]
-            if not mt or mt.is_empty():
+            if not mt or mt.is_empty() or mt.is_invalid():
                 logger.debug('Format text table: %s' % text)
                 mt = MarkupTable.from_txt(text)
             if self.lexer():
