@@ -147,6 +147,10 @@ class TabEditor(QtWidgets.QTabWidget):
         widget = self.currentWidget()
         widget and widget.do_copy_available(value, self)
 
+    def _onSelectionChanged(self):
+        widget = self.currentWidget()
+        widget and widget.do_selection_changed(self)
+
     def _onFilesDropped(self, value):
         for fname in value.split(';'):
             self.loadFile(fname)
@@ -271,8 +275,11 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.statusChanged.connect(self._onStatusChanged)
         editor.verticalScrollBar().valueChanged.connect(self._onVerticalScrollBarChanged)
         editor.inputPreviewRequest.connect(self._onInputPreview)
+
         editor.modificationChanged.connect(self._onModificationChanged)
         editor.copyAvailable.connect(self._onCopyAvailable)
+        editor.selectionChanged.connect(self._onSelectionChanged)
+
         editor.filesDropped.connect(self._onFilesDropped)
         editor.enableLexer(self._enable_lexer)
         editor.setFont(self._editor_font)

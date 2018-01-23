@@ -77,6 +77,7 @@ class Editor(QsciScintilla):
 
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
         self.linesChanged.connect(self.onLinesChanged)
+        self.textChanged.connect(self.onTextChanged)
 
         self._timer = QtCore.QTimer(self)
         self._timer.setInterval(self._timer_interval * 1000)
@@ -219,19 +220,16 @@ class Editor(QsciScintilla):
         super(Editor, self).inputMethodEvent(event)
 
         length = len(event.commitString())
-        self._latest_input_count += length
         if length > 0:
+            self._latest_input_count += length
             self._timer.start()
 
     def keyPressEvent(self, event):
         super(Editor, self).keyPressEvent(event)
-        self._latest_input_time = time.time()
         length = len(event.text())
         if length > 0:
+            self._latest_input_time = time.time()
             self._latest_input_count += length
-            self._timer.start()
-        elif event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return:
-            self._latest_input_count += 1
             self._timer.start()
 
     def dragEnterEvent(self, event):
@@ -341,10 +339,7 @@ class Editor(QsciScintilla):
     def menuAboutToShow(self, widget=None):
         if not widget:
             widget = self
-        widget.action('replace_next').setEnabled(True and not self.isReadOnly())
-        widget.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
-        widget.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
-        widget.action('format_table').setEnabled(self.hasSelectedText())
+        widget.action('replace_next').setEnabled(not self.isReadOnly())
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -354,6 +349,10 @@ class Editor(QsciScintilla):
         self.do_action(action, value)
 
     def _onTimerTimeout(self):
+        """
+        1. latest input count > 0
+        2. lastest input time > interval time
+        """
         now = time.time()
         if self._latest_input_count > 0:
             if not self._pauseLexer and (now - self._latest_input_time) > self._timer_interval:
@@ -365,6 +364,9 @@ class Editor(QsciScintilla):
     def onCopyAvailable(self, value):
         self.do_copy_available(value, self)
 
+    def onSelectionChanged(self):
+        self.do_selection_changed(self)
+
     def onModificationChanged(self, value):
         self.do_modification_changed(value, self)
 
@@ -374,6 +376,9 @@ class Editor(QsciScintilla):
 
     def onLinesChanged(self):
         self.do_set_margin_width()
+
+    def onTextChanged(self):
+        pass
 
     def isPasteAvailable(self):
         """ always return 1 in GTK+ """
@@ -759,6 +764,10 @@ class Editor(QsciScintilla):
                 replaced_text = mt.to_rst()
             if replaced_text:
                 self.replaceSelectedText(replaced_text)
+                # preview immediately
+                length = len(replaced_text)
+                self._latest_input_count += length
+                self._timer.start()
 
     def do_copy_available(self, value, widget):
         widget.action('cut') \
@@ -769,6 +778,11 @@ class Editor(QsciScintilla):
             and widget.action('paste').setEnabled(not self.isReadOnly())
         widget.action('delete') \
             and widget.action('delete').setEnabled(value and not self.isReadOnly())
+
+    def do_selection_changed(self, widget):
+        widget.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
+        widget.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
+        widget.action('format_table').setEnabled(self.hasSelectedText())
 
     def do_modification_changed(self, value, widget):
         widget.action('undo').setEnabled(self.isUndoAvailable())
@@ -791,6 +805,7 @@ class CodeViewer(Editor):
         self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.copyAvailable.connect(self.onCopyAvailable)
         self.modificationChanged.connect(self.onModificationChanged)
+        self.selectionChanged.connect(self.onSelectionChanged)
 
     def setValue(self, text):
         """ set all readonly text """
