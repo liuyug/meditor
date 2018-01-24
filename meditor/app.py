@@ -19,6 +19,7 @@ from . import __app_name__, __app_version__, __app_path__, \
     pygments_styles
 from .editor import Editor, CodeViewer
 from .tab_editor import TabEditor
+from .vim import VimEmulator
 from .scilib import EXTENSION_LEXER
 from . import webview
 from . import explorer
@@ -94,8 +95,16 @@ class MainWindow(QtWidgets.QMainWindow):
         # main window
         self.findDialog = FindReplaceDialog(self)
 
-        self.tab_editor = TabEditor(self.settings, self.findDialog, self)
-        self.setCentralWidget(self.tab_editor)
+        widget = QtWidgets.QWidget(self)
+        self.tab_editor = TabEditor(self.settings, self.findDialog, widget)
+        self.vim = VimEmulator(widget)
+        self.vim.hide()
+        # self.vim.setFocusProxy(self.tab_editor)
+        v_layout = QtWidgets.QVBoxLayout(widget)
+        v_layout.setContentsMargins(0, 0, 0, 0)
+        v_layout.addWidget(self.tab_editor)
+        v_layout.addWidget(self.vim)
+        self.setCentralWidget(widget)
 
         # left dock window
         self.dock_explorer = QtWidgets.QDockWidget(self.tr('Workspace'), self)
@@ -295,6 +304,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mathjaxAction.setEnabled(not os.path.exists(__mathjax_full_path__))
 
         # settings
+
+        self.vimAction = QtWidgets.QAction(self.tr('VIM Mode'), self, checkable=True)
+        self.vimAction.triggered.connect(partial(self.onMenuSettings, 'vim_mode'))
+        self.vimAction.setChecked(False)
+
         self.highDpiAction = QtWidgets.QAction(
             self.tr('&High DPI support'), self, checkable=True)
         self.highDpiAction.triggered.connect(
@@ -372,6 +386,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.mathjaxAction)
 
         menu = menubar.addMenu(self.tr('&Settings'))
+        menu.addAction(self.vimAction)
         menu.addAction(self.highDpiAction)
 
         menu.addSeparator()
@@ -709,6 +724,10 @@ class MainWindow(QtWidgets.QMainWindow):
             ret = msgBox.exec_()
             if ret == QtWidgets.QMessageBox.Ok:
                 self.close()
+        elif action == 'vim_mode':
+            self.tab_editor.setVimEmulator(self.vim if value else None)
+            self.vim.setVisible(value)
+            self.vim.setFocus()
 
     def onMenuHelp(self):
         help_paths = [

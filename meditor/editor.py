@@ -50,6 +50,7 @@ class Editor(QsciScintilla):
     _margin_width = 2
     _font = None
     _margin_font = None
+    _vim = None
 
     def __init__(self, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
@@ -225,11 +226,14 @@ class Editor(QsciScintilla):
             self._timer.start()
 
     def keyPressEvent(self, event):
+        text = event.text()
+        # if self._vim.handle(text, self):
+        #     return
         super(Editor, self).keyPressEvent(event)
-        length = len(event.text())
-        if length > 0:
+
+        if text:
             self._latest_input_time = time.time()
-            self._latest_input_count += length
+            self._latest_input_count += len(text)
             self._timer.start()
 
     def dragEnterEvent(self, event):
@@ -794,6 +798,9 @@ class Editor(QsciScintilla):
             self._margin_width = length
             fontmetrics = QtGui.QFontMetrics(self._margin_font)
             self.setMarginWidth(0, fontmetrics.width('0' * self._margin_width))
+
+    def setVimEmulator(self, vim):
+        self._vim = vim
 
 
 class CodeViewer(Editor):

@@ -34,6 +34,7 @@ class TabEditor(QtWidgets.QTabWidget):
     _show_ws_eol = False
     _single_instance = False
     _editor_font = None
+    _vim_emulator = None
 
     def __init__(self, settings, find_dialog, parent=None):
         super(TabEditor, self).__init__(parent)
@@ -285,6 +286,8 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.setFont(self._editor_font)
 
         editor.setWrapMode(self._wrap_mode)
+
+        editor.setVimEmulator(self._vim_emulator)
         editor.do_action('show_ws_eol', self._show_ws_eol)
         return editor
 
@@ -436,3 +439,8 @@ class TabEditor(QtWidgets.QTabWidget):
                 self.updateTitle(x)
                 self.fileLoaded.emit(x)
                 return
+
+    def setVimEmulator(self, vim):
+        self._vim_emulator = vim
+        for x in range(self.count()):
+            self.widget(x).setVimEmulator(self._vim_emulator)
