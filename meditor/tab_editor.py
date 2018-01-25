@@ -205,7 +205,7 @@ class TabEditor(QtWidgets.QTabWidget):
         if not dir_name and basename == __default_basename__:
             self._onSaveAs(index)
         else:
-            self.widget(index).writeFile()
+            self.widget(index).save()
             self.updateTitle(index)
             self.previewRequest.emit(index, 'save')
 
@@ -231,7 +231,7 @@ class TabEditor(QtWidgets.QTabWidget):
             if not ext:
                 ext = selected_filter.split('(')[1][1:4].strip()
                 new_filepath = new_filepath + ext
-            self.widget(index).writeFile(new_filepath)
+            self.widget(index).save(new_filepath)
             self.updateTitle(index)
             self.previewRequest.emit(index, 'save')
             self.filenameChanged.emit(filepath, new_filepath)
@@ -311,7 +311,7 @@ class TabEditor(QtWidgets.QTabWidget):
         if self._single_instance:
             self.do_close_all()
         editor = self._newEditor()
-        editor.readFile(filepath)
+        editor.read(filepath)
         title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
         index = self.insertTab(0, editor, title)
         self.setCurrentIndex(index)

@@ -96,10 +96,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.findDialog = FindReplaceDialog(self)
 
         widget = QtWidgets.QWidget(self)
-        self.tab_editor = TabEditor(self.settings, self.findDialog, widget)
+
         self.vim = VimEmulator(widget)
-        self.vim.hide()
-        # self.vim.setFocusProxy(self.tab_editor)
+        self.tab_editor = TabEditor(self.settings, self.findDialog, widget)
+        value = settings.value('vim_mode', False, type=bool)
+        self.tab_editor.setVimEmulator(self.vim if value else None)
+        self.vim.setVisible(value)
+
         v_layout = QtWidgets.QVBoxLayout(widget)
         v_layout.setContentsMargins(0, 0, 0, 0)
         v_layout.addWidget(self.tab_editor)
@@ -307,7 +310,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.vimAction = QtWidgets.QAction(self.tr('VIM Mode'), self, checkable=True)
         self.vimAction.triggered.connect(partial(self.onMenuSettings, 'vim_mode'))
-        self.vimAction.setChecked(False)
+        value = settings.value('vim_mode', False, type=bool)
+        self.vimAction.setChecked(value)
 
         self.highDpiAction = QtWidgets.QAction(
             self.tr('&High DPI support'), self, checkable=True)
@@ -466,6 +470,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settings.setValue('view/explorer', self.dock_explorer.isVisible())
         self.settings.setValue('view/webview', self.dock_webview.isVisible())
         self.settings.setValue('view/codeview', self.dock_codeview.isVisible())
+        self.settings.setValue('vim_mode', self.vimAction.isChecked())
 
         if not self.tab_editor.close():
             event.ignore()
@@ -727,7 +732,6 @@ class MainWindow(QtWidgets.QMainWindow):
         elif action == 'vim_mode':
             self.tab_editor.setVimEmulator(self.vim if value else None)
             self.vim.setVisible(value)
-            self.vim.setFocus()
 
     def onMenuHelp(self):
         help_paths = [

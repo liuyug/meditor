@@ -31,6 +31,9 @@ class Editor(QsciScintilla):
     inputPreviewRequest = QtCore.pyqtSignal()
     statusChanged = QtCore.pyqtSignal('QString')
     filesDropped = QtCore.pyqtSignal('QString')
+    saveRequest = QtCore.pyqtSignal('QString')
+    readRequest = QtCore.pyqtSignal('QString')
+    closeRequest = QtCore.pyqtSignal()
     _enable_lexer = True
     _filename = None
     _tab_width = 4
@@ -227,8 +230,8 @@ class Editor(QsciScintilla):
 
     def keyPressEvent(self, event):
         text = event.text()
-        # if self._vim.handle(text, self):
-        #     return
+        if self._vim and self._vim.handle(event.key(), text, self):
+            return
         super(Editor, self).keyPressEvent(event)
 
         if text:
@@ -476,7 +479,7 @@ class Editor(QsciScintilla):
                 action(line)
             self.pauseLexer(False)
 
-    def readFile(self, filename, encoding=None):
+    def read(self, filename, encoding=None):
         try:
             with open(filename, 'rb') as f:
                 encoding = chardet.detect(f.read(4096)).get('encoding')
@@ -496,7 +499,7 @@ class Editor(QsciScintilla):
             )
         return False
 
-    def writeFile(self, filename=None):
+    def save(self, filename=None):
         if filename:
             self.setFileName(filename)
         else:
@@ -801,6 +804,18 @@ class Editor(QsciScintilla):
 
     def setVimEmulator(self, vim):
         self._vim = vim
+
+    def moveLeft(self):
+        return self.SendScintilla(QsciScintilla.SCI_CHARLEFT)
+
+    def moveRight(self):
+        return self.SendScintilla(QsciScintilla.SCI_CHARRIGHT)
+
+    def moveUp(self):
+        return self.SendScintilla(QsciScintilla.SCI_LINEUP)
+
+    def moveDown(self):
+        return self.SendScintilla(QsciScintilla.SCI_LINEDOWN)
 
 
 class CodeViewer(Editor):
