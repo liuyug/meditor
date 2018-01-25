@@ -805,18 +805,6 @@ class Editor(QsciScintilla):
     def setVimEmulator(self, vim):
         self._vim = vim
 
-    def moveLeft(self):
-        return self.SendScintilla(QsciScintilla.SCI_CHARLEFT)
-
-    def moveRight(self):
-        return self.SendScintilla(QsciScintilla.SCI_CHARRIGHT)
-
-    def moveUp(self):
-        return self.SendScintilla(QsciScintilla.SCI_LINEUP)
-
-    def moveDown(self):
-        return self.SendScintilla(QsciScintilla.SCI_LINEDOWN)
-
 
 class CodeViewer(Editor):
     """ code viewer, readonly """
