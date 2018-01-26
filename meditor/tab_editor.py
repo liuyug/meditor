@@ -46,7 +46,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self.setDocumentMode(True)
         self.setTabBarAutoHide(True)
         self.tabBarClicked.connect(self._onTabClicked)
-        self.tabCloseRequested.connect(self._onTabCloseRequested)
+        self.tabCloseRequested.connect(self._onEditorClose)
 
         self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
         self._show_ws_eol = self._settings.value('editor/show_ws_eol', False, type=bool)
@@ -70,6 +70,10 @@ class TabEditor(QtWidgets.QTabWidget):
         action.triggered.connect(self._onSaveAs)
         action.setIcon(QtGui.QIcon.fromTheme('document-save-as'))
         self._actions['save_as'] = action
+
+        action = QtWidgets.QAction(self.tr('Save all'), self)
+        action.triggered.connect(self._onSaveAll)
+        self._actions['save_all'] = action
 
         action = QtWidgets.QAction(self.tr('Close all'), self)
         action.triggered.connect(self._onCloseAll)
@@ -107,7 +111,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def closeEvent(self, event):
         for x in range(self.count()):
-            if not self._saveAndContinue(x):
+            if not self._saveAndClose(x):
                 event.ignore()
                 return
 
@@ -171,8 +175,15 @@ class TabEditor(QtWidgets.QTabWidget):
         self.statusChanged.emit(index, widget.status())
         self.previewRequest.emit(index, 'open')
 
-    def _onTabCloseRequested(self, index):
-        if self._saveAndContinue(index):
+    def _onEditorClose(self, index):
+        if isinstance(index, str):
+            if index == '__ALL':
+                QtWidgets.qApp.closeAllWindows()
+                return
+            index = self.currentIndex()
+        if index < 0:
+            index = self.currentIndex()
+        if self._saveAndClose(index):
             widget = self.widget(index)
             self.removeTab(index)
             del widget
@@ -185,17 +196,28 @@ class TabEditor(QtWidgets.QTabWidget):
         self.statusChanged.emit(index, widget.status())
         self.previewRequest.emit(index, 'open')
 
-    def _onOpen(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, self.tr('Open a file'),
-            os.getcwd(),
-            ''.join(FILTER),
-        )
+    def _onOpen(self, filename=None):
+        if not filename:
+            filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self, self.tr('Open a file'),
+                os.getcwd(),
+                ''.join(FILTER),
+            )
         if filename:
             self.loadFile(os.path.abspath(filename))
 
     def _onSave(self, index):
-        if not index:
+        if isinstance(index, str):
+            if index == '__ALL':
+                self.do_save_all()
+                return
+            elif index:
+                filepath = os.path.abspath(index)
+                index = self.currentIndex()
+                self.do_save_as(filepath, index)
+                return
+            index = self.currentIndex()
+        elif index < 0:
             index = self.currentIndex()
 
         filepath = self.filepath(index)
@@ -205,9 +227,7 @@ class TabEditor(QtWidgets.QTabWidget):
         if not dir_name and basename == __default_basename__:
             self._onSaveAs(index)
         else:
-            self.widget(index).save()
-            self.updateTitle(index)
-            self.previewRequest.emit(index, 'save')
+            self.do_save_as(filepath, index)
 
     def _onSaveAs(self, index):
         if not index:
@@ -231,12 +251,9 @@ class TabEditor(QtWidgets.QTabWidget):
             if not ext:
                 ext = selected_filter.split('(')[1][1:4].strip()
                 new_filepath = new_filepath + ext
-            self.widget(index).save(new_filepath)
-            self.updateTitle(index)
-            self.previewRequest.emit(index, 'save')
-            self.filenameChanged.emit(filepath, new_filepath)
+            self.do_save_as(new_filepath, index)
 
-    def _saveAndContinue(self, index):
+    def _saveAndClose(self, index):
         if self.widget(index).isModified():
             filepath = self.filepath(index)
             msgBox = QtWidgets.QMessageBox(self)
@@ -257,6 +274,9 @@ class TabEditor(QtWidgets.QTabWidget):
             if ret == QtWidgets.QMessageBox.Save:
                 self._onSave(index)
         return True
+
+    def _onSaveAll(self):
+        self.do_save_all()
 
     def _onCloseAll(self):
         self.do_close_all()
@@ -282,6 +302,10 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.selectionChanged.connect(self._onSelectionChanged)
 
         editor.filesDropped.connect(self._onFilesDropped)
+        editor.saveRequest.connect(self._onSave)
+        editor.readRequest.connect(self._onOpen)
+        editor.closeRequest.connect(self._onEditorClose)
+
         editor.enableLexer(self._enable_lexer)
         editor.setFont(self._editor_font)
 
@@ -422,16 +446,31 @@ class TabEditor(QtWidgets.QTabWidget):
     def do_close_all(self):
         for x in list(range(self.count()))[::-1]:
             widget = self.widget(x)
-            if not self._saveAndContinue(x):
+            if not self._saveAndClose(x):
                 return
             self.removeTab(x)
             del widget
+
+    def do_save_all(self):
+        for x in list(range(self.count())):
+            self._onSave(x)
+
+    def do_save_as(self, new_name, index=-1):
+        if index < 0:
+            index = self.currentIndex()
+        old_name = self.widget(index).getFileName()
+        self.widget(index).save(new_name)
+        self.updateTitle(index)
+        self.previewRequest.emit(index, 'save')
+        if old_name != new_name:
+            self.filenameChanged.emit(old_name, new_name)
 
     def do_set_font(self, font):
         for x in range(self.count()):
             self.widget(x).setFont(font)
 
     def rename(self, old, new):
+        """update editor filename after has changed name in OS """
         for x in range(self.count()):
             editor = self.widget(x)
             if old == editor.getFileName():

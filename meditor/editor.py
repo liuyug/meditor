@@ -33,7 +33,7 @@ class Editor(QsciScintilla):
     filesDropped = QtCore.pyqtSignal('QString')
     saveRequest = QtCore.pyqtSignal('QString')
     readRequest = QtCore.pyqtSignal('QString')
-    closeRequest = QtCore.pyqtSignal()
+    closeRequest = QtCore.pyqtSignal('QString')
     _enable_lexer = True
     _filename = None
     _tab_width = 4
@@ -500,7 +500,7 @@ class Editor(QsciScintilla):
         return False
 
     def save(self, filename=None):
-        if filename:
+        if filename and filename != self.getFileName():
             self.setFileName(filename)
         else:
             filename = self.getFileName()

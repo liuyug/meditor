@@ -12,16 +12,39 @@ Markup Editor is a editor for reStructuredText and Markdown.
 Feature
 =======
 + support Markdown and reStructuredText
-+ Syntax Highlight for reStructuredText
++ Pygments to support Syntax Highlight
 + support MathJax
++ Format table
++ VIM mode
 + HTML Preview
-+ Customized rst properties
 + Synchronize scroll with preview window
-+ File system explorer
-+ Customized widnow layout
++ Multiple workspaces
 + Customized template
-+ Customized HTML css
++ Themes
 + Multiple editor windows
+
+VIM
+===
+vim command::
+
+    h, j, k, l
+    ~, gu, gU
+    w, b
+    0, ^, $
+    gg, G
+    ctrl+f, ctrl+b
+    X, x, d, db, dw, D, dd
+    y, yy, p
+    o
+    u, ctrl+r, 
+
+vim mode:
+
++   normal
++   insert
++   visual
++   visual block
++   command: ``:w``, ``:q``
 
 Install
 =======

@@ -347,6 +347,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addSeparator()
         menu.addAction(self.tab_editor.action('save'))
         menu.addAction(self.tab_editor.action('save_as'))
+        menu.addAction(self.tab_editor.action('save_all'))
         menu.addAction(self.tab_editor.action('close_all'))
 
         menu.addSeparator()
