@@ -437,6 +437,7 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('find'))
         tb_normal.addAction(self.tab_editor.action('format_table'))
+        tb_normal.addAction(self.vimAction)
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('zoom_in'))
         tb_normal.addAction(self.tab_editor.action('zoom_out'))
