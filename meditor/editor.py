@@ -50,7 +50,7 @@ class Editor(QsciScintilla):
     _modified = False
     _actions = None
     _find_dialog = None
-    _margin_width = 2
+    _min_margin_width = 3
     _font = None
     _margin_font = None
     _vim = None
@@ -66,7 +66,7 @@ class Editor(QsciScintilla):
         self.setMarginsFont(self._margin_font)
         self.setMarginType(0, QsciScintilla.NumberMargin)
         fontmetrics = QtGui.QFontMetrics(self._margin_font)
-        self.setMarginWidth(0, fontmetrics.width('0' * self._margin_width))
+        self.setMarginWidth(0, fontmetrics.width('0' * self._min_margin_width))
         self.setMarginWidth(1, 0)
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
@@ -796,11 +796,9 @@ class Editor(QsciScintilla):
         widget.action('redo').setEnabled(self.isRedoAvailable())
 
     def do_set_margin_width(self):
-        length = len('%s' % self.lines()) + 1
-        if length > self._margin_width:
-            self._margin_width = length
-            fontmetrics = QtGui.QFontMetrics(self._margin_font)
-            self.setMarginWidth(0, fontmetrics.width('0' * self._margin_width))
+        length = max(len('%s' % self.lines()) + 1, self._min_margin_width)
+        fontmetrics = QtGui.QFontMetrics(self._margin_font)
+        self.setMarginWidth(0, fontmetrics.width('0' * length))
 
     def setVimEmulator(self, vim):
         self._vim = vim
