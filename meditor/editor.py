@@ -310,11 +310,29 @@ class Editor(QsciScintilla):
     def getStyleAt(self, pos):
         return self.SendScintilla(QsciScintilla.SCI_GETSTYLEAT, pos)
 
+    def getCurrentPosition(self):
+        return self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
+
     def getPrinter(self, resolution):
         return QsciPrinter(resolution)
 
     def print_(self, printer):
         printer.printRange(self)
+
+    def blockEditAction(self, block, widget=None):
+        if widget is None:
+            widget = self
+        widget.action('undo').blockSignals(block)
+        widget.action('redo').blockSignals(block)
+        widget.action('cut').blockSignals(block)
+        widget.action('copy').blockSignals(block)
+        widget.action('paste').blockSignals(block)
+        widget.action('delete').blockSignals(block)
+        widget.action('select_all').blockSignals(block)
+        widget.action('find').blockSignals(block)
+        widget.action('find_next').blockSignals(block)
+        widget.action('find_prev').blockSignals(block)
+        widget.action('replace_next').blockSignals(block)
 
     def menuEdit(self, menu, widget=None):
         if not widget:
@@ -465,19 +483,39 @@ class Editor(QsciScintilla):
             action = self.indent
         else:
             action = self.unindent
-        if not self.hasSelectedText():
+        if self.hasSelectedText():
+            lineFrom, indexFrom, lineTo, indexTo = self.getSelection()
+            self.pauseLexer(True)
+            for line in range(lineFrom, lineTo + 1):
+                action(line)
+            self.pauseLexer(False)
+        else:
             line, index = self.getCursorPosition()
             action(line)
             if inc:
                 self.setCursorPosition(line, index + self._tab_width)
             else:
                 self.setCursorPosition(line, max(0, index - self._tab_width))
+
+    def linesJoin(self):
+        if self.hasSelectedText():
+            self.SendScintilla(QsciScintilla.SCI_TARGETFROMSELECTION)
         else:
-            lineFrom, indexFrom, lineTo, indexTo = self.getSelection()
-            self.pauseLexer(True)
-            for line in range(lineFrom, lineTo + 1):
-                action(line)
-            self.pauseLexer(False)
+            pos = self.getCurrentPosition()
+            line, index = self.getCursorPosition()
+            next_pos = self.positionFromLineIndex(line + 1, 0)
+            self.SendScintilla(QsciScintilla.SCI_SETTARGETRANGE, pos, next_pos)
+        self.SendScintilla(QsciScintilla.SCI_LINESJOIN)
+
+    def delete(self, length=1):
+        if length == 0:
+            if self.hasSelectedText():
+                self.copy()
+                self.removeSelectedText()
+        else:
+            pos = self.getCurrentPosition()
+            self.SendScintilla(QsciScintilla.SCI_COPYRANGE, pos, pos + length)
+            self.SendScintilla(QsciScintilla.SCI_DELETERANGE, pos, length)
 
     def read(self, filename, encoding=None):
         try:
@@ -564,9 +602,6 @@ class Editor(QsciScintilla):
         self.clear()
         self.setFileName(None)
         self.setModified(False)
-
-    def delete(self):
-        self.removeSelectedText()
 
     def find(self, finddialog, readonly=False):
         finddialog.setReadOnly(readonly)
@@ -702,7 +737,7 @@ class Editor(QsciScintilla):
         elif action == 'paste':
             self.paste()
         elif action == 'delete':
-            self.delete()
+            self.delete(0)
         elif action == 'selectall':
             self.selectAll()
         elif action == 'find':

@@ -89,6 +89,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self._actions['single_instance'] = action
 
         self._actions.update(Editor.createAction(self, self._onAction))
+
         self.action('wrap_line').setChecked(self._wrap_mode > 0)
         self.action('show_ws_eol').setChecked(self._show_ws_eol)
 
@@ -312,6 +313,8 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.setWrapMode(self._wrap_mode)
 
         editor.setVimEmulator(self._vim_emulator)
+        editor.blockEditAction(bool(self._vim_emulator), self)
+
         editor.do_action('show_ws_eol', self._show_ws_eol)
         return editor
 
@@ -483,3 +486,4 @@ class TabEditor(QtWidgets.QTabWidget):
         self._vim_emulator = vim
         for x in range(self.count()):
             self.widget(x).setVimEmulator(self._vim_emulator)
+            self.widget(x).blockEditAction(bool(self._vim_emulator), self)
