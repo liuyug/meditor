@@ -190,7 +190,8 @@ class VimEmulator(QtWidgets.QWidget):
                     for x in range(
                             self._vertical_edit['from'] + 1,
                             self._vertical_edit['to'] + 1):
-                        editor.insertAt(text, x, self._vertical_edit['index'])
+                        if len(editor.text(x)) > self._vertical_edit['index']:
+                            editor.insertAt(text, x, self._vertical_edit['index'])
                 self._vertical_edit = {}
             self.setMode('normal')
             self._command_edit.clear()
