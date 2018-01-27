@@ -146,6 +146,7 @@ class VimEmulator(QtWidgets.QWidget):
     _mode = 0
     _editor = None
     _leader_char = ''
+    _vertical_edit = None
 
     def __init__(self, parent):
         super(VimEmulator, self).__init__(parent)
@@ -163,14 +164,34 @@ class VimEmulator(QtWidgets.QWidget):
 
         self._mode_label.setBuddy(self._command_edit)
 
-        self._command_edit.returnPressed.connect(partial(self.handleCommandMode, 'return'))
-        self._command_edit.escapePressed.connect(partial(self.handleCommandMode, 'escape'))
+        self._command_edit.returnPressed.connect(
+            partial(self.handleCommandMode, 'return'))
+        self._command_edit.escapePressed.connect(
+            partial(self.handleCommandMode, 'escape'))
 
         self.setMode('normal')
+        self._vertical_edit = {}
 
     def handle(self, key, text, editor):
         print('debug key', hex(key), repr(text))
         if key == QtCore.Qt.Key_Escape:
+            if self._vertical_edit:
+                line, index = editor.getCursorPosition()
+                if line == self._vertical_edit['from']  \
+                        and index > self._vertical_edit['index']:
+                    editor.setSelection(
+                        self._vertical_edit['from'], self._vertical_edit['index'],
+                        line, index,
+                    )
+                    text = editor.selectedText()
+                    editor.selectAll(False)
+                    editor.setCursorPosition(
+                        self._vertical_edit['from'], self._vertical_edit['index'])
+                    for x in range(
+                            self._vertical_edit['from'] + 1,
+                            self._vertical_edit['to'] + 1):
+                        editor.insertAt(text, x, self._vertical_edit['index'])
+                self._vertical_edit = {}
             self.setMode('normal')
             self._command_edit.clear()
             editor.setFocus()
@@ -207,13 +228,22 @@ class VimEmulator(QtWidgets.QWidget):
                     editor.SendScintilla(KEY_SCINTILLA[self._leader_char])
                     editor.selectAll(False)
                 self._leader_char = ''
+            elif self._leader_char == '/':
+                self._leader_char = ''
+                if text == '\r':
+                    editor.findNext()
+                elif text.isprintable():
+                    self.setMode('command')
+                    self._command_edit.setText(':' + key)
+                    self._command_edit.setFocus()
+                    self._editor = editor
             else:
                 if key in KEY_SCINTILLA:
                     editor.SendScintilla(KEY_SCINTILLA[key])
                 self._leader_char = ''
         elif text == ':':
             self.setMode('command')
-            self._command_edit.setText(text)
+            self._command_edit.setText(':')
             self._command_edit.setFocus()
             self._editor = editor
         elif text == 'i':
@@ -233,6 +263,8 @@ class VimEmulator(QtWidgets.QWidget):
             else:
                 self._leader_char = text
         elif text == 'g':
+            self._leader_char = text
+        elif text == '/':
             self._leader_char = text
         elif text == '~':
             text = editor.selectedText()
@@ -292,6 +324,11 @@ class VimEmulator(QtWidgets.QWidget):
             editor.indentLines(True)
         elif text == 'J':
             editor.linesJoin()
+        elif text == ':':
+            self.setMode('command')
+            self._command_edit.setText(":'<,'>")
+            self._command_edit.setFocus()
+            self._editor = editor
         else:
             if text in KEY_SCINTILLA:
                 editor.SendScintilla(KEY_SCINTILLA[text])
@@ -311,6 +348,22 @@ class VimEmulator(QtWidgets.QWidget):
             editor.indentLines(True)
         elif text == 'J':
             editor.linesJoin()
+        elif text == ':':
+            self.setMode('command')
+            self._command_edit.setText(":'<,'>")
+            self._command_edit.setFocus()
+            self._editor = editor
+        elif text == 'I':
+            line_from, index_from, line_to, index_to = editor.getSelection()
+            editor.setCursorPosition(line_from, index_from)
+            self.setMode('insert')
+            editor.selectAll(False)
+            self._vertical_edit = {
+                'from': line_from,
+                'to': line_to,
+                'index': index_from,
+                'text': '',
+            }
         else:
             if text in KEY_SCINTILLA:
                 editor.SendScintilla(KEY_SCINTILLA[text])
@@ -323,24 +376,93 @@ class VimEmulator(QtWidgets.QWidget):
         text = self._command_edit.text()
         self._command_edit.clear()
         print(key, text)
+        if not self._editor:
+            return
         if key == 'return':
             self.setMode('normal')
-            cmd = text.split(' ')
-            parameter = ''
-            if len(cmd) > 1:
-                parameter = cmd[1]
-            if 'a' in cmd[0]:
-                parameter = '__ALL'
-            if 'r' in cmd[0]:
-                self._editor.readRequest.emit(parameter)
-            if 'w' in cmd[0]:
-                self._editor.saveRequest.emit(parameter)
-            if 'q' in cmd[0]:
-                self._editor.closeRequest.emit(parameter)
-            self._editor and self._editor.setFocus()
+            text = text.lstrip(':')
+            if text.startswith("'<,'>"):
+                text = text.lstrip("'<,'>")
+                in_selection = True
+            else:
+                in_selection = False
+            if text.startswith('/'):
+                search = text.split('/')
+                find_text = search[1]
+                print('find text', find_text, search)
+                if in_selection and self._editor.hasSelectedText():
+                    is_find = self._editor.findFirstInSelection(
+                        find_text,
+                        True,   # re
+                        False,  # cs
+                        False,  # wo
+                        posix=True,
+                    )
+                else:
+                    is_find = self._editor.findFirst(
+                        find_text,
+                        True,   # re
+                        False,  # cs
+                        False,  # wo
+                        True,   # wrap
+                        posix=True,
+                    )
+            elif text.startswith('s/'):
+                search = text.split('/')
+                if len(search) > 2:
+                    find_text = search[1]
+                    replace_text = search[2]
+                    print('find text', find_text, replace_text)
+                    if len(search) > 3:
+                        op = search[3]
+                    else:
+                        op = ''
+                    if in_selection and self._editor.hasSelectedText():
+                        is_find = self._editor.findFirstInSelection(
+                            find_text,
+                            True,   # re
+                            True if 'i' in op else False,  # cs
+                            False,  # wo
+                            posix=True,
+                        )
+                    else:
+                        is_find = self._editor.findFirst(
+                            find_text,
+                            True,   # re
+                            True if 'i' in op else False,  # cs
+                            False,  # wo
+                            True,   # wrap
+                            posix=True,
+                        )
+                    if is_find:
+                        self._editor.replace(replace_text)
+                    while is_find:
+                        is_find = self._editor.findNext()
+                        if is_find:
+                            self._editor.replace(replace_text)
+            else:
+                cmd = text.split(' ')
+                if len(cmd) > 1:
+                    parameter = cmd[1]
+                else:
+                    parameter = ''
+                if 'a' in cmd[0]:
+                    parameter = '__ALL'
+                if 'r' in cmd[0]:
+                    pass
+                if 'n' in cmd[0]:
+                    self._editor.loadRequest.emit(parameter)
+                if 'w' in cmd[0]:
+                    if in_selection:
+                        pass
+                    else:
+                        self._editor.saveRequest.emit(parameter)
+                if 'q' in cmd[0]:
+                    self._editor.closeRequest.emit(parameter)
+            self._editor.setFocus()
         elif key == 'escape':
             self.setMode('normal')
-            self._editor and self._editor.setFocus()
+            self._editor.setFocus()
 
     def setMode(self, mode):
         if isinstance(mode, int):

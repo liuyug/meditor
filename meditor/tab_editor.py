@@ -313,7 +313,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
         editor.filesDropped.connect(self._onFilesDropped)
         editor.saveRequest.connect(self._onSave)
-        editor.readRequest.connect(self._onOpen)
+        editor.loadRequest.connect(self._onOpen)
         editor.closeRequest.connect(self._onEditorClose)
 
         editor.enableLexer(self._enable_lexer)

@@ -32,7 +32,7 @@ class Editor(QsciScintilla):
     statusChanged = QtCore.pyqtSignal('QString')
     filesDropped = QtCore.pyqtSignal('QString')
     saveRequest = QtCore.pyqtSignal('QString')
-    readRequest = QtCore.pyqtSignal('QString')
+    loadRequest = QtCore.pyqtSignal('QString')
     closeRequest = QtCore.pyqtSignal('QString')
     _enable_lexer = True
     _filename = None
@@ -595,21 +595,21 @@ class Editor(QsciScintilla):
         self.setFileName(None)
         self.setModified(False)
 
-    def find(self, finddialog, readonly=False):
+    def showFindDialog(self, finddialog, readonly=False):
         finddialog.setReadOnly(readonly)
-        finddialog.find_next.connect(self.findNext)
-        finddialog.find_previous.connect(self.findPrevious)
+        finddialog.find_next.connect(self.do_find_next)
+        finddialog.find_previous.connect(self.do_find_previous)
         if not readonly:
-            finddialog.replace_next.connect(self.replaceNext)
-            finddialog.replace_all.connect(self.replaceAll)
+            finddialog.replace_next.connect(self.do_replace_next)
+            finddialog.replace_all.connect(self.do_replace_all)
         finddialog.exec_()
-        finddialog.find_next.disconnect(self.findNext)
-        finddialog.find_previous.disconnect(self.findPrevious)
+        finddialog.find_next.disconnect(self.do_find_next)
+        finddialog.find_previous.disconnect(self.do_find_previous)
         if not readonly:
-            finddialog.replace_next.disconnect(self.replaceNext)
-            finddialog.replace_all.disconnect(self.replaceAll)
+            finddialog.replace_next.disconnect(self.do_replace_next)
+            finddialog.replace_all.disconnect(self.do_replace_all)
 
-    def findNext(self, text, cs, wo):
+    def do_find_next(self, text, cs, wo):
         bfind = self.findFirst(
             text,
             False,  # re
@@ -627,7 +627,7 @@ class Editor(QsciScintilla):
             )
         return
 
-    def findPrevious(self, text, cs, wo):
+    def do_find_previous(self, text, cs, wo):
         line, index = self.getCursorPosition()
         index -= len(text)
         bfind = self.findFirst(
@@ -647,7 +647,7 @@ class Editor(QsciScintilla):
             )
         return
 
-    def replaceNext(self, text, text2, cs, wo):
+    def do_replace_next(self, text, text2, cs, wo):
         line, index = self.getCursorPosition()
         index -= len(text)
         bfind = self.findFirst(
@@ -669,7 +669,7 @@ class Editor(QsciScintilla):
             )
         return
 
-    def replaceAll(self, text, text2, cs, wo):
+    def do_replace_all(self, text, text2, cs, wo):
         bfind = True
         while bfind:
             # line, index = self.getCursorPosition()
@@ -733,21 +733,21 @@ class Editor(QsciScintilla):
         elif action == 'selectall':
             self.selectAll()
         elif action == 'find':
-            self.find(self._find_dialog)
+            self.showFindDialog(self._find_dialog)
         elif action == 'findnext':
-            self.findNext(
+            self.do_find_next(
                 self._find_dialog.getFindText(),
                 self._find_dialog.isCaseSensitive(),
                 self._find_dialog.isWholeWord(),
             )
         elif action == 'findprev':
-            self.findPrevious(
+            self.do_find_previous(
                 self._find_dialog.getFindText(),
                 self._find_dialog.isCaseSensitive(),
                 self._find_dialog.isWholeWord(),
             )
         elif action == 'replacenext':
-            self.replaceNext(
+            self.do_replace_next(
                 self._find_dialog.getFindText(),
                 self._find_dialog.getReplaceText(),
                 self._find_dialog.isCaseSensitive(),
@@ -876,5 +876,5 @@ class CodeViewer(Editor):
         self.setCursorPosition(0, 0)
         self.setModified(False)
 
-    def find(self, finddialog, readonly=True):
-        super(CodeViewer, self).find(finddialog, readonly)
+    def showFindDialog(self, finddialog, readonly=True):
+        super(CodeViewer, self).showFindDialog(finddialog, readonly)
