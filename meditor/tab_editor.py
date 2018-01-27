@@ -126,6 +126,15 @@ class TabEditor(QtWidgets.QTabWidget):
         self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
         self._settings.setValue('editor/single_instance', self._single_instance)
 
+    def keyPressEvent2(self, event):
+        print('tab editor', hex(event.key()), repr(event.text()))
+        if self._vim_emulator is None:
+            print(1)
+            super(TabEditor, self).keyPressEvent(event)
+        else:
+            print(2)
+            event.ignore()
+
     def _onStatusChanged(self, status):
         widget = self.sender()
         index = self.indexOf(widget)
@@ -313,7 +322,7 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.setWrapMode(self._wrap_mode)
 
         editor.setVimEmulator(self._vim_emulator)
-        editor.blockEditAction(bool(self._vim_emulator), self)
+        editor.setEnabledEditAction(self._vim_emulator is None, self)
 
         editor.do_action('show_ws_eol', self._show_ws_eol)
         return editor
@@ -486,4 +495,6 @@ class TabEditor(QtWidgets.QTabWidget):
         self._vim_emulator = vim
         for x in range(self.count()):
             self.widget(x).setVimEmulator(self._vim_emulator)
-            self.widget(x).blockEditAction(bool(self._vim_emulator), self)
+            self.widget(x).setEnabledEditAction(self._vim_emulator is None, self)
+            # invalid
+            # QtGui.qt_set_sequence_auto_mnemonic(self._vim_emulator is None)

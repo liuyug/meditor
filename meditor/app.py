@@ -199,7 +199,6 @@ class MainWindow(QtWidgets.QMainWindow):
         fileAssociationAction.setEnabled(sys.platform == 'win32')
 
         exitAction = QtWidgets.QAction(self.tr('&Exit'), self)
-        exitAction.setShortcut('Ctrl+Q')
         exitAction.setShortcut(QtGui.QKeySequence.Quit)
         exitAction.setIcon(QtGui.QIcon.fromTheme('application-exit'))
         exitAction.triggered.connect(self.close)

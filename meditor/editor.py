@@ -228,6 +228,13 @@ class Editor(QsciScintilla):
             self._latest_input_count += length
             self._timer.start()
 
+    def event(self, event):
+        """in VIM mode, accept all shortcut event """
+        if self._vim and event.type() == event.ShortcutOverride and event.key():
+            event.accept()
+            return True
+        return super(Editor, self).event(event)
+
     def keyPressEvent(self, event):
         text = event.text()
         if self._vim and self._vim.handle(event.key(), text, self):
@@ -238,6 +245,10 @@ class Editor(QsciScintilla):
             self._latest_input_time = time.time()
             self._latest_input_count += len(text)
             self._timer.start()
+
+    def contextMenuEvent(self, event):
+        if event.reason() == event.Mouse:
+            super(Editor, self).contextMenuEvent(event)
 
     def dragEnterEvent(self, event):
         mimedata = event.mimeData()
@@ -319,21 +330,6 @@ class Editor(QsciScintilla):
     def print_(self, printer):
         printer.printRange(self)
 
-    def blockEditAction(self, block, widget=None):
-        if widget is None:
-            widget = self
-        widget.action('undo').blockSignals(block)
-        widget.action('redo').blockSignals(block)
-        widget.action('cut').blockSignals(block)
-        widget.action('copy').blockSignals(block)
-        widget.action('paste').blockSignals(block)
-        widget.action('delete').blockSignals(block)
-        widget.action('select_all').blockSignals(block)
-        widget.action('find').blockSignals(block)
-        widget.action('find_next').blockSignals(block)
-        widget.action('find_prev').blockSignals(block)
-        widget.action('replace_next').blockSignals(block)
-
     def menuEdit(self, menu, widget=None):
         if not widget:
             widget = self
@@ -365,10 +361,6 @@ class Editor(QsciScintilla):
         if not widget:
             widget = self
         widget.action('replace_next').setEnabled(not self.isReadOnly())
-
-    def contextMenuEvent(self, event):
-        if event.reason() == event.Mouse:
-            super(Editor, self).contextMenuEvent(event)
 
     def _onAction(self, action, value):
         self.do_action(action, value)
@@ -829,6 +821,34 @@ class Editor(QsciScintilla):
     def do_modification_changed(self, value, widget):
         widget.action('undo').setEnabled(self.isUndoAvailable())
         widget.action('redo').setEnabled(self.isRedoAvailable())
+
+    def setEnabledEditAction(self, enable, widget=None):
+        return
+        if widget is None:
+            widget = self
+        if enable:
+            self.do_modification_changed(True, widget)
+            self.do_copy_available(True, widget)
+            self.do_selection_changed(widget)
+
+            widget.action('select_all').setEnabled(True)
+            widget.action('find').setEnabled(True)
+            widget.action('find_next').setEnabled(True)
+            widget.action('find_prev').setEnabled(True)
+            widget.action('replace_next').setEnabled(True)
+        else:
+            widget.action('undo').setEnabled(False)
+            widget.action('redo').setEnabled(False)
+            widget.action('cut').setEnabled(False)
+            widget.action('copy').setEnabled(False)
+            widget.action('paste').setEnabled(False)
+            widget.action('delete').setEnabled(False)
+
+            widget.action('select_all').setEnabled(False)
+            widget.action('find').setEnabled(False)
+            widget.action('find_next').setEnabled(False)
+            widget.action('find_prev').setEnabled(False)
+            widget.action('replace_next').setEnabled(False)
 
     def do_set_margin_width(self):
         length = max(len('%s' % self.lines()) + 1, self._min_margin_width)
