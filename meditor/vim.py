@@ -142,18 +142,21 @@ class VimCommand(QtWidgets.QLineEdit):
 
 class VimEmulator(QtWidgets.QWidget):
     _mode_label = None
+    _leader_label = None
     _command_edit = None
     _mode = 0
     _editor = None
-    _leader_char = ''
     _vertical_edit = None
 
     def __init__(self, parent):
         super(VimEmulator, self).__init__(parent)
         self._mode_label = QtWidgets.QLabel(self)
+        self._leader_label = QtWidgets.QLabel(self)
         font = self._mode_label.font()
         font.setBold(True)
         self._mode_label.setFont(font)
+        self._leader_label.setFont(font)
+        self.setLeaderChar('')
 
         self._command_edit = VimCommand(self)
 
@@ -161,8 +164,10 @@ class VimEmulator(QtWidgets.QWidget):
         h_layout.setContentsMargins(0, 0, 0, 0)
         h_layout.addWidget(self._mode_label)
         h_layout.addWidget(self._command_edit)
+        h_layout.addWidget(self._leader_label)
 
         self._mode_label.setBuddy(self._command_edit)
+        self._leader_label.setBuddy(self._command_edit)
 
         self._command_edit.returnPressed.connect(
             partial(self.handleCommandMode, 'return'))
@@ -171,6 +176,12 @@ class VimEmulator(QtWidgets.QWidget):
 
         self.setMode('normal')
         self._vertical_edit = {}
+
+    def leaderChar(self):
+        return self._leader_label.text().strip()
+
+    def setLeaderChar(self, text):
+        self._leader_label.setText(text.ljust(7, ' '))
 
     def handle(self, key, text, editor):
         print('debug key', hex(key), repr(text))
@@ -197,7 +208,7 @@ class VimEmulator(QtWidgets.QWidget):
             self._command_edit.clear()
             editor.setFocus()
             editor.selectAll(False)
-            self._leader_char = ''
+            self.setLeaderChar('')
             return True
         if self._mode == VIM_MODE['normal']:
             return self.handleNormalMode(key, text, editor)
@@ -213,24 +224,24 @@ class VimEmulator(QtWidgets.QWidget):
         print('normal', hex(key), repr(text))
         if not text:
             return False
-        if self._leader_char:
-            key = self._leader_char + text
+        if self.leaderChar():
+            key = self.leaderChar() + text
             if key in ['gu', 'gU']:
                 if editor.hasSelectedText():
                     if key in KEY_SCINTILLA:
                         editor.SendScintilla(KEY_SCINTILLA[key])
-                    self._leader_char = ''
+                    self.setLeaderChar('')
                     editor.selectAll(False)
                 else:
-                    self._leader_char = key
-            elif self._leader_char in ['gu', 'gU']:
+                    self.setLeaderChar(key)
+            elif self.leaderChar() in ['gu', 'gU']:
                 if text in KEY_VISUAL_SCINTILLA:
                     editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])
-                    editor.SendScintilla(KEY_SCINTILLA[self._leader_char])
+                    editor.SendScintilla(KEY_SCINTILLA[self.leaderChar()])
                     editor.selectAll(False)
-                self._leader_char = ''
-            elif self._leader_char == '/':
-                self._leader_char = ''
+                self.setLeaderChar('')
+            elif self.leaderChar() == '/':
+                self.setLeaderChar('')
                 if text == '\r':
                     editor.findNext()
                 elif text.isprintable():
@@ -241,7 +252,7 @@ class VimEmulator(QtWidgets.QWidget):
             else:
                 if key in KEY_SCINTILLA:
                     editor.SendScintilla(KEY_SCINTILLA[key])
-                self._leader_char = ''
+                self.setLeaderChar('')
         elif text == ':':
             self.setMode('command')
             self._command_edit.setText(':')
@@ -257,16 +268,16 @@ class VimEmulator(QtWidgets.QWidget):
             if editor.hasSelectedText():
                 editor.SendScintilla(KEY_SCINTILLA['y'])
             else:
-                self._leader_char = text
+                self.setLeaderChar(text)
         elif text == 'd':
             if editor.hasSelectedText():
                 editor.SendScintilla(KEY_SCINTILLA['d'])
             else:
-                self._leader_char = text
+                self.setLeaderChar(text)
         elif text == 'g':
-            self._leader_char = text
+            self.setLeaderChar(text)
         elif text == '/':
-            self._leader_char = text
+            self.setLeaderChar(text)
         elif text == '~':
             text = editor.selectedText()
             if not text:
