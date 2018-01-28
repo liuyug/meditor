@@ -1,4 +1,4 @@
-
+import os.path
 from functools import partial
 
 from PyQt5 import QtCore, QtWidgets
@@ -131,13 +131,35 @@ KEY_VBLOCK_SCINTILLA = {
 
 class VimCommand(QtWidgets.QLineEdit):
     escapePressed = QtCore.pyqtSignal()
+    _history = None
+    _history_pos = 0
+    _max_history = 10
+
+    def __init__(self, parent):
+        super(VimCommand, self).__init__(parent)
+        self._history = []
+        self.returnPressed.connect(self.addHistory)
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Escape:
+        if event.key() == QtCore.Qt.Key_Up:
+            if len(self._history) > 0:
+                self._history_pos = max(self._history_pos - 1, 0)
+                self.setText(self._history[self._history_pos])
+        elif event.key() == QtCore.Qt.Key_Down:
+            if len(self._history) > 0:
+                self._history_pos = min(self._history_pos + 1, len(self._history) - 1)
+                self.setText(self._history[self._history_pos])
+        elif event.key() == QtCore.Qt.Key_Escape:
             self.clear()
             self.escapePressed.emit()
         else:
             super(VimCommand, self).keyPressEvent(event)
+
+    def addHistory(self):
+        self._history.append(self.text())
+        if len(self._history) > self._max_history:
+            self._history.pop()
+        self._history_pos = len(self._history) - 1
 
 
 class VimEmulator(QtWidgets.QWidget):
@@ -183,6 +205,13 @@ class VimEmulator(QtWidgets.QWidget):
     def setLeaderChar(self, text):
         self._leader_label.setText(text.ljust(7, ' '))
 
+    def reset(self, editor):
+        self.setMode('normal')
+        self._command_edit.clear()
+        editor.setFocus()
+        editor.selectAll(False)
+        self.setLeaderChar('')
+
     def handle(self, key, text, editor):
         print('debug key', hex(key), repr(text))
         if key == QtCore.Qt.Key_Escape:
@@ -195,7 +224,6 @@ class VimEmulator(QtWidgets.QWidget):
                         line, index,
                     )
                     text = editor.selectedText()
-                    editor.selectAll(False)
                     editor.setCursorPosition(
                         self._vertical_edit['from'], self._vertical_edit['index'])
                     for x in range(
@@ -204,11 +232,7 @@ class VimEmulator(QtWidgets.QWidget):
                         if len(editor.text(x)) > self._vertical_edit['index']:
                             editor.insertAt(text, x, self._vertical_edit['index'])
                 self._vertical_edit = {}
-            self.setMode('normal')
-            self._command_edit.clear()
-            editor.setFocus()
-            editor.selectAll(False)
-            self.setLeaderChar('')
+            self.reset(editor)
             return True
         if key == -1:
             if self._mode == VIM_MODE['insert']:
@@ -230,34 +254,7 @@ class VimEmulator(QtWidgets.QWidget):
         if not text:
             return False
         if self.leaderChar():
-            key = self.leaderChar() + text
-            if key in ['gu', 'gU']:
-                if editor.hasSelectedText():
-                    if key in KEY_SCINTILLA:
-                        editor.SendScintilla(KEY_SCINTILLA[key])
-                    self.setLeaderChar('')
-                    editor.selectAll(False)
-                else:
-                    self.setLeaderChar(key)
-            elif self.leaderChar() in ['gu', 'gU']:
-                if text in KEY_VISUAL_SCINTILLA:
-                    editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])
-                    editor.SendScintilla(KEY_SCINTILLA[self.leaderChar()])
-                    editor.selectAll(False)
-                self.setLeaderChar('')
-            elif self.leaderChar() == '/':
-                self.setLeaderChar('')
-                if text == '\r':
-                    editor.findNext()
-                elif text.isprintable():
-                    self.setMode('command')
-                    self._command_edit.setText(':' + key)
-                    self._command_edit.setFocus()
-                    self._editor = editor
-            else:
-                if key in KEY_SCINTILLA:
-                    editor.SendScintilla(KEY_SCINTILLA[key])
-                self.setLeaderChar('')
+            self.handleLeaderMode(key, text, editor)
         elif text == ':':
             self.setMode('command')
             self._command_edit.setText(':')
@@ -281,6 +278,14 @@ class VimEmulator(QtWidgets.QWidget):
                 self.setLeaderChar(text)
         elif text == 'g':
             self.setLeaderChar(text)
+        elif text == ',':
+            self.setLeaderChar(text)
+        elif text == 'c':
+            if editor.hasSelectedText():
+                editor.SendScintilla(KEY_SCINTILLA['x'])
+                self.setMode('insert')
+            else:
+                self.setLeaderChar(text)
         elif text == '/':
             self.setLeaderChar(text)
         elif text == '~':
@@ -333,7 +338,9 @@ class VimEmulator(QtWidgets.QWidget):
         print('visual', hex(key), repr(text))
         if not text:
             return False
-        if text in KEY_VISUAL_SCINTILLA:
+        if self.leaderChar():
+            self.handleLeaderMode(key, text, editor)
+        elif text in KEY_VISUAL_SCINTILLA:
             editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])
         elif text == '<':
             editor.indentLines(False)
@@ -341,6 +348,12 @@ class VimEmulator(QtWidgets.QWidget):
             editor.indentLines(True)
         elif text == 'J':
             editor.linesJoin()
+        elif text == 'c':
+            if editor.hasSelectedText():
+                editor.SendScintilla(KEY_SCINTILLA['x'])
+                self.setMode('insert')
+        elif text == ',':
+            self.setLeaderChar(text)
         elif text == ':':
             self.setMode('command')
             self._command_edit.setText(":'<,'>")
@@ -349,8 +362,7 @@ class VimEmulator(QtWidgets.QWidget):
         else:
             if text in KEY_SCINTILLA:
                 editor.SendScintilla(KEY_SCINTILLA[text])
-            self.setMode('normal')
-            editor.selectAll(False)
+            self.reset(editor)
         return True
 
     def handleVisualBlockMode(self, key, text, editor):
@@ -370,6 +382,17 @@ class VimEmulator(QtWidgets.QWidget):
             self._command_edit.setText(":'<,'>")
             self._command_edit.setFocus()
             self._editor = editor
+        elif text == 'c':
+            line_from, index_from, line_to, index_to = editor.getSelection()
+            editor.SendScintilla(KEY_SCINTILLA['x'])
+            editor.setCursorPosition(line_from, index_from)
+            self.setMode('insert')
+            self._vertical_edit = {
+                'from': line_from,
+                'to': line_to,
+                'index': index_from,
+                'text': '',
+            }
         elif text == 'I':
             line_from, index_from, line_to, index_to = editor.getSelection()
             editor.setCursorPosition(line_from, index_from)
@@ -384,14 +407,12 @@ class VimEmulator(QtWidgets.QWidget):
         else:
             if text in KEY_SCINTILLA:
                 editor.SendScintilla(KEY_SCINTILLA[text])
-            self.setMode('normal')
-            editor.selectAll(False)
+            self.reset(editor)
         return True
 
     def handleCommandMode(self, key):
         """VIM Command"""
         text = self._command_edit.text()
-        self._command_edit.clear()
         print(key, text)
         if not self._editor:
             return
@@ -466,8 +487,8 @@ class VimEmulator(QtWidgets.QWidget):
                 if 'a' in cmd[0]:
                     parameter = '__ALL'
                 if 'r' in cmd[0]:
-                    if parameter:
-                        with open(parameter, 'r',
+                    if os.path.exists(parameter):
+                        with open(parameter, 'r', newline='',
                                   encoding=self._editor.encoding()) as f:
                             text = f.read()
                             line, index = self._editor.getCursorPosition()
@@ -478,17 +499,54 @@ class VimEmulator(QtWidgets.QWidget):
                     if in_selection:
                         text = self._editor.selectedText()
                         if text and parameter:
-                            with open(parameter, 'w',
+                            with open(parameter, 'w', newline='',
                                       encoding=self._editor.encoding()) as f:
                                 f.write(text)
                     else:
                         self._editor.saveRequest.emit(parameter)
                 if 'q' in cmd[0]:
                     self._editor.closeRequest.emit(parameter)
-            self._editor.setFocus()
+            self.reset(self._editor)
         elif key == 'escape':
-            self.setMode('normal')
-            self._editor.setFocus()
+            self.reset(self._editor)
+
+    def handleLeaderMode(self, key, text, editor):
+        key = self.leaderChar() + text
+        if key in ['gu', 'gU']:
+            if editor.hasSelectedText():
+                if key in KEY_SCINTILLA:
+                    editor.SendScintilla(KEY_SCINTILLA[key])
+                self.setLeaderChar('')
+            else:
+                self.setLeaderChar(key)
+        elif self.leaderChar() in ['gu', 'gU']:
+            if text in KEY_VISUAL_SCINTILLA:
+                editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])
+                editor.SendScintilla(KEY_SCINTILLA[self.leaderChar()])
+            self.setLeaderChar('')
+        elif self.leaderChar() == ',':
+            if text == 'f' and editor.hasSelectedText():
+                editor.do_action('format_table', False)
+                self.reset(editor)
+        elif self.leaderChar() == 'c':
+            if text in KEY_VISUAL_SCINTILLA:
+                editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])
+                editor.SendScintilla(KEY_SCINTILLA['d'])
+                self.setMode('insert')
+            self.setLeaderChar('')
+        elif self.leaderChar() == '/':
+            self.setLeaderChar('')
+            if text == '\r':
+                editor.findNext()
+            elif text.isprintable():
+                self.setMode('command')
+                self._command_edit.setText(':' + key)
+                self._command_edit.setFocus()
+                self._editor = editor
+        else:
+            if key in KEY_SCINTILLA:
+                editor.SendScintilla(KEY_SCINTILLA[key])
+            self.setLeaderChar('')
 
     def setMode(self, mode):
         if isinstance(mode, int):
