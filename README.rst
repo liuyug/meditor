@@ -27,16 +27,20 @@ VIM
 ===
 vim command::
 
-    h, j, k, l
-    ~, gu, gU
-    w, b
-    0, ^, $
-    gg, G
-    ctrl+f, ctrl+b
-    X, x, d, db, dw, D, dd
-    y, yy, p
-    o
-    u, ctrl+r, 
+    h, j, k, l          # move left, down, up, right
+    ~, gu, gU           # change uppper or lower case
+    w, b, e             # move forward or backward by word
+    0, ^, $             # move begin of line, first word of line, end of line
+    gg, G               # move document top and bottom
+    ctrl+f, ctrl+b      # page down and up
+    d, db, dw, D, dd    # delete back word, word, to end of line, line
+    y, yy, x, X, p      # copy, cut, paste
+    i, a, A, o, O       # insert, append, newline
+    <, >                # indent
+    J, I                # line join, and vertical insert
+    u, .                # undo and redo
+    /, :/, /<search>, s/<search>/<replace/  # search and replace
+
 
 vim mode:
 

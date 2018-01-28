@@ -215,6 +215,9 @@ class Editor(QsciScintilla):
     def inputMethodEvent(self, event):
         if self.isReadOnly():
             return
+        if self._vim and self._vim.handle(
+                -1, event.preeditString() or event.commitString(), self):
+            return
 
         if event.preeditString():
             self.pauseLexer(True)
@@ -509,6 +512,9 @@ class Editor(QsciScintilla):
             self.SendScintilla(QsciScintilla.SCI_COPYRANGE, pos, pos + length)
             self.SendScintilla(QsciScintilla.SCI_DELETERANGE, pos, length)
 
+    def encoding(self):
+        return self._file_encoding
+
     def read(self, filename, encoding=None):
         try:
             with open(filename, 'rb') as f:
@@ -537,7 +543,7 @@ class Editor(QsciScintilla):
         if filename:
             try:
                 text = self.getValue()
-                with open(filename, 'wt', encoding=self._file_encoding, newline='') as f:
+                with open(filename, 'wt', encoding=self.encoding(), newline='') as f:
                     f.write(text)
                 self.setModified(False)
                 return True
@@ -583,7 +589,7 @@ class Editor(QsciScintilla):
         line, index = self.getCursorPosition()
         cursor = 'Ln %s/%s Col %s/80' % (line + 1, lines, index + 1)
         status = [
-            'encoding:%s' % self._file_encoding.upper(),
+            'encoding:%s' % self.encoding().upper(),
             'eol:%s' % EOL_DESCRIPTION[self.eolMode()],
             'lexer:%s' % (self.lexer().language() if self.lexer() else '--'),
             'cursor:%s' % cursor,

@@ -214,7 +214,7 @@ class TabEditor(QtWidgets.QTabWidget):
                 ''.join(FILTER),
             )
         if filename:
-            self.loadFile(os.path.abspath(filename))
+            self.loadFile(filename)
 
     def _onSave(self, index):
         if isinstance(index, str):
@@ -408,11 +408,12 @@ class TabEditor(QtWidgets.QTabWidget):
         for x in range(self.count()):
             self.widget(x).enableLexer(enable)
 
-    def loadFile(self, path):
+    def loadFile(self, path=None):
         if not path:
             index = self.new('.rst')
             return index
         else:
+            path = os.path.abspath(path)
             if not Editor.canOpened(path):
                 return
             for index in range(self.count()):

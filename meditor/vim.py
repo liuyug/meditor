@@ -210,7 +210,12 @@ class VimEmulator(QtWidgets.QWidget):
             editor.selectAll(False)
             self.setLeaderChar('')
             return True
-        if self._mode == VIM_MODE['normal']:
+        if key == -1:
+            if self._mode == VIM_MODE['insert']:
+                return self.handleInsertMode(key, text, editor)
+            else:
+                return True
+        elif self._mode == VIM_MODE['normal']:
             return self.handleNormalMode(key, text, editor)
         elif self._mode == VIM_MODE['insert']:
             return self.handleInsertMode(key, text, editor)
@@ -461,12 +466,21 @@ class VimEmulator(QtWidgets.QWidget):
                 if 'a' in cmd[0]:
                     parameter = '__ALL'
                 if 'r' in cmd[0]:
-                    pass
+                    if parameter:
+                        with open(parameter, 'r',
+                                  encoding=self._editor.encoding()) as f:
+                            text = f.read()
+                            line, index = self._editor.getCursorPosition()
+                            self._editor.insertAt(text, line, index)
                 if 'n' in cmd[0]:
                     self._editor.loadRequest.emit(parameter)
                 if 'w' in cmd[0]:
                     if in_selection:
-                        pass
+                        text = self._editor.selectedText()
+                        if text and parameter:
+                            with open(parameter, 'w',
+                                      encoding=self._editor.encoding()) as f:
+                                f.write(text)
                     else:
                         self._editor.saveRequest.emit(parameter)
                 if 'q' in cmd[0]:
