@@ -138,6 +138,7 @@ class VimCommand(QtWidgets.QLineEdit):
     def __init__(self, parent):
         super(VimCommand, self).__init__(parent)
         self._history = []
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.returnPressed.connect(self.addHistory)
 
     def keyPressEvent(self, event):
@@ -147,8 +148,11 @@ class VimCommand(QtWidgets.QLineEdit):
                 self.setText(self._history[self._history_pos])
         elif event.key() == QtCore.Qt.Key_Down:
             if len(self._history) > 0:
-                self._history_pos = min(self._history_pos + 1, len(self._history) - 1)
-                self.setText(self._history[self._history_pos])
+                self._history_pos = min(self._history_pos + 1, len(self._history))
+                if self._history_pos == len(self._history):
+                    self.setText('')
+                else:
+                    self.setText(self._history[self._history_pos])
         elif event.key() == QtCore.Qt.Key_Escape:
             self.clear()
             self.escapePressed.emit()
@@ -158,8 +162,8 @@ class VimCommand(QtWidgets.QLineEdit):
     def addHistory(self):
         self._history.append(self.text())
         if len(self._history) > self._max_history:
-            self._history.pop()
-        self._history_pos = len(self._history) - 1
+            self._history.pop(0)
+        self._history_pos = len(self._history)
 
 
 class VimEmulator(QtWidgets.QWidget):
@@ -418,7 +422,6 @@ class VimEmulator(QtWidgets.QWidget):
         if not self._editor:
             return
         if key == 'return':
-            self.setMode('normal')
             text = text.lstrip(':')
             if text.startswith("'<,'>"):
                 text = text.lstrip("'<,'>")
@@ -507,7 +510,9 @@ class VimEmulator(QtWidgets.QWidget):
                         self._editor.saveRequest.emit(parameter)
                 if 'q' in cmd[0]:
                     self._editor.closeRequest.emit(parameter)
-            self.reset(self._editor)
+            self._command_edit.clear()
+            self._editor.setFocus()
+            self.setMode('normal')
         elif key == 'escape':
             self.reset(self._editor)
 
