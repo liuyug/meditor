@@ -545,7 +545,7 @@ class VimEmulator(QtWidgets.QWidget):
             cur_pos = editor.getCurrentPosition()
             text = editor.text(pos_from, cur_pos)
             point = editor.pixelFromPosition(pos_from)
-            px = point[0]
+            px = point[0] + 4  # fix char pixel point
             for x in range(
                     self._vertical_edit['from'] + 1,
                     self._vertical_edit['to'] + 1):
