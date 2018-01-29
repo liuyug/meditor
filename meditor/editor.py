@@ -242,7 +242,8 @@ class Editor(QsciScintilla):
         text = event.text()
         if self._vim and self._vim.handle(event.key(), text, self):
             return
-        super(Editor, self).keyPressEvent(event)
+        else:
+            super(Editor, self).keyPressEvent(event)
 
         if text:
             self._latest_input_time = time.time()
@@ -375,7 +376,9 @@ class Editor(QsciScintilla):
         """
         now = time.time()
         if self._latest_input_count > 0:
-            if not self._pauseLexer and (now - self._latest_input_time) > self._timer_interval:
+            if not self._pauseLexer  \
+                    and not (self._vim and self._vim.isCommandMode())  \
+                    and (now - self._latest_input_time) > self._timer_interval:
                 self.inputPreviewRequest.emit()
                 self._latest_input_count = 0
             else:

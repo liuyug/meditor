@@ -217,7 +217,6 @@ class VimEmulator(QtWidgets.QWidget):
         self.setLeaderChar('')
 
     def handle(self, key, text, editor):
-        print('debug key', hex(key), repr(text))
         if key == QtCore.Qt.Key_Escape:
             if self._vertical_edit:
                 self.verticalInsert(editor)
@@ -239,7 +238,6 @@ class VimEmulator(QtWidgets.QWidget):
         return False
 
     def handleNormalMode(self, key, text, editor):
-        print('normal', hex(key), repr(text))
         if not text:
             return False
         if self.leaderChar():
@@ -324,7 +322,6 @@ class VimEmulator(QtWidgets.QWidget):
         return False
 
     def handleVisualMode(self, key, text, editor):
-        print('visual', hex(key), repr(text))
         if not text:
             return False
         if self.leaderChar():
@@ -355,7 +352,6 @@ class VimEmulator(QtWidgets.QWidget):
         return True
 
     def handleVisualBlockMode(self, key, text, editor):
-        print('visual block', hex(key), repr(text))
         if not text:
             return False
         if text in KEY_VBLOCK_SCINTILLA:
@@ -407,7 +403,6 @@ class VimEmulator(QtWidgets.QWidget):
     def handleCommandMode(self, key):
         """VIM Command"""
         text = self._command_edit.text()
-        print(key, text)
         if not self._editor:
             return
         if key == 'return':
@@ -420,7 +415,6 @@ class VimEmulator(QtWidgets.QWidget):
             if text.startswith('/'):
                 search = text.split('/')
                 find_text = search[1]
-                print('find text', find_text, search)
                 if in_selection and self._editor.hasSelectedText():
                     is_find = self._editor.findFirstInSelection(
                         find_text,
@@ -443,7 +437,6 @@ class VimEmulator(QtWidgets.QWidget):
                 if len(search) > 2:
                     find_text = search[1]
                     replace_text = search[2]
-                    print('find text', find_text, replace_text)
                     if len(search) > 3:
                         op = search[3]
                     else:
@@ -576,3 +569,6 @@ class VimEmulator(QtWidgets.QWidget):
 
     def mode(self):
         return self._mode
+
+    def isCommandMode(self):
+        return self.mode() == VIM_MODE['command']
