@@ -18,9 +18,10 @@ Feature
 + VIM mode
 + HTML Preview
 + Synchronize scroll with preview window
++ drag and drop
 + Multiple workspaces
 + Customized template
-+ Themes
++ Peview CSS Themes
 + Multiple editor windows
 
 VIM
