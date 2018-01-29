@@ -377,7 +377,6 @@ class Editor(QsciScintilla):
         now = time.time()
         if self._latest_input_count > 0:
             if not self._pauseLexer  \
-                    and not (self._vim and self._vim.isCommandMode())  \
                     and (now - self._latest_input_time) > self._timer_interval:
                 self.inputPreviewRequest.emit()
                 self._latest_input_count = 0
