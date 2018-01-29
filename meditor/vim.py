@@ -302,7 +302,8 @@ class VimEmulator(QtWidgets.QWidget):
             if editor.hasSelectedText():
                 editor.SendScintilla(KEY_SCINTILLA['x'])
             else:
-                editor.delete(1)
+                editor.SendScintilla(KEY_VISUAL_SCINTILLA['l'])
+                editor.SendScintilla(KEY_SCINTILLA['x'])
         elif text == 'a':
             editor.SendScintilla(KEY_SCINTILLA['l'])
             self.setMode('insert')

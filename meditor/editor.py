@@ -509,8 +509,10 @@ class Editor(QsciScintilla):
                 self.removeSelectedText()
         else:
             pos = self.getCurrentPosition()
-            self.SendScintilla(QsciScintilla.SCI_COPYRANGE, pos, pos + length)
-            self.SendScintilla(QsciScintilla.SCI_DELETERANGE, pos, length)
+            line, index = self.getCursorPosition()
+            next_pos = self.positionFromLineIndex(line, index + length)
+            self.SendScintilla(QsciScintilla.SCI_COPYRANGE, pos, next_pos)
+            self.SendScintilla(QsciScintilla.SCI_DELETERANGE, pos, next_pos - pos)
 
     def encoding(self):
         return self._file_encoding
