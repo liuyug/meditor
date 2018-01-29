@@ -511,8 +511,18 @@ class Editor(QsciScintilla):
             pos = self.getCurrentPosition()
             line, index = self.getCursorPosition()
             next_pos = self.positionFromLineIndex(line, index + length)
+
             self.SendScintilla(QsciScintilla.SCI_COPYRANGE, pos, next_pos)
             self.SendScintilla(QsciScintilla.SCI_DELETERANGE, pos, next_pos - pos)
+
+    def pixelFromPosition(self, pos):
+        x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, pos)
+        y = self.SendScintilla(QsciScintilla.SCI_POINTYFROMPOSITION, 0, pos)
+        return (x, y)
+
+    def positionFromPixel(self, point):
+        return self.SendScintilla(
+            QsciScintilla.SCI_CHARPOSITIONFROMPOINTCLOSE, point[0], point[1])
 
     def encoding(self):
         return self._file_encoding

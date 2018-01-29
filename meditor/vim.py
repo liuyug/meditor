@@ -220,22 +220,7 @@ class VimEmulator(QtWidgets.QWidget):
         print('debug key', hex(key), repr(text))
         if key == QtCore.Qt.Key_Escape:
             if self._vertical_edit:
-                line, index = editor.getCursorPosition()
-                if line == self._vertical_edit['from']  \
-                        and index > self._vertical_edit['index']:
-                    editor.setSelection(
-                        self._vertical_edit['from'], self._vertical_edit['index'],
-                        line, index,
-                    )
-                    text = editor.selectedText()
-                    editor.setCursorPosition(
-                        self._vertical_edit['from'], self._vertical_edit['index'])
-                    for x in range(
-                            self._vertical_edit['from'] + 1,
-                            self._vertical_edit['to'] + 1):
-                        if len(editor.text(x)) > self._vertical_edit['index']:
-                            editor.insertAt(text, x, self._vertical_edit['index'])
-                self._vertical_edit = {}
+                self.verticalInsert(editor)
             self.reset(editor)
             return True
         if key == -1:
@@ -306,8 +291,7 @@ class VimEmulator(QtWidgets.QWidget):
             if editor.hasSelectedText():
                 editor.SendScintilla(KEY_SCINTILLA['x'])
             else:
-                editor.SendScintilla(KEY_VISUAL_SCINTILLA['l'])
-                editor.SendScintilla(KEY_SCINTILLA['x'])
+                editor.delete(1)
         elif text == 'a':
             editor.SendScintilla(KEY_SCINTILLA['l'])
             self.setMode('insert')
@@ -390,25 +374,30 @@ class VimEmulator(QtWidgets.QWidget):
         elif text == 'c':
             line_from, index_from, line_to, index_to = editor.getSelection()
             editor.SendScintilla(KEY_SCINTILLA['x'])
-            editor.setCursorPosition(line_from, index_from)
-            self.setMode('insert')
+            line_b = min(line_from, line_to)
+            line_e = max(line_from, line_to)
+            index = min(index_from, index_to)
+            editor.setCursorPosition(line_b, index)
             self._vertical_edit = {
-                'from': line_from,
-                'to': line_to,
-                'index': index_from,
-                'text': '',
+                'from': line_b,
+                'to': line_e,
+                'index': index,
             }
+            self.setMode('insert')
         elif text == 'I':
-            line_from, index_from, line_to, index_to = editor.getSelection()
-            editor.setCursorPosition(line_from, index_from)
+            if editor.hasSelectedText():
+                line_from, index_from, line_to, index_to = editor.getSelection()
+                line_b = min(line_from, line_to)
+                line_e = max(line_from, line_to)
+                index = min(index_from, index_to)
+                editor.setCursorPosition(line_b, index)
+                self._vertical_edit = {
+                    'from': line_b,
+                    'to': line_e,
+                    'index': index,
+                }
             self.setMode('insert')
             editor.selectAll(False)
-            self._vertical_edit = {
-                'from': line_from,
-                'to': line_to,
-                'index': index_from,
-                'text': '',
-            }
         else:
             if text in KEY_SCINTILLA:
                 editor.SendScintilla(KEY_SCINTILLA[text])
@@ -553,6 +542,29 @@ class VimEmulator(QtWidgets.QWidget):
             if key in KEY_SCINTILLA:
                 editor.SendScintilla(KEY_SCINTILLA[key])
             self.setLeaderChar('')
+
+    def verticalInsert(self, editor):
+        line, index = editor.getCursorPosition()
+        if line == self._vertical_edit['from']  \
+                and index > self._vertical_edit['index']:
+            pos_from = editor.positionFromLineIndex(
+                self._vertical_edit['from'], self._vertical_edit['index'])
+            cur_pos = editor.getCurrentPosition()
+            text = editor.text(pos_from, cur_pos)
+            point = editor.pixelFromPosition(pos_from)
+            px = point[0]
+            for x in range(
+                    self._vertical_edit['from'] + 1,
+                    self._vertical_edit['to'] + 1):
+                pos_line = editor.positionFromLineIndex(x, 0)
+                point = editor.pixelFromPosition(pos_line)
+                pos_insert = editor.positionFromPixel((px, point[1]))
+                if pos_insert != -1:
+                    line, index = editor.lineIndexFromPosition(pos_insert)
+                    editor.insertAt(text, line, index)
+            editor.setCursorPosition(
+                self._vertical_edit['from'], self._vertical_edit['index'])
+        self._vertical_edit = {}
 
     def setMode(self, mode):
         if isinstance(mode, int):
