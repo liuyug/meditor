@@ -18,7 +18,6 @@ VIM_MODE = {
     'v-block': 4,
 }
 
-QsciScintilla
 
 KEY_SCINTILLA = {
     'j': QsciScintilla.SCI_LINEDOWN,
@@ -222,7 +221,7 @@ class VimEmulator(QtWidgets.QWidget):
                 self.verticalInsert(editor)
             self.reset(editor)
             return True
-        if key == -1:
+        if key == -1:  # for input method event
             if self._mode == VIM_MODE['insert']:
                 return self.handleInsertMode(key, text, editor)
             else:
@@ -314,8 +313,9 @@ class VimEmulator(QtWidgets.QWidget):
             editor.indentLines(True)
         elif text == 'J':
             editor.linesJoin()
-        elif text in KEY_SCINTILLA:
-            editor.SendScintilla(KEY_SCINTILLA[text])
+        else:
+            if text in KEY_SCINTILLA:
+                editor.SendScintilla(KEY_SCINTILLA[text])
         return True
 
     def handleInsertMode(self, key, text, editor):
@@ -326,8 +326,6 @@ class VimEmulator(QtWidgets.QWidget):
             return False
         if self.leaderChar():
             self.handleLeaderMode(key, text, editor)
-        elif text in KEY_VISUAL_SCINTILLA:
-            editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])
         elif text == '<':
             editor.indentLines(False)
         elif text == '>':
@@ -345,6 +343,10 @@ class VimEmulator(QtWidgets.QWidget):
             self._command_edit.setText(":'<,'>")
             self._command_edit.setFocus()
             self._editor = editor
+        elif text == 'g':
+            self.setLeaderChar('g')
+        elif text in KEY_VISUAL_SCINTILLA:
+            editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])
         else:
             if text in KEY_SCINTILLA:
                 editor.SendScintilla(KEY_SCINTILLA[text])
@@ -354,8 +356,8 @@ class VimEmulator(QtWidgets.QWidget):
     def handleVisualBlockMode(self, key, text, editor):
         if not text:
             return False
-        if text in KEY_VBLOCK_SCINTILLA:
-            editor.SendScintilla(KEY_VBLOCK_SCINTILLA[text])
+        if self.leaderChar():
+            self.handleLeaderMode(key, text, editor)
         elif text == '<':
             editor.indentLines(False)
         elif text == '>':
@@ -394,6 +396,10 @@ class VimEmulator(QtWidgets.QWidget):
                 }
             self.setMode('insert')
             editor.selectAll(False)
+        elif text == 'g':
+            self.setLeaderChar('g')
+        elif text in KEY_VBLOCK_SCINTILLA:
+            editor.SendScintilla(KEY_VBLOCK_SCINTILLA[text])
         else:
             if text in KEY_SCINTILLA:
                 editor.SendScintilla(KEY_SCINTILLA[text])
@@ -500,13 +506,18 @@ class VimEmulator(QtWidgets.QWidget):
 
     def handleLeaderMode(self, key, text, editor):
         key = self.leaderChar() + text
-        if key in ['gu', 'gU']:
+        if key == 'gg':
+            if self.mode() == VIM_MODE['visual']:
+                editor.SendScintilla(KEY_VISUAL_SCINTILLA['gg'])
+            if self.mode() == VIM_MODE['normal']:
+                editor.SendScintilla(KEY_SCINTILLA['gg'])
+        elif key in ['gu', 'gU']:
             if editor.hasSelectedText():
                 if key in KEY_SCINTILLA:
                     editor.SendScintilla(KEY_SCINTILLA[key])
                 self.setLeaderChar('')
             else:
-                self.setLeaderChar(key)
+                self.setLeaderChar(key)  # to accept motion key
         elif self.leaderChar() in ['gu', 'gU']:
             if text in KEY_VISUAL_SCINTILLA:
                 editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])

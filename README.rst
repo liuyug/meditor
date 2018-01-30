@@ -44,7 +44,6 @@ vim command::
     c, w, r             # selection change, read and write
     n [file]            # new window
 
-    # ',' to call action
     ,f                  # format table
 
 
