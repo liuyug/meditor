@@ -1,7 +1,7 @@
 import os.path
 from functools import partial
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.Qsci import QsciScintilla
 
 
@@ -179,8 +179,15 @@ class VimEmulator(QtWidgets.QWidget):
         self._leader_label = QtWidgets.QLabel(self)
         font = self._mode_label.font()
         font.setBold(True)
+        fontmetrics = QtGui.QFontMetrics(font)
+        font_width = fontmetrics.width('O')
+
         self._mode_label.setFont(font)
         self._leader_label.setFont(font)
+        self._mode_label.setMinimumWidth(font_width * 7)
+        self._leader_label.setMinimumWidth(font_width * 3)
+        self._mode_label.setAlignment(QtCore.Qt.AlignCenter)
+        self._leader_label.setAlignment(QtCore.Qt.AlignCenter)
         self.setLeaderChar('')
 
         self._command_edit = VimCommand(self)
@@ -206,7 +213,7 @@ class VimEmulator(QtWidgets.QWidget):
         return self._leader_label.text().strip()
 
     def setLeaderChar(self, text):
-        self._leader_label.setText(text.ljust(7, ' '))
+        self._leader_label.setText(text)
 
     def reset(self, editor):
         self.setMode('normal')
@@ -556,7 +563,7 @@ class VimEmulator(QtWidgets.QWidget):
             cur_pos = editor.getCurrentPosition()
             text = editor.text(pos_from, cur_pos)
             point = editor.pixelFromPosition(pos_from)
-            px = point[0]
+            px = point[0] + 4  # fix char pixel point
             for x in range(
                     self._vertical_edit['from'] + 1,
                     self._vertical_edit['to'] + 1):
@@ -575,7 +582,7 @@ class VimEmulator(QtWidgets.QWidget):
             self._mode = mode
         else:
             self._mode = VIM_MODE[mode]
-        label = '{0:>7}'.format(VIM_MODE[self._mode].upper())
+        label = VIM_MODE[self._mode].upper()
         self._mode_label.setText(label)
 
     def mode(self):
