@@ -126,15 +126,6 @@ class TabEditor(QtWidgets.QTabWidget):
         self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
         self._settings.setValue('editor/single_instance', self._single_instance)
 
-    def keyPressEvent2(self, event):
-        print('tab editor', hex(event.key()), repr(event.text()))
-        if self._vim_emulator is None:
-            print(1)
-            super(TabEditor, self).keyPressEvent(event)
-        else:
-            print(2)
-            event.ignore()
-
     def _onStatusChanged(self, status):
         widget = self.sender()
         index = self.indexOf(widget)
@@ -227,7 +218,7 @@ class TabEditor(QtWidgets.QTabWidget):
                 self.do_save_as(filepath, index)
                 return
             index = self.currentIndex()
-        elif index < 0:
+        elif isinstance(index, bool) or index < 0:
             index = self.currentIndex()
 
         filepath = self.filepath(index)
