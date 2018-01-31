@@ -1,6 +1,7 @@
 
 import os.path
 import logging
+from functools import partial
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -46,7 +47,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self.setDocumentMode(True)
         self.setTabBarAutoHide(True)
         self.tabBarClicked.connect(self._onTabClicked)
-        self.tabCloseRequested.connect(self._onEditorClose)
+        self.tabCloseRequested.connect(self._onTabCloseRequest)
 
         self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
         self._show_ws_eol = self._settings.value('editor/show_ws_eol', False, type=bool)
@@ -111,11 +112,6 @@ class TabEditor(QtWidgets.QTabWidget):
             self.new('.rst')
 
     def closeEvent(self, event):
-        for x in range(self.count()):
-            if not self._saveAndClose(x):
-                event.ignore()
-                return
-
         self._settings.setValue('editor/font', self._editor_font.toString())
         opened = []
         for x in range(self.count()):
@@ -125,6 +121,10 @@ class TabEditor(QtWidgets.QTabWidget):
         self._settings.setValue('editor/wrap_mode', self._wrap_mode)
         self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
         self._settings.setValue('editor/single_instance', self._single_instance)
+
+        if not self.do_close_all():
+            event.ignore()
+            return
 
     def _onStatusChanged(self, status):
         widget = self.sender()
@@ -168,71 +168,26 @@ class TabEditor(QtWidgets.QTabWidget):
         self.verticalScrollBarChanged.emit(index, value)
 
     def _onTabClicked(self, index):
-        widget = self.widget(index)
-        if not widget:
-            return
-        widget.setFocus(QtCore.Qt.TabFocusReason)
-        self.fileLoaded.emit(index)
-        self.statusChanged.emit(index, widget.status())
-        self.previewRequest.emit(index, 'open')
+        self.do_switch_editor(index)
 
-    def _onEditorClose(self, index):
-        if isinstance(index, str):
-            if index == '__ALL':
-                QtWidgets.qApp.closeAllWindows()
-                return
-            index = self.currentIndex()
-        if index < 0:
-            index = self.currentIndex()
-        if self._saveAndClose(index):
-            widget = self.widget(index)
-            self.removeTab(index)
-            del widget
-        if self.count() == 0:
-            self.new('.rst')
-        widget = self.currentWidget()
-        index = self.currentIndex()
-        widget.setFocus(QtCore.Qt.TabFocusReason)
-        self.fileLoaded.emit(index)
-        self.statusChanged.emit(index, widget.status())
-        self.previewRequest.emit(index, 'open')
+    def _onTabCloseRequest(self, index):
+        self.do_close_editor(index)
 
-    def _onOpen(self, filename=None):
-        if not filename:
-            filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-                self, self.tr('Open a file'),
-                os.getcwd(),
-                ''.join(FILTER),
-            )
+    def _onOpen(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, self.tr('Open a file'),
+            os.getcwd(),
+            ''.join(FILTER),
+        )
         if filename:
             self.loadFile(filename)
 
-    def _onSave(self, index):
-        if isinstance(index, str):
-            if index == '__ALL':
-                self.do_save_all()
-                return
-            elif index:
-                filepath = os.path.abspath(index)
-                index = self.currentIndex()
-                self.do_save_as(filepath, index)
-                return
-            index = self.currentIndex()
-        elif isinstance(index, bool) or index < 0:
-            index = self.currentIndex()
+    def _onSave(self):
+        index = self.currentIndex()
+        self.do_save(index)
 
-        filepath = self.filepath(index)
-        dir_name = os.path.dirname(filepath)
-        filename = os.path.basename(filepath)
-        basename, _ = os.path.splitext(filename)
-        if not dir_name and basename == __default_basename__:
-            self._onSaveAs(index)
-        else:
-            self.do_save_as(filepath, index)
-
-    def _onSaveAs(self, index):
-        if not index:
-            index = self.currentIndex()
+    def _onSaveAs(self):
+        index = self.currentIndex()
 
         filepath = self.filepath(index)
         dir_name = os.path.dirname(filepath)
@@ -252,9 +207,10 @@ class TabEditor(QtWidgets.QTabWidget):
             if not ext:
                 ext = selected_filter.split('(')[1][1:4].strip()
                 new_filepath = new_filepath + ext
-            self.do_save_as(new_filepath, index)
+            self.do_save_as(index, new_filepath)
 
-    def _saveAndClose(self, index):
+    def _saveAndClose(self):
+        index = self.currentIndex()
         if self.widget(index).isModified():
             filepath = self.filepath(index)
             msgBox = QtWidgets.QMessageBox(self)
@@ -273,15 +229,14 @@ class TabEditor(QtWidgets.QTabWidget):
             if ret == QtWidgets.QMessageBox.Cancel:
                 return False
             if ret == QtWidgets.QMessageBox.Save:
-                self._onSave(index)
+                self._onSave()
         return True
 
     def _onSaveAll(self):
         self.do_save_all()
 
     def _onCloseAll(self):
-        self.do_close_all()
-        self.new('.rst')
+        self.do_close_all(new=True)
 
     def _onDefaultFont(self):
         font, ok = QtWidgets.QFontDialog.getFont(self._editor_font, self)
@@ -303,9 +258,11 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.selectionChanged.connect(self._onSelectionChanged)
 
         editor.filesDropped.connect(self._onFilesDropped)
-        editor.saveRequest.connect(self._onSave)
-        editor.loadRequest.connect(self._onOpen)
-        editor.closeRequest.connect(self._onEditorClose)
+        editor.saveRequest.connect(partial(self.do_save_as, -1))
+        editor.saveAllRequest.connect(self.do_save_all)
+        editor.loadRequest.connect(self.loadFile)
+        editor.closeRequest.connect(partial(self.do_close_editor, -1))
+        editor.closeAppRequest.connect(self.do_close_app)
 
         editor.enableLexer(self._enable_lexer)
         editor.setFont(self._editor_font)
@@ -399,7 +356,7 @@ class TabEditor(QtWidgets.QTabWidget):
         for x in range(self.count()):
             self.widget(x).enableLexer(enable)
 
-    def loadFile(self, path=None):
+    def loadFile(self, path):
         if not path:
             index = self.new('.rst')
             return index
@@ -447,27 +404,81 @@ class TabEditor(QtWidgets.QTabWidget):
         else:
             widget.do_action(action, value)
 
-    def do_close_all(self):
+    def do_close_app(self):
+        QtWidgets.qApp.closeAllWindows()
+
+    def do_close_all(self, new=False):
         for x in list(range(self.count()))[::-1]:
+            self.setCurrentIndex(x)
             widget = self.widget(x)
-            if not self._saveAndClose(x):
-                return
+            if not self._saveAndClose():
+                return False
             self.removeTab(x)
+            widget.close()
             del widget
+        if new:
+            self.new('.rst')
+        return True
+
+    def do_close_editor(self, index):
+        if index < 0:
+            index = self.currentIndex()
+        if self.widget(index).isModified():
+            self.do_switch_editor(index)
+            if self._saveAndClose():
+                widget = self.widget(index)
+                self.removeTab(index)
+                widget.close()
+                del widget
+        else:
+            widget = self.widget(index)
+            self.removeTab(index)
+            widget.close()
+            del widget
+        if self.count() == 0:
+            self.new('.rst')
+        index = self.currentIndex()
+        self.do_switch_editor(index)
 
     def do_save_all(self):
-        for x in list(range(self.count())):
-            self._onSave(x)
+        for x in range(self.count()):
+            self.do_save(x)
 
-    def do_save_as(self, new_name, index=-1):
+    def do_save(self, index):
+        filepath = self.filepath(index)
+        dir_name = os.path.dirname(filepath)
+        filename = os.path.basename(filepath)
+        basename, _ = os.path.splitext(filename)
+        if not dir_name and basename == __default_basename__:
+            self.setCurrentIndex(index)
+            self._onSaveAs()
+        else:
+            self.widget(index).save()
+
+    def do_save_as(self, index, new_name):
         if index < 0:
             index = self.currentIndex()
         old_name = self.widget(index).getFileName()
+        if not new_name:
+            new_name = old_name
         self.widget(index).save(new_name)
-        self.updateTitle(index)
-        self.previewRequest.emit(index, 'save')
+
+        if index == self.currentIndex():
+            self.updateTitle(index)
+            self.previewRequest.emit(index, 'save')
         if old_name != new_name:
             self.filenameChanged.emit(old_name, new_name)
+
+    def do_switch_editor(self, index):
+        widget = self.widget(index)
+        if not widget:
+            return
+        if index != self.currentIndex():
+            self.setCurrentIndex(index)
+        widget.setFocus(QtCore.Qt.TabFocusReason)
+        self.fileLoaded.emit(index)
+        self.statusChanged.emit(index, widget.status())
+        self.previewRequest.emit(index, 'open')
 
     def do_set_font(self, font):
         for x in range(self.count()):

@@ -174,7 +174,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
         logger.debug(' Preview worker start '.center(80, '-'))
         self.previewWorker.start()
-        self.tab_editor.loadFile(self.tab_editor.filepath())
+        self.tab_editor.do_switch_editor(0)
         self.previewCurrentText(force=True)
 
     def setupMenu(self):

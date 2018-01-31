@@ -483,8 +483,6 @@ class VimEmulator(QtWidgets.QWidget):
                     parameter = cmd[1]
                 else:
                     parameter = ''
-                if 'a' in cmd[0]:
-                    parameter = '__ALL'
                 if 'r' in cmd[0]:
                     if os.path.exists(parameter):
                         with open(parameter, 'r', newline='',
@@ -502,9 +500,15 @@ class VimEmulator(QtWidgets.QWidget):
                                       encoding=self._editor.encoding()) as f:
                                 f.write(text)
                     else:
-                        self._editor.saveRequest.emit(parameter)
+                        if 'a' in cmd[0]:
+                            self._editor.saveAllRequest.emit()
+                        else:
+                            self._editor.saveRequest.emit(parameter)
                 if 'q' in cmd[0]:
-                    self._editor.closeRequest.emit(parameter)
+                    if 'a' in cmd[0]:
+                        self._editor.closeAppRequest.emit()
+                    else:
+                        self._editor.closeRequest.emit()
             self._command_edit.clear()
             self._editor.setFocus()
             self.setMode('normal')
@@ -534,6 +538,7 @@ class VimEmulator(QtWidgets.QWidget):
             if text == 'f' and editor.hasSelectedText():
                 editor.do_action('format_table', False)
                 self.reset(editor)
+            self.setLeaderChar('')
         elif self.leaderChar() == 'c':
             if text in KEY_VISUAL_SCINTILLA:
                 editor.SendScintilla(KEY_VISUAL_SCINTILLA[text])

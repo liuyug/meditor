@@ -32,8 +32,10 @@ class Editor(QsciScintilla):
     statusChanged = QtCore.pyqtSignal('QString')
     filesDropped = QtCore.pyqtSignal('QString')
     saveRequest = QtCore.pyqtSignal('QString')
+    saveAllRequest = QtCore.pyqtSignal()
     loadRequest = QtCore.pyqtSignal('QString')
-    closeRequest = QtCore.pyqtSignal('QString')
+    closeRequest = QtCore.pyqtSignal()
+    closeAppRequest = QtCore.pyqtSignal()
     _enable_lexer = True
     _filename = None
     _tab_width = 4
@@ -450,7 +452,6 @@ class Editor(QsciScintilla):
         modified state is false
         """
         self.setText(text)
-        self.setCursorPosition(0, 0)
         self.setModified(False)
         self.setEolMode(self._qsciEolModeFromLine(self.text(0)))
         self.do_set_margin_width()
@@ -893,7 +894,6 @@ class CodeViewer(Editor):
     def setValue(self, text):
         """ set all readonly text """
         self.setText(toUtf8(text))
-        self.setCursorPosition(0, 0)
         self.setModified(False)
 
     def showFindDialog(self, finddialog, readonly=True):
