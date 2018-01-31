@@ -6,6 +6,7 @@ from collections import OrderedDict
 from pygments import highlight
 from pygments.lexers import get_lexer_for_filename
 from pygments.formatters import HtmlFormatter
+from pygments.util import ClassNotFound
 
 import chardet
 
@@ -295,7 +296,10 @@ def md2html(md_file, filename, theme):
 
 
 def htmlcode(text, filepath):
-    lexer = get_lexer_for_filename(filepath, stripall=True)
+    try:
+        lexer = get_lexer_for_filename(filepath, stripall=True)
+    except ClassNotFound:
+        lexer = get_lexer_for_filename(filepath + '.txt', stripall=True)
     formatter = HtmlFormatter(linenos='inline', full=True, filename=filepath)
 
     with open(filepath, 'rb') as f:

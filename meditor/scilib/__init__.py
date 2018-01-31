@@ -1,6 +1,7 @@
 from .input import _SciImSupport
 from .scilexerdefault import QsciLexerDefault
 from .scilexerrest_py import QsciLexerRest
+from .scilexerart import QsciLexerArt
 from PyQt5 import Qsci
 
 
@@ -66,4 +67,6 @@ EXTENSION_LEXER = {
     '.txt': QsciLexerDefault,
     '.log': QsciLexerDefault,
     '.csv': QsciLexerDefault,
+    '.nfo': QsciLexerArt,
+    '.art': QsciLexerArt,
 }

@@ -6,19 +6,22 @@ from PyQt5.QtGui import QColor, QFont
 logger = logging.getLogger(__name__)
 
 
-class QsciLexerDefault(Qsci.QsciLexerCustom):
+class QsciLexerArt(Qsci.QsciLexerCustom):
     styles = {
         "Default": 0,
     }
 
     def __init__(self, parent=None):
-        super(QsciLexerDefault, self).__init__(parent)
+        super(QsciLexerArt, self).__init__(parent)
         self.setDefaultColor(QColor('#000000'))
         self.setDefaultPaper(QColor('#ffffff'))
-        self.setDefaultFont(QFont())
+
+        font = QFont('Monospace')
+        font.setFixedPitch(True)
+        self.setDefaultFont(font)
 
     def language(self):
-        return 'Defaut Text'
+        return 'Ascii Art'
 
     def description(self, style):
         if style == 0:
@@ -29,5 +32,8 @@ class QsciLexerDefault(Qsci.QsciLexerCustom):
     def styleText(self, start, end):
         if not self.editor():
             return
+        self.editor().setIndentationGuides(False)
+        self.editor().setExtraAscent(-2)
+        self.editor().setExtraDescent(-1)
         self.startStyling(start)
-        self.setStyling(end - start, self.styles['Default'])
+        self.setStyling(end - start, 0)
