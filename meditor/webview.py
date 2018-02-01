@@ -120,7 +120,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def menuAboutToShow(self):
         self.action('export_pdf').setEnabled(self.isVisible())
-        self.action('export_html').setEnabled(self.isVisible())
+        # self.action('export_html').setEnabled(self.isVisible())
         # page widget will set enabled
 
     def menuEdit(self, menu):
