@@ -1,3 +1,4 @@
+import re
 import os.path
 from functools import partial
 
@@ -250,7 +251,10 @@ class VimEmulator(QtWidgets.QWidget):
             self.handleLeaderMode(key, text, editor)
         elif text == ':':
             self.setMode('command')
-            self._command_edit.setText(':')
+            if editor.hasSelectedText():
+                self._command_edit.setText(":'<,'>")
+            else:
+                self._command_edit.setText(':')
             self._command_edit.setFocus()
             self._editor = editor
         elif text == 'i':
@@ -347,7 +351,10 @@ class VimEmulator(QtWidgets.QWidget):
             self.setLeaderChar(text)
         elif text == ':':
             self.setMode('command')
-            self._command_edit.setText(":'<,'>")
+            if editor.hasSelectedText():
+                self._command_edit.setText(":'<,'>")
+            else:
+                self._command_edit.setText(':')
             self._command_edit.setFocus()
             self._editor = editor
         elif text == 'g':
@@ -373,7 +380,10 @@ class VimEmulator(QtWidgets.QWidget):
             editor.linesJoin()
         elif text == ':':
             self.setMode('command')
-            self._command_edit.setText(":'<,'>")
+            if editor.hasSelectedText():
+                self._command_edit.setText(":'<,'>")
+            else:
+                self._command_edit.setText(':')
             self._command_edit.setFocus()
             self._editor = editor
         elif text == 'c':
@@ -426,8 +436,7 @@ class VimEmulator(QtWidgets.QWidget):
             else:
                 in_selection = False
             if text.startswith('/'):
-                search = text.split('/')
-                find_text = search[1]
+                find_text = text[1:]
                 if in_selection and self._editor.hasSelectedText():
                     is_find = self._editor.findFirstInSelection(
                         find_text,
@@ -446,14 +455,28 @@ class VimEmulator(QtWidgets.QWidget):
                         posix=True,
                     )
             elif text.startswith('s/'):
-                search = text.split('/')
-                if len(search) > 2:
-                    find_text = search[1]
-                    replace_text = search[2]
-                    if len(search) > 3:
-                        op = search[3]
+                translate = False
+                trans_str = ''
+                search = []
+                for ch in text[2:]:
+                    if ch == '\\' and not translate:
+                        translate = True
+                    elif translate:
+                        trans_str += ch
+                        translate = False
+                    elif ch == '/':
+                        search.append(trans_str)
+                        trans_str = ''
+                    else:
+                        trans_str += ch
+                if len(search) >= 2:
+                    find_text = search[0]
+                    replace_text = search[1]
+                    if len(search) >= 3:
+                        op = search[2]
                     else:
                         op = ''
+
                     if in_selection and self._editor.hasSelectedText():
                         is_find = self._editor.findFirstInSelection(
                             find_text,
