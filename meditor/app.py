@@ -541,7 +541,7 @@ class MainWindow(QtWidgets.QMainWindow):
             out_file = in_basename + '.html'
             out_html = QtWidgets.QFileDialog.getSaveFileName(
                 self, self.tr('export HTML as ...'),
-                os.path.join(self.explorer.getCurrentPath(), out_file),
+                os.path.join(os.getcwd(), out_file),
                 "HTML files (*.html *.htm)",
             )
             if isinstance(out_html, tuple):

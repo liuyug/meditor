@@ -41,6 +41,7 @@ class Workspace(QtWidgets.QTreeWidget):
         self.setExpandsOnDoubleClick(True)
 
         self.itemActivated.connect(self.onItemActivated)
+        self.currentItemChanged.connect(self.onCurrentItemChanged)
         # popup menu
         self._actions = {}
         action = QtWidgets.QAction(self.tr('reStructuredText'), self)
@@ -148,6 +149,14 @@ class Workspace(QtWidgets.QTreeWidget):
         else:
             path = os.path.join(item.data(0, self.role_path), item.text(0))
             self.fileLoaded.emit(os.path.abspath(path))
+
+    def onCurrentItemChanged(self, cur, prev):
+        item = cur
+        if item:
+            path = item.data(0, self.role_path)
+            if item.type() == self.type_folder:
+                path = os.path.join(path, item.text(0))
+            os.chdir(path)
 
     def onNewFile(self, label):
         self.fileNew.emit(label)
