@@ -85,6 +85,11 @@ class Editor(QsciScintilla):
         self.linesChanged.connect(self.onLinesChanged)
         self.textChanged.connect(self.onTextChanged)
 
+        # Font Quality
+        self.SendScintilla(
+            QsciScintilla.SCI_SETFONTQUALITY,
+            QsciScintilla.SC_EFF_QUALITY_LCD_OPTIMIZED)
+
         self._timer = QtCore.QTimer(self)
         self._timer.setInterval(self._timer_interval * 1000)
         self._timer.setSingleShot(True)
@@ -291,24 +296,26 @@ class Editor(QsciScintilla):
         else:
             return super(Editor, self).dropEvent(event)
 
-    def setFont(self, font):
-        """
-        setFont have no action if Lexer set
-        """
-        super(Editor, self).setFont(font)
+    def setLexerFont(self, font):
+        if not font:
+            return
         lexer = self.lexer()
-        if lexer:
-            # set style 0 also will set STYLE_DEFAULT
-            style = 0
-            while style < QsciScintilla.STYLE_DEFAULT:
-                if lexer.description(style):
-                    new_font = QtGui.QFont(font)
-                    old_font = lexer.font(style)
-                    new_font.setBold(old_font.bold())
-                    new_font.setItalic(old_font.italic())
-                    new_font.setUnderline(old_font.underline())
-                    lexer.setFont(new_font, style)
-                style += 1
+        if not lexer:
+            return
+        # set style 0 also will set STYLE_DEFAULT
+        style = 0
+        while style < QsciScintilla.STYLE_DEFAULT:
+            if lexer.description(style):
+                new_font = QtGui.QFont(font)
+                old_font = lexer.font(style)
+                new_font.setBold(old_font.bold())
+                new_font.setItalic(old_font.italic())
+                new_font.setUnderline(old_font.underline())
+                lexer.setFont(new_font, style)
+            style += 1
+
+    def setFont(self, font):
+        super(Editor, self).setFont(font)
         self._font = font
         self._margin_font = QtGui.QFont(self._font)
         self._margin_font.setPointSize(self._font.pointSize() - 2)
@@ -428,12 +435,12 @@ class Editor(QsciScintilla):
         set filename and enable lexer
         """
         self._filename = path
-        self.setStyle(self._filename)
+        self.setLexerByFilename(self._filename)
 
     def enableLexer(self, enable=True):
         self._enable_lexer = enable
         if self._filename:
-            self.setStyle(self._filename)
+            self.setLexerByFilename(self._filename)
 
     def setModified(self, m):
         super(Editor, self).setModified(m)
@@ -708,7 +715,7 @@ class Editor(QsciScintilla):
                 self.replace(text2)
         return
 
-    def setStyle(self, filename):
+    def setLexerByFilename(self, filename):
         lexer = None
         t1 = time.clock()
         if self._enable_lexer and filename:
@@ -720,7 +727,7 @@ class Editor(QsciScintilla):
 
         self.setLexer(lexer)
         if lexer:
-            self.setFont(self._font)
+            self.setLexerFont(self._font)
             self.statusChanged.emit('lexer:%s' % lexer.language())
         else:
             self.statusChanged.emit('lexer:--')

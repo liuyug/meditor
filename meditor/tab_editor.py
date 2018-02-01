@@ -249,6 +249,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def _newEditor(self):
         editor = Editor(self._find_dialog, self)
+        editor.setFont(self._editor_font)
         editor.statusChanged.connect(self._onStatusChanged)
         editor.verticalScrollBar().valueChanged.connect(self._onVerticalScrollBarChanged)
         editor.inputPreviewRequest.connect(self._onInputPreview)
@@ -265,7 +266,6 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.closeAppRequest.connect(self.do_close_app)
 
         editor.enableLexer(self._enable_lexer)
-        editor.setFont(self._editor_font)
 
         editor.setWrapMode(self._wrap_mode)
 
@@ -483,6 +483,7 @@ class TabEditor(QtWidgets.QTabWidget):
     def do_set_font(self, font):
         for x in range(self.count()):
             self.widget(x).setFont(font)
+            self.widget(x).setLexerFont(font)
 
     def rename(self, old, new):
         """update editor filename after has changed name in OS """
