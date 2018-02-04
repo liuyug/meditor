@@ -302,6 +302,8 @@ class Editor(QsciScintilla):
         lexer = self.lexer()
         if not lexer:
             return
+        if lexer.language() == 'Ascii Art':
+            return
         # set style 0 also will set STYLE_DEFAULT
         style = 0
         while style < QsciScintilla.STYLE_DEFAULT:

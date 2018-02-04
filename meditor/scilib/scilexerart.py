@@ -1,3 +1,4 @@
+import sys
 import logging
 
 from PyQt5 import Qsci
@@ -16,7 +17,10 @@ class QsciLexerArt(Qsci.QsciLexerCustom):
         self.setDefaultColor(QColor('#000000'))
         self.setDefaultPaper(QColor('#ffffff'))
 
-        font = QFont('Monospace')
+        if sys.platform == 'win32':
+            font = QFont('consolas')
+        else:
+            font = QFont('monospace')
         font.setFixedPitch(True)
         self.setDefaultFont(font)
 
