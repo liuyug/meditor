@@ -350,6 +350,12 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.tab_editor.action('close_all'))
 
         menu.addSeparator()
+        submenu = menu.addMenu(self.tr('Line Endings'))
+        submenu.addAction(self.tab_editor.action('eol_windows'))
+        submenu.addAction(self.tab_editor.action('eol_unix'))
+        submenu.addAction(self.tab_editor.action('eol_mac'))
+
+        menu.addSeparator()
         self.webview.menuExport(menu)
         menu.aboutToShow.connect(self.webview.menuAboutToShow)
 

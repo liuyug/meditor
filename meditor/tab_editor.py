@@ -5,7 +5,7 @@ from functools import partial
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from .editor import Editor
+from .editor import Editor, EOL_DESCRIPTION
 from . import __default_basename__, __monospace__
 
 
@@ -89,6 +89,16 @@ class TabEditor(QtWidgets.QTabWidget):
         action.setChecked(self._single_instance)
         self._actions['single_instance'] = action
 
+        action = QtWidgets.QAction(self.tr('Windows (CR + LF)'), self)
+        action.triggered.connect(partial(self._onConvertEol, 'windows'))
+        self._actions['eol_windows'] = action
+        action = QtWidgets.QAction(self.tr('Unix (LF)'), self)
+        action.triggered.connect(partial(self._onConvertEol, 'unix'))
+        self._actions['eol_unix'] = action
+        action = QtWidgets.QAction(self.tr('Mac (CR)'), self)
+        action.triggered.connect(partial(self._onConvertEol, 'mac'))
+        self._actions['eol_mac'] = action
+
         self._actions.update(Editor.createAction(self, self._onAction))
 
         self.action('wrap_line').setChecked(self._wrap_mode > 0)
@@ -166,6 +176,10 @@ class TabEditor(QtWidgets.QTabWidget):
         if index < 0:
             return
         self.verticalScrollBarChanged.emit(index, value)
+
+    def _onConvertEol(self, value):
+        widget = self.currentWidget()
+        widget and widget.do_convert_eol(value)
 
     def _onTabClicked(self, index):
         self.do_switch_editor(index)

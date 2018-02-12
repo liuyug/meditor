@@ -21,6 +21,9 @@ EOL_DESCRIPTION = {
     QsciScintilla.EolWindows: 'CR+LF',
     QsciScintilla.EolUnix: 'LF',
     QsciScintilla.EolMac: 'CR',
+    'windows': QsciScintilla.EolWindows,
+    'unix': QsciScintilla.EolUnix,
+    'mac': QsciScintilla.EolMac,
 }
 
 
@@ -884,6 +887,11 @@ class Editor(QsciScintilla):
         length = max(len('%s' % self.lines()) + 1, self._min_margin_width)
         fontmetrics = QtGui.QFontMetrics(self._margin_font)
         self.setMarginWidth(0, fontmetrics.width('0' * length))
+
+    def do_convert_eol(self, value):
+        self.convertEols(EOL_DESCRIPTION[value])
+        self.setEolMode(EOL_DESCRIPTION[value])
+        self.statusChanged.emit('eol:%s' % EOL_DESCRIPTION[self.eolMode()])
 
     def setVimEmulator(self, vim):
         self._vim = vim
