@@ -136,6 +136,11 @@ class Editor(QsciScintilla):
         action.setEnabled(False)
         actions['copy'] = action
 
+        action = QtWidgets.QAction(parent.tr('&Copy Table'), parent)
+        action.triggered.connect(partial(do_action, 'copy_table'))
+        action.setEnabled(False)
+        actions['copy_table'] = action
+
         action = QtWidgets.QAction(parent.tr('&Paste'), parent)
         action.setShortcut(QtGui.QKeySequence.Paste)
         action.triggered.connect(partial(do_action, 'paste'))
@@ -216,6 +221,22 @@ class Editor(QsciScintilla):
         action = QtWidgets.QAction(parent.tr('Format Table'), parent)
         action.triggered.connect(partial(do_action, 'format_table'))
         actions['format_table'] = action
+
+        action = QtWidgets.QAction(parent.tr('delimeter "|"'), parent)
+        action.triggered.connect(partial(do_action, 'format_table_vline'))
+        actions['format_table_vline'] = action
+
+        action = QtWidgets.QAction(parent.tr('delimeter "<SPACE>"'), parent)
+        action.triggered.connect(partial(do_action, 'format_table_space'))
+        actions['format_table_space'] = action
+
+        action = QtWidgets.QAction(parent.tr('delimeter ","'), parent)
+        action.triggered.connect(partial(do_action, 'format_table_comma'))
+        actions['format_table_comma'] = action
+
+        action = QtWidgets.QAction(parent.tr('delimeter "<TAB>"'), parent)
+        action.triggered.connect(partial(do_action, 'format_table_tab'))
+        actions['format_table_tab'] = action
         return actions
 
     def action(self, action):
@@ -356,6 +377,7 @@ class Editor(QsciScintilla):
         menu.addSeparator()
         menu.addAction(widget.action('cut'))
         menu.addAction(widget.action('copy'))
+        menu.addAction(widget.action('copy_table'))
         menu.addAction(widget.action('paste'))
         menu.addAction(widget.action('delete'))
         menu.addSeparator()
@@ -368,8 +390,14 @@ class Editor(QsciScintilla):
         menu.addSeparator()
         menu.addAction(widget.action('indent'))
         menu.addAction(widget.action('unindent'))
+
         menu.addSeparator()
-        menu.addAction(widget.action('format_table'))
+        submenu = menu.addMenu('Format Table')
+        submenu.addAction(widget.action('format_table_vline'))
+        submenu.addAction(widget.action('format_table_comma'))
+        submenu.addAction(widget.action('format_table_tab'))
+        submenu.addAction(widget.action('format_table_space'))
+
         menu.addSeparator()
         menu.addAction(widget.action('zoom_in'))
         menu.addAction(widget.action('zoom_original'))
@@ -759,6 +787,23 @@ class Editor(QsciScintilla):
             self.cut()
         elif action == 'copy':
             self.copy()
+        elif action == 'copy_table':
+            text = self.selectedText()
+            if text and self.lexer():
+                mt = None
+                tables = None
+                if self.lexer().language() == 'reStructuredText':
+                    logger.debug('Format rst table: %s' % text)
+                    tables = MarkupTable.from_rst(text)
+                elif self.lexer().language() == 'Markdown':
+                    logger.debug('Format md table: %s' % text)
+                    tables = MarkupTable.from_md(text)
+                if tables:
+                    mt = tables[0]
+                if mt and not mt.is_empty() and not mt.is_invalid():
+                    tab_text = mt.to_tab()
+                    clipboard = QtWidgets.qApp.clipboard()
+                    clipboard.setText(tab_text)
         elif action == 'paste':
             self.paste()
         elif action == 'delete':
@@ -804,43 +849,58 @@ class Editor(QsciScintilla):
         elif action == 'show_ws_eol':
             self.setWhitespaceVisibility(value)
             self.setEolVisibility(value)
-        elif action == 'format_table':
-            if not self.hasSelectedText():
-                return
-            text = self.selectedText()
-            mt = None
-            if self.lexer():
-                tables = None
-                if self.lexer().language() == 'reStructuredText':
-                    logger.debug('Format rst table: %s' % text)
-                    tables = MarkupTable.from_rst(text)
-                elif self.lexer().language() == 'Markdown':
-                    logger.debug('Format md table: %s' % text)
-                    tables = MarkupTable.from_md(text)
-                if tables:
-                    mt = tables[0]
-            if not mt or mt.is_empty() or mt.is_invalid():
-                logger.debug('Format text table: %s' % text)
-                mt = MarkupTable.from_txt(text)
-            if self.lexer():
-                if self.lexer().language() == 'reStructuredText':
-                    replaced_text = mt.to_rst()
-                elif self.lexer().language() == 'Markdown':
-                    replaced_text = mt.to_md()
-            else:
+        elif action.startswith('format_table'):
+            self.do_format_table(action)
+
+    def do_format_table(self, action):
+        if action == 'format_table_vline':
+            delimeter = '|'
+        elif action == 'format_table_space':
+            delimeter = ' '
+        elif action == 'format_table_comma':
+            delimeter = ','
+        elif action == 'format_table_tab':
+            delimeter = '\t'
+        else:
+            delimeter = '|'
+        if not self.hasSelectedText():
+            return
+        text = self.selectedText()
+        mt = None
+        if self.lexer():
+            tables = None
+            if self.lexer().language() == 'reStructuredText':
+                logger.debug('Format rst table: %s' % text)
+                tables = MarkupTable.from_rst(text)
+            elif self.lexer().language() == 'Markdown':
+                logger.debug('Format md table: %s' % text)
+                tables = MarkupTable.from_md(text)
+            if tables:
+                mt = tables[0]
+        if not mt or mt.is_empty() or mt.is_invalid():
+            logger.debug('Format text table: %s' % text)
+            mt = MarkupTable.from_txt(text, delimeter)
+        if self.lexer():
+            if self.lexer().language() == 'reStructuredText':
                 replaced_text = mt.to_rst()
-            if replaced_text:
-                self.replaceSelectedText(replaced_text)
-                # preview immediately
-                length = len(replaced_text)
-                self._latest_input_count += length
-                self._timer.start()
+            elif self.lexer().language() == 'Markdown':
+                replaced_text = mt.to_md()
+        else:
+            replaced_text = mt.to_rst()
+        if replaced_text:
+            self.replaceSelectedText(replaced_text)
+            # preview immediately
+            length = len(replaced_text)
+            self._latest_input_count += length
+            self._timer.start()
 
     def do_copy_available(self, value, widget):
         widget.action('cut') \
             and widget.action('cut').setEnabled(value and not self.isReadOnly())
         widget.action('copy') \
             and widget.action('copy').setEnabled(value)
+        widget.action('copy_table') \
+            and widget.action('copy_table').setEnabled(value)
         widget.action('paste') \
             and widget.action('paste').setEnabled(not self.isReadOnly())
         widget.action('delete') \
@@ -849,7 +909,10 @@ class Editor(QsciScintilla):
     def do_selection_changed(self, widget):
         widget.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
         widget.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
-        widget.action('format_table').setEnabled(self.hasSelectedText())
+        widget.action('format_table_vline').setEnabled(self.hasSelectedText())
+        widget.action('format_table_comma').setEnabled(self.hasSelectedText())
+        widget.action('format_table_space').setEnabled(self.hasSelectedText())
+        widget.action('format_table_tab').setEnabled(self.hasSelectedText())
 
     def do_modification_changed(self, value, widget):
         widget.action('undo').setEnabled(self.isUndoAvailable())

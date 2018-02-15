@@ -422,7 +422,7 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.setObjectName('normal')
 
         newButton = QtWidgets.QToolButton(self)
-        menu = QtWidgets.QMenu(self.tr('New'), self)
+        menu = QtWidgets.QMenu('', self)
         menu.addAction(self.explorer.action('new_rst'))
         menu.addAction(self.explorer.action('new_md'))
         newButton.setMenu(menu)
@@ -442,7 +442,18 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.addAction(self.tab_editor.action('paste'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('find'))
-        tb_normal.addAction(self.tab_editor.action('format_table'))
+
+        ftButton = QtWidgets.QToolButton(self)
+        menu = QtWidgets.QMenu('', self)
+        menu.addAction(self.tab_editor.action('format_table_vline'))
+        menu.addAction(self.tab_editor.action('format_table_comma'))
+        menu.addAction(self.tab_editor.action('format_table_tab'))
+        menu.addAction(self.tab_editor.action('format_table_space'))
+        ftButton.setMenu(menu)
+        ftButton.setPopupMode(ftButton.MenuButtonPopup)
+        ftButton.setDefaultAction(self.tab_editor.action('format_table'))
+        tb_normal.addWidget(ftButton)
+
         tb_normal.addAction(self.vimAction)
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('zoom_in'))
