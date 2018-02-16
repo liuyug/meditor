@@ -376,8 +376,11 @@ class Editor(QsciScintilla):
         menu.addAction(widget.action('redo'))
         menu.addSeparator()
         menu.addAction(widget.action('cut'))
-        menu.addAction(widget.action('copy'))
-        menu.addAction(widget.action('copy_table'))
+
+        submenu = menu.addMenu(QtGui.QIcon.fromTheme('edit-copy'), 'Copy')
+        submenu.addAction(widget.action('copy'))
+        submenu.addAction(widget.action('copy_table'))
+
         menu.addAction(widget.action('paste'))
         menu.addAction(widget.action('delete'))
         menu.addSeparator()
@@ -789,9 +792,7 @@ class Editor(QsciScintilla):
             self.copy()
         elif action == 'copy_table':
             text = self.selectedText()
-            if text and self.lexer():
-                mt = None
-                tables = None
+            if text:
                 if self.lexer().language() == 'reStructuredText':
                     logger.debug('Format rst table: %s' % text)
                     tables = MarkupTable.from_rst(text)
@@ -800,10 +801,9 @@ class Editor(QsciScintilla):
                     tables = MarkupTable.from_md(text)
                 if tables:
                     mt = tables[0]
-                if mt and not mt.is_empty() and not mt.is_invalid():
-                    tab_text = mt.to_tab()
-                    clipboard = QtWidgets.qApp.clipboard()
-                    clipboard.setText(tab_text)
+                    text = mt.to_tab()
+            clipboard = QtWidgets.qApp.clipboard()
+            clipboard.setText(text)
         elif action == 'paste':
             self.paste()
         elif action == 'delete':

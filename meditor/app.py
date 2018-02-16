@@ -438,7 +438,16 @@ class MainWindow(QtWidgets.QMainWindow):
         tb_normal.addAction(self.tab_editor.action('redo'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('cut'))
-        tb_normal.addAction(self.tab_editor.action('copy'))
+
+        cpButton = QtWidgets.QToolButton(self)
+        menu = QtWidgets.QMenu('', self)
+        menu.addAction(self.tab_editor.action('copy'))
+        menu.addAction(self.tab_editor.action('copy_table'))
+        cpButton.setMenu(menu)
+        cpButton.setPopupMode(cpButton.MenuButtonPopup)
+        cpButton.setDefaultAction(self.tab_editor.action('copy'))
+        tb_normal.addWidget(cpButton)
+
         tb_normal.addAction(self.tab_editor.action('paste'))
         tb_normal.addSeparator()
         tb_normal.addAction(self.tab_editor.action('find'))
