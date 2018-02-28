@@ -52,6 +52,8 @@ def previewWorker(self):
         elif ext in ['.md', '.markdown']:
             self.previewHtml = output.md2htmlcode(self.previewText,
                                                   theme=self.md_theme)
+        elif ext in ['.htm', '.html', '.php', '.asp']:
+            self.previewHtml = self.previewText
         elif ext in EXTENSION_LEXER:
             self.previewHtml = output.htmlcode(self.previewText, self.previewPath)
         else:

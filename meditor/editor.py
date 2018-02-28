@@ -575,10 +575,17 @@ class Editor(QsciScintilla):
 
     def read(self, filename, encoding=None):
         try:
-            with open(filename, 'rb') as f:
-                encoding = chardet.detect(f.read(4096)).get('encoding')
-                if not encoding or encoding == 'ascii':
-                    encoding = 'utf-8'
+            if encoding is None:
+                with open(filename, 'rb') as f:
+                    encoding = chardet.detect(f.read(8192)).get('encoding')
+                    if not encoding:
+                        encoding = 'utf-8'
+                    else:
+                        encoding = encoding.lower()
+                    if encoding == 'ascii':
+                        encoding = 'utf-8'
+                    elif encoding == 'gb2312':
+                        encoding = 'gbk'
             with open(filename, 'rt', encoding=encoding, newline='') as f:
                 text = f.read()
             self._file_encoding = encoding

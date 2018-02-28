@@ -5,7 +5,7 @@ from functools import partial
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from .editor import Editor, EOL_DESCRIPTION
+from .editor import Editor
 from . import __default_basename__, __monospace__
 
 
@@ -309,14 +309,14 @@ class TabEditor(QtWidgets.QTabWidget):
         if self._single_instance:
             self.do_close_all()
         editor = self._newEditor()
-        editor.read(filepath)
-        title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
-        index = self.insertTab(0, editor, title)
-        self.setCurrentIndex(index)
-        self.fileLoaded.emit(index)
-        self.statusChanged.emit(index, self.widget(index).status())
-        self.previewRequest.emit(index, 'open')
-        return index
+        if editor.read(filepath):
+            title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
+            index = self.insertTab(0, editor, title)
+            self.setCurrentIndex(index)
+            self.fileLoaded.emit(index)
+            self.statusChanged.emit(index, self.widget(index).status())
+            self.previewRequest.emit(index, 'open')
+            return index
 
     def text(self, index):
         if index is None:

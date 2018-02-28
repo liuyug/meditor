@@ -8,8 +8,6 @@ from pygments.lexers import get_lexer_for_filename
 from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
 
-import chardet
-
 import markdown
 import mdx_mathjax
 
@@ -302,11 +300,4 @@ def htmlcode(text, filepath):
         lexer = get_lexer_for_filename(filepath + '.txt', stripall=True)
     formatter = HtmlFormatter(linenos='inline', full=True, filename=filepath)
 
-    with open(filepath, 'rb') as f:
-        data = f.read()
-        encoding = chardet.detect(data).get('encoding')
-        if encoding:
-            text = data.decode(encoding)
-        else:
-            text = ''
     return highlight(text, lexer, formatter)
