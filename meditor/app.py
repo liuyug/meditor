@@ -72,6 +72,7 @@ class MainWindow(QtWidgets.QMainWindow):
     previewPath = None
     previewQuit = False
     previewSignal = QtCore.pyqtSignal()
+    _toolbar = None
 
     def __init__(self, settings):
         super(MainWindow, self).__init__()
@@ -164,8 +165,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.explorer.fileRenamed.connect(self.onFileRenamed)
 
         # setup main frame
+        self._toolbar = QtWidgets.QToolBar('ToolBar')
+        self._toolbar.setObjectName('ToolBar')
+
         self.setupMenu()
-        self.setupToolbar()
+        self.setupToolbar(self._toolbar)
         self.setupStatusBar()
 
         # restore window state
@@ -337,7 +341,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # menu
         menubar = self.menuBar()
         menu = menubar.addMenu(self.tr('&File'))
-        submenu = menu.addMenu(self.tr('&New'))
+
+        submenu = menu.addMenu(QtGui.QIcon.fromTheme('document-new'), self.tr('&New'))
         submenu.addAction(self.explorer.action('new_rst'))
         submenu.addAction(self.explorer.action('new_md'))
         menu.addMenu(submenu)
@@ -376,6 +381,8 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.dock_explorer.toggleViewAction())
         menu.addAction(self.dock_webview.toggleViewAction())
         menu.addAction(self.dock_codeview.toggleViewAction())
+        menu.addSeparator()
+        menu.addAction(self._toolbar.toggleViewAction())
 
         menu = menubar.addMenu(self.tr('&Theme'))
         submenu = QtWidgets.QMenu(self.tr('reStructuredText'), menu)
@@ -419,10 +426,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(aboutAction)
         menu.addAction(aboutqtAction)
 
-    def setupToolbar(self):
-        tb_normal = QtWidgets.QToolBar('normal')
-        tb_normal.setObjectName('normal')
-
+    def setupToolbar(self, toolbar):
         newButton = QtWidgets.QToolButton(self)
         menu = QtWidgets.QMenu('', self)
         menu.addAction(self.explorer.action('new_rst'))
@@ -430,16 +434,16 @@ class MainWindow(QtWidgets.QMainWindow):
         newButton.setMenu(menu)
         newButton.setPopupMode(newButton.MenuButtonPopup)
         newButton.setDefaultAction(self.explorer.action('new_rst'))
-        tb_normal.addWidget(newButton)
+        toolbar.addWidget(newButton)
 
-        tb_normal.addAction(self.tab_editor.action('open'))
-        tb_normal.addAction(self.explorer.action('open_workspace'))
-        tb_normal.addAction(self.tab_editor.action('save'))
-        tb_normal.addSeparator()
-        tb_normal.addAction(self.tab_editor.action('undo'))
-        tb_normal.addAction(self.tab_editor.action('redo'))
-        tb_normal.addSeparator()
-        tb_normal.addAction(self.tab_editor.action('cut'))
+        toolbar.addAction(self.tab_editor.action('open'))
+        toolbar.addAction(self.explorer.action('open_workspace'))
+        toolbar.addAction(self.tab_editor.action('save'))
+        toolbar.addSeparator()
+        toolbar.addAction(self.tab_editor.action('undo'))
+        toolbar.addAction(self.tab_editor.action('redo'))
+        toolbar.addSeparator()
+        toolbar.addAction(self.tab_editor.action('cut'))
 
         cpButton = QtWidgets.QToolButton(self)
         menu = QtWidgets.QMenu('', self)
@@ -448,11 +452,11 @@ class MainWindow(QtWidgets.QMainWindow):
         cpButton.setMenu(menu)
         cpButton.setPopupMode(cpButton.MenuButtonPopup)
         cpButton.setDefaultAction(self.tab_editor.action('copy'))
-        tb_normal.addWidget(cpButton)
+        toolbar.addWidget(cpButton)
 
-        tb_normal.addAction(self.tab_editor.action('paste'))
-        tb_normal.addSeparator()
-        tb_normal.addAction(self.tab_editor.action('find'))
+        toolbar.addAction(self.tab_editor.action('paste'))
+        toolbar.addSeparator()
+        toolbar.addAction(self.tab_editor.action('find'))
 
         ftButton = QtWidgets.QToolButton(self)
         menu = QtWidgets.QMenu('', self)
@@ -463,16 +467,16 @@ class MainWindow(QtWidgets.QMainWindow):
         ftButton.setMenu(menu)
         ftButton.setPopupMode(ftButton.MenuButtonPopup)
         ftButton.setDefaultAction(self.tab_editor.action('format_table'))
-        tb_normal.addWidget(ftButton)
+        toolbar.addWidget(ftButton)
 
-        tb_normal.addAction(self.vimAction)
-        tb_normal.addSeparator()
-        tb_normal.addAction(self.tab_editor.action('zoom_in'))
-        tb_normal.addAction(self.tab_editor.action('zoom_out'))
-        tb_normal.addAction(self.tab_editor.action('zoom_original'))
-        tb_normal.addSeparator()
-        tb_normal.addAction(self.previewAction)
-        self.addToolBar(tb_normal)
+        toolbar.addAction(self.vimAction)
+        toolbar.addSeparator()
+        toolbar.addAction(self.tab_editor.action('zoom_in'))
+        toolbar.addAction(self.tab_editor.action('zoom_out'))
+        toolbar.addAction(self.tab_editor.action('zoom_original'))
+        toolbar.addSeparator()
+        toolbar.addAction(self.previewAction)
+        self.addToolBar(toolbar)
 
     def setupStatusBar(self):
         # status bar
