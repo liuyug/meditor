@@ -867,6 +867,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.codeview.setValue(self.previewHtml)
             self.codeview.setFileName(self.previewPath + '.html')
         widget = self.tab_editor.currentWidget()
+        if not widget:
+            return
         dy = widget.getVScrollValue()
         editor_vmax = widget.getVScrollMaximum()
         if editor_vmax:

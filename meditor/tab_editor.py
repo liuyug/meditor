@@ -132,9 +132,9 @@ class TabEditor(QtWidgets.QTabWidget):
         self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
         self._settings.setValue('editor/single_instance', self._single_instance)
 
-        if not self.do_close_all():
+        self.do_close_all()
+        if self.count() > 0:
             event.ignore()
-            return
 
     def _onStatusChanged(self, status):
         widget = self.sender()
@@ -186,6 +186,8 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def _onTabCloseRequest(self, index):
         self.do_close_editor(index)
+        if self.count() == 0:
+            self.new('.rst')
 
     def _onOpen(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -202,49 +204,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def _onSaveAs(self):
         index = self.currentIndex()
-
-        filepath = self.filepath(index)
-        dir_name = os.path.dirname(filepath)
-        if not dir_name:
-            dir_name = os.getcwd()
-
-        filename = os.path.basename(filepath)
-        new_filepath, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            self.tr('Save file as ...'),
-            os.path.join(dir_name, filename),
-            ''.join(FILTER),
-        )
-        if new_filepath:
-            new_filepath = os.path.abspath(new_filepath)
-            _, ext = os.path.splitext(new_filepath)
-            if not ext:
-                ext = selected_filter.split('(')[1][1:4].strip()
-                new_filepath = new_filepath + ext
-            self.do_save_as(index, new_filepath)
-
-    def _saveAndClose(self):
-        index = self.currentIndex()
-        if self.widget(index).isModified():
-            filepath = self.filepath(index)
-            msgBox = QtWidgets.QMessageBox(self)
-            msgBox.setIcon(QtWidgets.QMessageBox.Question)
-            msgBox.setText(self.tr('The document has been modified.'))
-            msgBox.setInformativeText(
-                self.tr('Do you want to save your changes?\n%s' % filepath)
-            )
-            msgBox.setStandardButtons(
-                QtWidgets.QMessageBox.Save |
-                QtWidgets.QMessageBox.Discard |
-                QtWidgets.QMessageBox.Cancel
-            )
-            msgBox.setDefaultButton(QtWidgets.QMessageBox.Save)
-            ret = msgBox.exec_()
-            if ret == QtWidgets.QMessageBox.Cancel:
-                return False
-            if ret == QtWidgets.QMessageBox.Save:
-                self._onSave()
-        return True
+        self.do_save_as(index)
 
     def _onSaveAll(self):
         self.do_save_all()
@@ -424,53 +384,78 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def do_close_all(self):
         for x in list(range(self.count()))[::-1]:
-            self.setCurrentIndex(x)
-            widget = self.widget(x)
-            if not self._saveAndClose():
-                return False
-            self.removeTab(x)
-            widget.close()
-            del widget
-        return True
+            self.do_close_editor(x)
 
     def do_close_editor(self, index):
         if index < 0:
             index = self.currentIndex()
         if self.widget(index).isModified():
-            self.do_switch_editor(index)
-            if self._saveAndClose():
-                widget = self.widget(index)
-                self.removeTab(index)
-                widget.close()
-                del widget
-        else:
-            widget = self.widget(index)
-            self.removeTab(index)
-            widget.close()
-            del widget
-        if self.count() == 0:
-            self.new('.rst')
-        index = self.currentIndex()
-        self.do_switch_editor(index)
+            filepath = self.filepath(index)
+            msgBox = QtWidgets.QMessageBox(self)
+            msgBox.setIcon(QtWidgets.QMessageBox.Question)
+            msgBox.setText(self.tr('The document has been modified.'))
+            msgBox.setInformativeText(
+                self.tr('Do you want to save your changes?\n%s' % filepath)
+            )
+            msgBox.setStandardButtons(
+                QtWidgets.QMessageBox.Save |
+                QtWidgets.QMessageBox.Discard |
+                QtWidgets.QMessageBox.Cancel
+            )
+            msgBox.setDefaultButton(QtWidgets.QMessageBox.Save)
+            ret = msgBox.exec_()
+            if ret == QtWidgets.QMessageBox.Cancel:
+                return
+            if ret == QtWidgets.QMessageBox.Save:
+                self.do_save(index)
+            elif ret == QtWidgets.QMessageBox.Discard:
+                pass
+        # close
+        widget = self.widget(index)
+        self.removeTab(index)
+        widget.close()
+        del widget
 
     def do_save_all(self):
         for x in range(self.count()):
             self.do_save(x)
 
     def do_save(self, index):
+        if index < 0:
+            index = self.currentIndex()
         filepath = self.filepath(index)
         dir_name = os.path.dirname(filepath)
         filename = os.path.basename(filepath)
         basename, _ = os.path.splitext(filename)
         if not dir_name and basename == __default_basename__:
-            self.setCurrentIndex(index)
-            self._onSaveAs()
+            self.do_save_as(index)
         else:
             self.widget(index).save()
 
-    def do_save_as(self, index, new_name):
+    def do_save_as(self, index):
         if index < 0:
             index = self.currentIndex()
+        filepath = self.filepath(index)
+        dir_name = os.path.dirname(filepath)
+        if not dir_name:
+            dir_name = os.getcwd()
+
+        filename = os.path.basename(filepath)
+        new_filepath, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            self.tr('Save file as ...'),
+            os.path.join(dir_name, filename),
+            ''.join(FILTER),
+        )
+        if not new_filepath:
+            return
+        new_filepath = os.path.abspath(new_filepath)
+        _, ext = os.path.splitext(new_filepath)
+        if not ext:
+            ext = selected_filter.split('(')[1][1:4].strip()
+            new_filepath = new_filepath + ext
+
+        new_name = new_filepath
         old_name = self.widget(index).getFileName()
         if not new_name:
             new_name = old_name
