@@ -57,6 +57,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self._actions['find_prev'] = action
 
         action = QtWidgets.QAction(self.tr('Zoom In'), self)
+        action.setShortcut(QtGui.QKeySequence.ZoomIn)
         action.triggered.connect(partial(self._onAction, 'zoom_in'))
         self._actions['zoom_in'] = action
 
@@ -65,6 +66,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self._actions['zoom_original'] = action
 
         action = QtWidgets.QAction(self.tr('Zoom Out'), self)
+        action.setShortcut(QtGui.QKeySequence.ZoomOut)
         action.triggered.connect(partial(self._onAction, 'zoom_out'))
         self._actions['zoom_out'] = action
 
