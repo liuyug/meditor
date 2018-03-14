@@ -250,7 +250,8 @@ class TabEditor(QtWidgets.QTabWidget):
         self.do_save_all()
 
     def _onCloseAll(self):
-        self.do_close_all(new=True)
+        self.do_close_all()
+        self.new('.rst')
 
     def _onDefaultFont(self):
         font, ok = QtWidgets.QFontDialog.getFont(self._editor_font, self)
@@ -421,7 +422,7 @@ class TabEditor(QtWidgets.QTabWidget):
     def do_close_app(self):
         QtWidgets.qApp.closeAllWindows()
 
-    def do_close_all(self, new=False):
+    def do_close_all(self):
         for x in list(range(self.count()))[::-1]:
             self.setCurrentIndex(x)
             widget = self.widget(x)
@@ -430,8 +431,6 @@ class TabEditor(QtWidgets.QTabWidget):
             self.removeTab(x)
             widget.close()
             del widget
-        if new:
-            self.new('.rst')
         return True
 
     def do_close_editor(self, index):

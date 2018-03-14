@@ -26,9 +26,11 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
         self._actions = {}
         action = self.pageAction(self.page().Copy)
+        action.setShortcut(QtGui.QKeySequence.Copy)
         self._actions['copy'] = action
 
         action = self.pageAction(self.page().SelectAll)
+        action.setShortcut(QtGui.QKeySequence.SelectAll)
         self._actions['select_all'] = action
 
         action = QtWidgets.QAction(self.tr('Export to PDF'), self)
@@ -40,14 +42,17 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self._actions['export_html'] = action
 
         action = QtWidgets.QAction(self.tr('Find'), self)
+        action.setShortcut(QtGui.QKeySequence.Find)
         action.triggered.connect(partial(self._onAction, 'find'))
         self._actions['find'] = action
 
         action = QtWidgets.QAction(self.tr('Find Next'), self)
+        action.setShortcut(QtGui.QKeySequence.FindNext)
         action.triggered.connect(partial(self._onAction, 'findnext'))
         self._actions['find_next'] = action
 
         action = QtWidgets.QAction(self.tr('Find Previous'), self)
+        action.setShortcut(QtGui.QKeySequence.FindPrevious)
         action.triggered.connect(partial(self._onAction, 'findprev'))
         self._actions['find_prev'] = action
 
