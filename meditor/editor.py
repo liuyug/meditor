@@ -12,10 +12,20 @@ from mtable import MarkupTable
 
 from .scilib import EXTENSION_LEXER
 
+from .gaction import GlobalAction
 from .util import toUtf8
 from . import __home_data_path__, __data_path__, __default_basename__
 
 logger = logging.getLogger(__name__)
+
+
+FILTER = [
+    'All support files (*.rst *.md *.txt);;',
+    'reStructuredText files (*.rst *.rest);;',
+    'Markdown files (*.md *.markdown);;',
+    'Text files (*.txt)',
+]
+
 
 EOL_DESCRIPTION = {
     QsciScintilla.EolWindows: 'CR+LF',
@@ -53,7 +63,6 @@ class Editor(QsciScintilla):
     _imsupport = None
     _file_encoding = 'utf8'
     _modified = False
-    _actions = None
     _find_dialog = None
     _min_margin_width = 3
     _font = None
@@ -93,6 +102,8 @@ class Editor(QsciScintilla):
             QsciScintilla.SCI_SETFONTQUALITY,
             QsciScintilla.SC_EFF_QUALITY_LCD_OPTIMIZED)
 
+        self.createAction()
+
         self._timer = QtCore.QTimer(self)
         self._timer.setInterval(self._timer_interval * 1000)
         self._timer.setSingleShot(True)
@@ -105,143 +116,161 @@ class Editor(QsciScintilla):
             ext = basename
         return ext.lower() in EXTENSION_LEXER
 
-    @classmethod
-    def createAction(cls, parent, do_action):
-        actions = {}
-        action = QtWidgets.QAction(parent.tr('&Undo'), parent)
-        action.setShortcut(QtGui.QKeySequence.Undo)
-        action.triggered.connect(partial(do_action, 'undo'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-undo'))
-        action.setEnabled(False)
-        actions['undo'] = action
+    def closeEvent(self, event):
+        g_action = GlobalAction.instance()
+        g_action.unregister_by_widget(self)
 
-        action = QtWidgets.QAction(parent.tr('&Redo'), parent)
-        action.setShortcut(QtGui.QKeySequence.Redo)
-        action.triggered.connect(partial(do_action, 'redo'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-redo'))
-        action.setEnabled(False)
-        actions['redo'] = action
+    def createAction(self):
+        g_action = GlobalAction.instance()
 
-        action = QtWidgets.QAction(parent.tr('Cu&t'), parent)
-        action.setShortcut(QtGui.QKeySequence.Cut)
-        action.triggered.connect(partial(do_action, 'cut'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-cut'))
-        action.setEnabled(False)
-        actions['cut'] = action
+        action = QtWidgets.QAction(self.tr('&Undo'), self)
+        action.triggered.connect(partial(self.do_action, 'undo'))
+        cmd = g_action.register('undo', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.Undo)
+        cmd.setIcon(QtGui.QIcon.fromTheme('edit-undo'))
+        cmd.setEnabled(False)
+        cmd.setText(self.tr('Undo'))
 
-        action = QtWidgets.QAction(parent.tr('&Copy'), parent)
-        action.setShortcut(QtGui.QKeySequence.Copy)
-        action.triggered.connect(partial(do_action, 'copy'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-copy'))
-        action.setEnabled(False)
-        actions['copy'] = action
+        action = QtWidgets.QAction(self.tr('&Redo'), self)
+        action.triggered.connect(partial(self.do_action, 'redo'))
+        cmd = g_action.register('redo', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.Redo)
+        cmd.setIcon(QtGui.QIcon.fromTheme('edit-redo'))
+        cmd.setEnabled(False)
+        cmd.setText(self.tr('Redo'))
 
-        action = QtWidgets.QAction(parent.tr('&Copy Table'), parent)
-        action.triggered.connect(partial(do_action, 'copy_table'))
-        action.setEnabled(False)
-        actions['copy_table'] = action
+        action = QtWidgets.QAction(self.tr('Cu&t'), self)
+        action.triggered.connect(partial(self.do_action, 'cut'))
+        cmd = g_action.register('cut', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.Cut)
+        cmd.setIcon(QtGui.QIcon.fromTheme('edit-cut'))
+        cmd.setEnabled(False)
+        cmd.setText(self.tr('Cut'))
 
-        action = QtWidgets.QAction(parent.tr('&Paste'), parent)
-        action.setShortcut(QtGui.QKeySequence.Paste)
-        action.triggered.connect(partial(do_action, 'paste'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-paste'))
-        actions['paste'] = action
+        action = QtWidgets.QAction(self.tr('&Copy'), self)
+        action.triggered.connect(partial(self.do_action, 'copy'))
+        cmd = g_action.register('copy', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.Copy)
+        cmd.setIcon(QtGui.QIcon.fromTheme('edit-copy'))
+        cmd.setEnabled(False)
+        cmd.setText(self.tr('Copy'))
 
-        action = QtWidgets.QAction(parent.tr('&Delete'), parent)
-        action.setShortcut(QtGui.QKeySequence.Delete)
-        action.triggered.connect(partial(do_action, 'delete'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-delete'))
-        action.setEnabled(False)
-        actions['delete'] = action
+        action = QtWidgets.QAction(self.tr('&Copy Table'), self)
+        action.triggered.connect(partial(self.do_action, 'copy_table'))
+        cmd = g_action.register('copy_table', action, 'editor')
+        cmd.setEnabled(False)
+        cmd.setText(self.tr('Copy Table'))
 
-        action = QtWidgets.QAction(parent.tr('Select &All'), parent)
-        action.setShortcut(QtGui.QKeySequence.SelectAll)
-        action.triggered.connect(partial(do_action, 'selectall'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-select-all'))
-        actions['select_all'] = action
+        action = QtWidgets.QAction(self.tr('&Paste'), self)
+        action.triggered.connect(partial(self.do_action, 'paste'))
+        cmd = g_action.register('paste', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.Paste)
+        cmd.setIcon(QtGui.QIcon.fromTheme('edit-paste'))
+        cmd.setEnabled(False)
+        cmd.setText(self.tr('Paste'))
 
-        action = QtWidgets.QAction(parent.tr('&Find or Replace'), parent)
-        action.setShortcut(QtGui.QKeySequence.Find)
-        action.triggered.connect(partial(do_action, 'find'))
-        action.setIcon(QtGui.QIcon.fromTheme('edit-find'))
-        actions['find'] = action
+        action = QtWidgets.QAction(self.tr('&Delete'), self)
+        action.triggered.connect(partial(self.do_action, 'delete'))
+        cmd = g_action.register('delete', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.Delete)
+        cmd.setIcon(QtGui.QIcon.fromTheme('edit-delete'))
+        cmd.setEnabled(False)
+        cmd.setText(self.tr('Delete'))
 
-        action = QtWidgets.QAction(parent.tr('Find Next'), parent)
-        action.setShortcut(QtGui.QKeySequence.FindNext)
-        action.triggered.connect(partial(do_action, 'findnext'))
-        actions['find_next'] = action
+        action = QtWidgets.QAction(self.tr('Select &All'), self)
+        action.triggered.connect(partial(self.do_action, 'selectall'))
+        cmd = g_action.register('select_all', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.SelectAll)
+        cmd.setIcon(QtGui.QIcon.fromTheme('edit-select-all'))
+        cmd.setText(self.tr('Select All'))
 
-        action = QtWidgets.QAction(parent.tr('Find Previous'), parent)
-        action.setShortcut(QtGui.QKeySequence.FindPrevious)
-        action.triggered.connect(partial(do_action, 'findprev'))
-        actions['find_prev'] = action
+        action = QtWidgets.QAction(self.tr('&Find or Replace'), self)
+        action.triggered.connect(partial(self.do_action, 'find'))
+        cmd = g_action.register('find', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.Find)
+        cmd.setIcon(QtGui.QIcon.fromTheme('edit-find'))
+        cmd.setText(self.tr('Find or Replace'))
 
-        action = QtWidgets.QAction(parent.tr('Replace Next'), parent)
-        action.setShortcut('F4')
-        action.triggered.connect(partial(do_action, 'replacenext'))
-        actions['replace_next'] = action
+        action = QtWidgets.QAction(self.tr('Find Next'), self)
+        action.triggered.connect(partial(self.do_action, 'findnext'))
+        cmd = g_action.register('find_next', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.FindNext)
+        cmd.setText(self.tr('Find Next'))
 
-        action = QtWidgets.QAction(parent.tr('Indent'), parent)
-        action.setShortcut('TAB')
-        action.triggered.connect(partial(do_action, 'indent'))
-        action.setIcon(QtGui.QIcon.fromTheme('format-indent-more'))
-        actions['indent'] = action
+        action = QtWidgets.QAction(self.tr('Find Previous'), self)
+        action.triggered.connect(partial(self.do_action, 'findprev'))
+        cmd = g_action.register('find_prev', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.FindPrevious)
+        cmd.setText(self.tr('Find Previous'))
 
-        action = QtWidgets.QAction(parent.tr('Unindent'), parent)
-        action.setShortcut('Shift+TAB')
-        action.triggered.connect(partial(do_action, 'unindent'))
-        action.setIcon(QtGui.QIcon.fromTheme('format-indent-less'))
-        actions['unindent'] = action
+        action = QtWidgets.QAction(self.tr('Replace Next'), self)
+        action.triggered.connect(partial(self.do_action, 'replacenext'))
+        cmd = g_action.register('replace_next', action, 'editor')
+        cmd.setShortcut('F4')
+        cmd.setText(self.tr('Replace Next'))
 
-        action = QtWidgets.QAction(parent.tr('Zoom In'), parent)
-        action.setShortcut(QtGui.QKeySequence.ZoomIn)
-        action.triggered.connect(partial(do_action, 'zoom_in'))
-        action.setIcon(QtGui.QIcon.fromTheme('zoom-in'))
-        actions['zoom_in'] = action
+        action = QtWidgets.QAction(self.tr('Indent'), self)
+        action.triggered.connect(partial(self.do_action, 'indent'))
+        cmd = g_action.register('indent', action, 'editor')
+        cmd.setShortcut('TAB')
+        cmd.setIcon(QtGui.QIcon.fromTheme('format-indent-more'))
+        cmd.setText(self.tr('Indent'))
 
-        action = QtWidgets.QAction(parent.tr('Zoom Original'), parent)
-        action.triggered.connect(partial(do_action, 'zoom_original'))
-        action.setIcon(QtGui.QIcon.fromTheme('zoom-original'))
-        actions['zoom_original'] = action
+        action = QtWidgets.QAction(self.tr('Unindent'), self)
+        action.triggered.connect(partial(self.do_action, 'unindent'))
+        cmd = g_action.register('unindent', action, 'editor')
+        cmd.setShortcut('Shift+TAB')
+        cmd.setIcon(QtGui.QIcon.fromTheme('format-indent-less'))
+        cmd.setText(self.tr('Unindent'))
 
-        action = QtWidgets.QAction(parent.tr('Zoom Out'), parent)
-        action.setShortcut(QtGui.QKeySequence.ZoomOut)
-        action.triggered.connect(partial(do_action, 'zoom_out'))
-        action.setIcon(QtGui.QIcon.fromTheme('zoom-out'))
-        actions['zoom_out'] = action
+        action = QtWidgets.QAction(self.tr('Zoom In'), self)
+        action.triggered.connect(partial(self.do_action, 'zoom_in'))
+        cmd = g_action.register('zoom_in', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.ZoomIn)
+        cmd.setIcon(QtGui.QIcon.fromTheme('zoom-in'))
+        cmd.setText(self.tr('Zoom In'))
 
-        action = QtWidgets.QAction(parent.tr('Wrap line'), parent, checkable=True)
-        action.triggered.connect(partial(do_action, 'wrap_line'))
-        actions['wrap_line'] = action
+        action = QtWidgets.QAction(self.tr('Zoom Original'), self)
+        action.triggered.connect(partial(self.do_action, 'zoom_original'))
+        cmd = g_action.register('zoom_original', action, 'editor')
+        cmd.setIcon(QtGui.QIcon.fromTheme('zoom-original'))
+        cmd.setText(self.tr('Zoom Original'))
 
-        action = QtWidgets.QAction(parent.tr('Show WS and EOL'), parent, checkable=True)
-        action.triggered.connect(partial(do_action, 'show_ws_eol'))
-        actions['show_ws_eol'] = action
+        action = QtWidgets.QAction(self.tr('Zoom Out'), self)
+        action.triggered.connect(partial(self.do_action, 'zoom_out'))
+        cmd = g_action.register('zoom_out', action, 'editor')
+        cmd.setShortcut(QtGui.QKeySequence.ZoomOut)
+        cmd.setIcon(QtGui.QIcon.fromTheme('zoom-out'))
+        cmd.setText(self.tr('Zoom Out'))
 
-        action = QtWidgets.QAction(parent.tr('Format Table'), parent)
-        action.triggered.connect(partial(do_action, 'format_table'))
-        actions['format_table'] = action
+        action = QtWidgets.QAction(self.tr('Format Table'), self)
+        action.triggered.connect(partial(self.do_action, 'format_table'))
+        cmd = g_action.register('format_table', action, 'editor')
+        cmd.setText(self.tr('Format Table'))
 
-        action = QtWidgets.QAction(parent.tr('delimeter "|"'), parent)
-        action.triggered.connect(partial(do_action, 'format_table_vline'))
-        actions['format_table_vline'] = action
+        action = QtWidgets.QAction(self.tr('delimeter "|"'), self)
+        action.triggered.connect(partial(self.do_action, 'format_table_vline'))
+        cmd = g_action.register('format_table_vline', action, 'editor')
+        cmd.setText(self.tr('delimeter "|"'))
 
-        action = QtWidgets.QAction(parent.tr('delimeter "<SPACE>"'), parent)
-        action.triggered.connect(partial(do_action, 'format_table_space'))
-        actions['format_table_space'] = action
+        action = QtWidgets.QAction(self.tr('delimeter "<SPACE>"'), self)
+        action.triggered.connect(partial(self.do_action, 'format_table_space'))
+        cmd = g_action.register('format_table_space', action, 'editor')
+        cmd.setText(self.tr('delimeter "<SPACE>"'))
 
-        action = QtWidgets.QAction(parent.tr('delimeter ","'), parent)
-        action.triggered.connect(partial(do_action, 'format_table_comma'))
-        actions['format_table_comma'] = action
+        action = QtWidgets.QAction(self.tr('delimeter ","'), self)
+        action.triggered.connect(partial(self.do_action, 'format_table_comma'))
+        cmd = g_action.register('format_table_comma', action, 'editor')
+        cmd.setText(self.tr('delimeter ","'))
 
-        action = QtWidgets.QAction(parent.tr('delimeter "<TAB>"'), parent)
-        action.triggered.connect(partial(do_action, 'format_table_tab'))
-        actions['format_table_tab'] = action
-        return actions
+        action = QtWidgets.QAction(self.tr('delimeter "<TAB>"'), self)
+        action.triggered.connect(partial(self.do_action, 'format_table_tab'))
+        cmd = g_action.register('format_table_tab', action, 'editor')
+        cmd.setText(self.tr('delimeter "<TAB>"'))
 
-    def action(self, action):
-        if self._actions:
-            return self._actions.get(action)
+    def action(self, act_id):
+        g_action = GlobalAction.instance()
+        return g_action.get('' + act_id)
 
     def inputMethodEvent(self, event):
         if self.isReadOnly():
@@ -369,50 +398,46 @@ class Editor(QsciScintilla):
     def print_(self, printer):
         printer.printRange(self)
 
-    def menuEdit(self, menu, widget=None):
-        if not widget:
-            widget = self
-        menu.addAction(widget.action('undo'))
-        menu.addAction(widget.action('redo'))
+    def menuEdit(self, menu):
+        menu.addAction(self.action('undo'))
+        menu.addAction(self.action('redo'))
         menu.addSeparator()
-        menu.addAction(widget.action('cut'))
+        menu.addAction(self.action('cut'))
 
         submenu = menu.addMenu(QtGui.QIcon.fromTheme('edit-copy'), 'Copy')
-        submenu.addAction(widget.action('copy'))
-        submenu.addAction(widget.action('copy_table'))
+        submenu.addAction(self.action('copy'))
+        submenu.addAction(self.action('copy_table'))
 
-        menu.addAction(widget.action('paste'))
-        menu.addAction(widget.action('delete'))
+        menu.addAction(self.action('paste'))
+        menu.addAction(self.action('delete'))
         menu.addSeparator()
-        menu.addAction(widget.action('select_all'))
+        menu.addAction(self.action('select_all'))
         menu.addSeparator()
-        menu.addAction(widget.action('find'))
-        menu.addAction(widget.action('find_next'))
-        menu.addAction(widget.action('find_prev'))
-        menu.addAction(widget.action('replace_next'))
+        menu.addAction(self.action('find'))
+        menu.addAction(self.action('find_next'))
+        menu.addAction(self.action('find_prev'))
+        menu.addAction(self.action('replace_next'))
         menu.addSeparator()
-        menu.addAction(widget.action('indent'))
-        menu.addAction(widget.action('unindent'))
+        menu.addAction(self.action('indent'))
+        menu.addAction(self.action('unindent'))
 
         menu.addSeparator()
         submenu = menu.addMenu('Format Table')
-        submenu.addAction(widget.action('format_table_vline'))
-        submenu.addAction(widget.action('format_table_comma'))
-        submenu.addAction(widget.action('format_table_tab'))
-        submenu.addAction(widget.action('format_table_space'))
+        submenu.addAction(self.action('format_table_vline'))
+        submenu.addAction(self.action('format_table_comma'))
+        submenu.addAction(self.action('format_table_tab'))
+        submenu.addAction(self.action('format_table_space'))
 
         menu.addSeparator()
-        menu.addAction(widget.action('zoom_in'))
-        menu.addAction(widget.action('zoom_original'))
-        menu.addAction(widget.action('zoom_out'))
+        menu.addAction(self.action('zoom_in'))
+        menu.addAction(self.action('zoom_original'))
+        menu.addAction(self.action('zoom_out'))
 
-    def menuAboutToShow(self, widget=None):
-        if not widget:
-            widget = self
-        widget.action('replace_next').setEnabled(not self.isReadOnly())
-
-    def _onAction(self, action, value):
-        self.do_action(action, value)
+    def menuAboutToShow(self):
+        self.do_copy_available(self.hasSelectedText())
+        self.do_selection_changed()
+        self.do_modification_changed(None)
+        self.action('replace_next').setEnabled(not self.isReadOnly())
 
     def _onTimerTimeout(self):
         """
@@ -429,13 +454,13 @@ class Editor(QsciScintilla):
                 self._timer.start()
 
     def onCopyAvailable(self, value):
-        self.do_copy_available(value, self)
+        self.do_copy_available(value)
 
     def onSelectionChanged(self):
-        self.do_selection_changed(self)
+        self.do_selection_changed()
 
     def onModificationChanged(self, value):
-        self.do_modification_changed(value, self)
+        self.do_modification_changed(value)
 
     def onCursorPositionChanged(self, line, index):
         cursor = 'Ln %s/%s Col %s/80' % (line + 1, self.lines(), index + 1)
@@ -800,6 +825,7 @@ class Editor(QsciScintilla):
         elif action == 'copy_table':
             text = self.selectedText()
             if text:
+                tables = None
                 if self.lexer().language() == 'reStructuredText':
                     logger.debug('Format rst table: %s' % text)
                     tables = MarkupTable.from_rst(text)
@@ -887,6 +913,7 @@ class Editor(QsciScintilla):
         if not mt or mt.is_empty() or mt.is_invalid():
             logger.debug('Format text table: %s' % text)
             mt = MarkupTable.from_txt(text, delimeter)
+        replaced_text = ''
         if self.lexer():
             if self.lexer().language() == 'reStructuredText':
                 replaced_text = mt.to_rst()
@@ -901,57 +928,50 @@ class Editor(QsciScintilla):
             self._latest_input_count += length
             self._timer.start()
 
-    def do_copy_available(self, value, widget):
-        widget.action('cut') \
-            and widget.action('cut').setEnabled(value and not self.isReadOnly())
-        widget.action('copy') \
-            and widget.action('copy').setEnabled(value)
-        widget.action('copy_table') \
-            and widget.action('copy_table').setEnabled(value)
-        widget.action('paste') \
-            and widget.action('paste').setEnabled(not self.isReadOnly())
-        widget.action('delete') \
-            and widget.action('delete').setEnabled(value and not self.isReadOnly())
+    def do_copy_available(self, value):
+        self.action('cut').setEnabled(value and not self.isReadOnly())
+        self.action('copy').setEnabled(value)
+        self.action('copy_table').setEnabled(value)
+        self.action('paste').setEnabled(not self.isReadOnly())
+        self.action('delete').setEnabled(value and not self.isReadOnly())
 
-    def do_selection_changed(self, widget):
-        widget.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
-        widget.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
-        widget.action('format_table_vline').setEnabled(self.hasSelectedText())
-        widget.action('format_table_comma').setEnabled(self.hasSelectedText())
-        widget.action('format_table_space').setEnabled(self.hasSelectedText())
-        widget.action('format_table_tab').setEnabled(self.hasSelectedText())
+    def do_selection_changed(self):
+        self.action('indent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
+        self.action('unindent').setEnabled(self.hasSelectedText() and not self.isReadOnly())
+        self.action('format_table_vline').setEnabled(self.hasSelectedText())
+        self.action('format_table_comma').setEnabled(self.hasSelectedText())
+        self.action('format_table_space').setEnabled(self.hasSelectedText())
+        self.action('format_table_tab').setEnabled(self.hasSelectedText())
 
-    def do_modification_changed(self, value, widget):
-        widget.action('undo').setEnabled(self.isUndoAvailable())
-        widget.action('redo').setEnabled(self.isRedoAvailable())
+    def do_modification_changed(self, value):
+        self.action('undo').setEnabled(self.isUndoAvailable())
+        self.action('redo').setEnabled(self.isRedoAvailable())
 
-    def setEnabledEditAction(self, enable, widget=None):
+    def setEnabledEditAction(self, enable):
         return
-        if widget is None:
-            widget = self
         if enable:
-            self.do_modification_changed(True, widget)
-            self.do_copy_available(True, widget)
-            self.do_selection_changed(widget)
+            self.do_modification_changed(True)
+            self.do_copy_available(True)
+            self.do_selection_changed()
 
-            widget.action('select_all').setEnabled(True)
-            widget.action('find').setEnabled(True)
-            widget.action('find_next').setEnabled(True)
-            widget.action('find_prev').setEnabled(True)
-            widget.action('replace_next').setEnabled(True)
+            self.action('select_all').setEnabled(True)
+            self.action('find').setEnabled(True)
+            self.action('find_next').setEnabled(True)
+            self.action('find_prev').setEnabled(True)
+            self.action('replace_next').setEnabled(True)
         else:
-            widget.action('undo').setEnabled(False)
-            widget.action('redo').setEnabled(False)
-            widget.action('cut').setEnabled(False)
-            widget.action('copy').setEnabled(False)
-            widget.action('paste').setEnabled(False)
-            widget.action('delete').setEnabled(False)
+            self.action('undo').setEnabled(False)
+            self.action('redo').setEnabled(False)
+            self.action('cut').setEnabled(False)
+            self.action('copy').setEnabled(False)
+            self.action('paste').setEnabled(False)
+            self.action('delete').setEnabled(False)
 
-            widget.action('select_all').setEnabled(False)
-            widget.action('find').setEnabled(False)
-            widget.action('find_next').setEnabled(False)
-            widget.action('find_prev').setEnabled(False)
-            widget.action('replace_next').setEnabled(False)
+            self.action('select_all').setEnabled(False)
+            self.action('find').setEnabled(False)
+            self.action('find_next').setEnabled(False)
+            self.action('find_prev').setEnabled(False)
+            self.action('replace_next').setEnabled(False)
 
     def do_set_margin_width(self):
         length = max(len('%s' % self.lines()) + 1, self._min_margin_width)
@@ -963,6 +983,67 @@ class Editor(QsciScintilla):
         self.setEolMode(EOL_DESCRIPTION[value])
         self.statusChanged.emit('eol:%s' % EOL_DESCRIPTION[self.eolMode()])
 
+    def do_save(self):
+        fname = self.getFileName()
+        dir_name = os.path.dirname(fname)
+        filename = os.path.basename(fname)
+        basename, _ = os.path.splitext(filename)
+        if not dir_name and basename == __default_basename__:
+            self.do_save_as()
+        else:
+            self.save()
+
+    def do_save_as(self):
+        old_fname = self.getFileName()
+        dir_name = os.path.dirname(old_fname)
+        if not dir_name:
+            dir_name = os.getcwd()
+
+        filename = os.path.basename(old_fname)
+        new_fname, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            self.tr('Save file as ...'),
+            os.path.join(dir_name, filename),
+            ''.join(FILTER),
+        )
+        if not new_fname:
+            return
+        new_fname = os.path.abspath(new_fname)
+        _, ext = os.path.splitext(new_fname)
+        if not ext:
+            ext = selected_filter.split('(')[1][1:4].strip()
+            new_fname = new_fname + ext
+
+        if not new_fname:
+            new_fname = old_fname
+        self.save(new_fname)
+
+        return old_fname, new_fname
+
+    def do_close(self):
+        if self.isModified():
+            fname = self.getFileName()
+            msgBox = QtWidgets.QMessageBox(self)
+            msgBox.setIcon(QtWidgets.QMessageBox.Question)
+            msgBox.setText(self.tr('The document has been modified.'))
+            msgBox.setInformativeText(
+                self.tr('Do you want to save your changes?\n%s' % fname)
+            )
+            msgBox.setStandardButtons(
+                QtWidgets.QMessageBox.Save |
+                QtWidgets.QMessageBox.Discard |
+                QtWidgets.QMessageBox.Cancel
+            )
+            msgBox.setDefaultButton(QtWidgets.QMessageBox.Save)
+            ret = msgBox.exec_()
+            if ret == QtWidgets.QMessageBox.Cancel:
+                return False
+            if ret == QtWidgets.QMessageBox.Save:
+                self.do_save()
+            elif ret == QtWidgets.QMessageBox.Discard:
+                pass
+        return True
+
     def setVimEmulator(self, vim):
         self._vim = vim
 
@@ -972,7 +1053,6 @@ class CodeViewer(Editor):
     def __init__(self, find_dialog, parent=None):
         super(CodeViewer, self).__init__(find_dialog, parent)
         self.setReadOnly(True)
-        self._actions = self.createAction(self, self._onAction)
         self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.copyAvailable.connect(self.onCopyAvailable)
         self.modificationChanged.connect(self.onModificationChanged)

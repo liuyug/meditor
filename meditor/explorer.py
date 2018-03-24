@@ -9,6 +9,7 @@ from functools import partial
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from .util import toUtf8
+from .gaction import GlobalAction
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,6 @@ class Workspace(QtWidgets.QTreeWidget):
     type_file = type_root + 2
     role_path = QtCore.Qt.UserRole
     _settings = None
-    _actions = None
 
     fileLoaded = QtCore.pyqtSignal('QString')
     fileDeleted = QtCore.pyqtSignal('QString')
@@ -42,41 +42,52 @@ class Workspace(QtWidgets.QTreeWidget):
         self.itemActivated.connect(self.onItemActivated)
         self.currentItemChanged.connect(self.onCurrentItemChanged)
         # popup menu
-        self._actions = {}
+        g_action = GlobalAction.instance()
+
         action = QtWidgets.QAction(self.tr('reStructuredText'), self)
         action.triggered.connect(partial(self.onNewFile, '.rst'))
-        action.setShortcut(QtGui.QKeySequence.New)
-        action.setIcon(QtGui.QIcon.fromTheme('document-new'))
-        self._actions['new_rst'] = action
+        cmd = g_action.register('new_rst', action)
+        cmd.setText(self.tr('reStructuredText'))
+        cmd.setShortcut(QtGui.QKeySequence.New)
+        cmd.setIcon(QtGui.QIcon.fromTheme('document-new'))
 
         action = QtWidgets.QAction(self.tr('Markdown'), self)
         action.triggered.connect(partial(self.onNewFile, '.md'))
-        self._actions['new_md'] = action
+        cmd = g_action.register('new_md', action)
+        cmd.setText(self.tr('Markdown'))
 
         action = QtWidgets.QAction(self.tr('New &directory'), self)
         action.triggered.connect(self.onNewDirectory)
-        action.setIcon(QtGui.QIcon.fromTheme('folder-new'))
-        self._actions['new_dir'] = action
+        cmd = g_action.register('new_dir', action)
+        cmd.setText(self.tr('New Directory'))
+        cmd.setIcon(QtGui.QIcon.fromTheme('folder-new'))
 
         action = QtWidgets.QAction(self.tr('&Rename...'), self)
         action.triggered.connect(self.onRename)
-        self._actions['rename'] = action
+        cmd = g_action.register('rename', action)
+        cmd.setText(self.tr('Rename...'))
 
         action = QtWidgets.QAction(self.tr('Delete'), self)
         action.triggered.connect(self.onDelete)
-        self._actions['delete'] = action
+        cmd = g_action.register('delete', action)
+        cmd.setText(self.tr('Delete'))
+
         action = QtWidgets.QAction(self.tr('Refresh'), self)
         action.triggered.connect(self.onRefresh)
-        action.setIcon(QtGui.QIcon.fromTheme('view-refresh'))
-        self._actions['refresh'] = action
+        cmd = g_action.register('refresh', action)
+        cmd.setText(self.tr('Refresh'))
+        cmd.setIcon(QtGui.QIcon.fromTheme('view-refresh'))
+
         action = QtWidgets.QAction(self.tr('Windows Explorer'), self)
         action.triggered.connect(self.onWindowsExplorer)
-        self._actions['explorer'] = action
+        cmd = g_action.register('explorer', action)
+        cmd.setText(self.tr('Windows Explorer'))
 
         action = QtWidgets.QAction(self.tr('Open Workspace'), self)
         action.triggered.connect(self.onOpenWorkspace)
-        action.setIcon(QtGui.QIcon.fromTheme('folder-open'))
-        self._actions['open_workspace'] = action
+        cmd = g_action.register('open_workspace', action)
+        cmd.setText(self.tr('Open Workspace'))
+        cmd.setIcon(QtGui.QIcon.fromTheme('folder-open'))
 
         self.popupMenu = QtWidgets.QMenu(self)
 
@@ -482,5 +493,6 @@ class Workspace(QtWidgets.QTreeWidget):
                     break
         self.onRefresh(node)
 
-    def action(self, action):
-        return self._actions.get(action)
+    def action(self, act_id):
+        g_action = GlobalAction.instance()
+        return g_action.get('' + act_id)

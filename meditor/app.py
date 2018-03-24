@@ -27,6 +27,8 @@ from . import output
 from . import globalvars
 from .util import toUtf8, toBytes, download, unzip
 from .findreplace import FindReplaceDialog
+from .gaction import GlobalAction
+from . import qrc_icon_theme
 
 
 requestPreview = threading.Event()
@@ -86,7 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._icon_path = os.path.join(__data_path__, 'meditor-text-editor.ico')
 
         if sys.platform != 'linux':
-            from . import qrc_icon_theme
+            logger.info('embed_qrc: %s' % qrc_icon_theme.__doc__)
             QtGui.QIcon.setThemeName('embed_qrc')
 
         self.setWindowIcon(
@@ -186,60 +188,83 @@ class MainWindow(QtWidgets.QMainWindow):
     def setupMenu(self):
         settings = self.settings
         # action
+        g_action = GlobalAction.instance()
         # file
-        newwindowAction = QtWidgets.QAction(self.tr('New &window'), self)
-        newwindowAction.triggered.connect(self.onMenuNewWindow)
-        newwindowAction.setIcon(QtGui.QIcon.fromTheme('window-new'))
+        action = QtWidgets.QAction(self.tr('New &window'), self)
+        action.triggered.connect(self.onMenuNewWindow)
+        cmd = g_action.register('mainwindow.new_window', action)
+        cmd.setText(action.text())
+        cmd.setIcon(QtGui.QIcon.fromTheme('window-new'))
 
-        printAction = QtWidgets.QAction(self.tr('&Print'), self)
-        printAction.setShortcut(QtGui.QKeySequence.Print)
-        printAction.triggered.connect(self.onMenuPrint)
-        printAction.setIcon(QtGui.QIcon.fromTheme('document-print'))
+        action = QtWidgets.QAction(self.tr('&Print'), self)
+        action.triggered.connect(self.onMenuPrint)
+        cmd = g_action.register('mainwindow.print', action)
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.Print)
+        cmd.setIcon(QtGui.QIcon.fromTheme('document-print'))
 
-        printPreviewAction = QtWidgets.QAction(self.tr('Print Preview'), self)
-        printPreviewAction.triggered.connect(self.onMenuPrintPreview)
-        printPreviewAction.setIcon(QtGui.QIcon.fromTheme('document-print-preview'))
+        action = QtWidgets.QAction(self.tr('Print Preview'), self)
+        action.triggered.connect(self.onMenuPrintPreview)
+        cmd = g_action.register('mainwindow.print_preview', action)
+        cmd.setText(action.text())
+        cmd.setIcon(QtGui.QIcon.fromTheme('document-print-preview'))
 
-        fileAssociationAction = QtWidgets.QAction(self.tr('File associate'), self)
-        fileAssociationAction.triggered.connect(self.onMenuFileAssociation)
-        fileAssociationAction.setEnabled(sys.platform == 'win32')
+        action = QtWidgets.QAction(self.tr('File associate'), self)
+        action.triggered.connect(self.onMenuFileAssociation)
+        cmd = g_action.register('mainwindow.file_associate', action)
+        cmd.setText(action.text())
+        cmd.setEnabled(sys.platform == 'win32')
 
-        exitAction = QtWidgets.QAction(self.tr('&Exit'), self)
-        exitAction.setShortcut(QtGui.QKeySequence.Quit)
-        exitAction.setIcon(QtGui.QIcon.fromTheme('application-exit'))
-        exitAction.triggered.connect(self.close)
+        action = QtWidgets.QAction(self.tr('&Quit'), self)
+        action.triggered.connect(self.close)
+        cmd = g_action.register('mainwindow.quit', action)
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.Quit)
+        cmd.setIcon(QtGui.QIcon.fromTheme('application-exit'))
         # edit
         # view
         # preview
-        self.previewAction = QtWidgets.QAction(self.tr('Preview'), self, checkable=True)
-        self.previewAction.triggered.connect(partial(self.onMenuPreview, 'preview'))
-        self.previewAction.setChecked(
+        action = QtWidgets.QAction(self.tr('Preview'), self, checkable=True)
+        action.triggered.connect(partial(self.onMenuPreview, 'preview'))
+        cmd = g_action.register('mainwindow.preview', action)
+        cmd.setText(action.text())
+        cmd.setCheckable(True)
+        cmd.setChecked(
             settings.value('view/webview', True, type=bool) or
             settings.value('view/codeview', True, type=bool))
 
-        previewsaveAction = QtWidgets.QAction(
+        action = QtWidgets.QAction(
             self.tr('Preview on save'), self, checkable=True)
-        previewsaveAction.triggered.connect(
+        action.triggered.connect(
             partial(self.onMenuPreview, 'previewonsave'))
         value = settings.value('preview/onsave', True, type=bool)
         settings.setValue('preview/onsave', value)
-        previewsaveAction.setChecked(value)
+        cmd = g_action.register('mainwindow.preview_onsave', action)
+        cmd.setText(action.text())
+        cmd.setCheckable(True)
+        cmd.setChecked(value)
 
-        previewinputAction = QtWidgets.QAction(
+        action = QtWidgets.QAction(
             self.tr('Preview on input'), self, checkable=True)
-        previewinputAction.triggered.connect(
+        action.triggered.connect(
             partial(self.onMenuPreview, 'previewoninput'))
         value = settings.value('preview/oninput', True, type=bool)
         settings.setValue('preview/oninput', value)
-        previewinputAction.setChecked(value)
+        cmd = g_action.register('mainwindow.preview_oninput', action)
+        cmd.setText(action.text())
+        cmd.setCheckable(True)
+        cmd.setChecked(value)
 
-        previewsyncAction = QtWidgets.QAction(
+        action = QtWidgets.QAction(
             self.tr('Scroll synchronize'), self, checkable=True)
-        previewsyncAction.triggered.connect(
+        action.triggered.connect(
             partial(self.onMenuPreview, 'previewsync'))
         value = settings.value('preview/sync', True, type=bool)
         settings.setValue('preview/sync', value)
-        previewsyncAction.setChecked(value)
+        cmd = g_action.register('mainwindow.preview_sync', action)
+        cmd.setText(action.text())
+        cmd.setCheckable(True)
+        cmd.setChecked(value)
         # theme
         # docutils theme
         default_cssAction = QtWidgets.QAction(
@@ -307,36 +332,49 @@ class MainWindow(QtWidgets.QMainWindow):
                 act.setChecked(True)
                 break
 
-        self.mathjaxAction = QtWidgets.QAction(self.tr('Install MathJax'), self)
-        self.mathjaxAction.triggered.connect(partial(self.onMenuMathJax, 'install'))
-        self.mathjaxAction.setEnabled(not os.path.exists(__mathjax_full_path__))
-
+        action = QtWidgets.QAction(self.tr('Install MathJax'), self)
+        action.triggered.connect(partial(self.onMenuMathJax, 'install'))
+        cmd = g_action.register('mainwindow.install_mathjax', action)
+        cmd.setText(action.text())
+        cmd.setEnabled(not os.path.exists(__mathjax_full_path__))
         # settings
 
-        self.vimAction = QtWidgets.QAction(self.tr('VIM Mode'), self, checkable=True)
-        self.vimAction.triggered.connect(partial(self.onMenuSettings, 'vim_mode'))
+        action = QtWidgets.QAction(self.tr('VIM Mode'), self, checkable=True)
+        action.triggered.connect(partial(self.onMenuSettings, 'vim_mode'))
         value = settings.value('vim_mode', False, type=bool)
-        self.vimAction.setChecked(value)
+        cmd = g_action.register('mainwindow.vim_mode', action)
+        cmd.setText(action.text())
+        cmd.setCheckable(True)
+        cmd.setChecked(value)
 
-        self.highDpiAction = QtWidgets.QAction(
+        action = QtWidgets.QAction(
             self.tr('&High DPI support'), self, checkable=True)
-        self.highDpiAction.triggered.connect(
+        action.triggered.connect(
             partial(self.onMenuSettings, 'high_dpi'))
         value = settings.value('highdpi', type=bool)
-        self.highDpiAction.setChecked(value)
+        cmd = g_action.register('mainwindow.high_dpi', action)
+        cmd.setText(action.text())
+        cmd.setCheckable(True)
+        cmd.setChecked(value)
 
         # help
-        helpAction = QtWidgets.QAction(self.tr('&Help Documents'), self)
-        helpAction.setShortcut(QtGui.QKeySequence.HelpContents)
-        helpAction.setIcon(QtGui.QIcon.fromTheme('help-contents'))
-        helpAction.triggered.connect(self.onMenuHelp)
+        action = QtWidgets.QAction(self.tr('&Help Documents'), self)
+        action.triggered.connect(self.onMenuHelp)
+        cmd = g_action.register('mainwindow.help', action)
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.HelpContents)
+        cmd.setIcon(QtGui.QIcon.fromTheme('help-contents'))
 
-        aboutAction = QtWidgets.QAction(self.tr('&About'), self)
-        aboutAction.setIcon(QtGui.QIcon.fromTheme('help-about'))
-        aboutAction.triggered.connect(self.onMenuAbout)
+        action = QtWidgets.QAction(self.tr('&About'), self)
+        action.triggered.connect(self.onMenuAbout)
+        cmd = g_action.register('mainwindow.about', action)
+        cmd.setText(action.text())
+        cmd.setIcon(QtGui.QIcon.fromTheme('help-about'))
 
-        aboutqtAction = QtWidgets.QAction(self.tr('About &Qt'), self)
-        aboutqtAction.triggered.connect(QtWidgets.qApp.aboutQt)
+        action = QtWidgets.QAction(self.tr('About &Qt'), self)
+        action.triggered.connect(QtWidgets.qApp.aboutQt)
+        cmd = g_action.register('mainwindow.about_qt', action)
+        cmd.setText(action.text())
 
         # menu
         menubar = self.menuBar()
@@ -346,7 +384,7 @@ class MainWindow(QtWidgets.QMainWindow):
         submenu.addAction(self.explorer.action('new_rst'))
         submenu.addAction(self.explorer.action('new_md'))
         menu.addMenu(submenu)
-        menu.addAction(newwindowAction)
+        menu.addAction(self.action('new_window'))
         menu.addAction(self.tab_editor.action('open'))
         menu.addAction(self.explorer.action('open_workspace'))
 
@@ -367,15 +405,15 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.aboutToShow.connect(self.webview.menuAboutToShow)
 
         menu.addSeparator()
-        menu.addAction(printPreviewAction)
-        menu.addAction(printAction)
+        menu.addAction(self.action('print_preview'))
+        menu.addAction(self.action('print'))
 
         menu.addSeparator()
-        menu.addAction(exitAction)
+        menu.addAction(self.action('quit'))
 
         menu = menubar.addMenu(self.tr('&Edit'))
         self.tab_editor.menuEdit(menu)
-        menu.aboutToShow.connect(self.tab_editor.menuAboutToShow)
+        menu.aboutToShow.connect(partial(self.onMenuAboutToShow, 'edit'))
 
         menu = menubar.addMenu(self.tr('&View'))
         menu.addAction(self.dock_explorer.toggleViewAction())
@@ -402,29 +440,33 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addMenu(submenu)
 
         menu.addSeparator()
-        menu.addAction(self.mathjaxAction)
+        menu.addAction(self.action('install_mathjax'))
 
         menu = menubar.addMenu(self.tr('&Settings'))
-        menu.addAction(self.vimAction)
-        menu.addAction(self.highDpiAction)
+        menu.addAction(self.action('vim_mode'))
+        menu.addAction(self.action('high_dpi'))
 
         menu.addSeparator()
-        menu.addAction(previewsaveAction)
-        menu.addAction(previewinputAction)
-        menu.addAction(previewsyncAction)
+        menu.addAction(self.action('preview_onsave'))
+        menu.addAction(self.action('preview_oninput'))
+        menu.addAction(self.action('preview_sync'))
 
         menu.addSeparator()
         self.tab_editor.menuSetting(menu)
 
         menu.addSeparator()
-        menu.addAction(fileAssociationAction)
+        menu.addAction(self.action('file_associate'))
 
         menu = menubar.addMenu(self.tr('&Help'))
-        menu.addAction(helpAction)
+        menu.addAction(self.action('help'))
 
         menu.addSeparator()
-        menu.addAction(aboutAction)
-        menu.addAction(aboutqtAction)
+        menu.addAction(self.action('about'))
+        menu.addAction(self.action('about_qt'))
+
+    def action(self, act_id):
+        g_action = GlobalAction.instance()
+        return g_action.get('mainwindow.' + act_id)
 
     def setupToolbar(self, toolbar):
         newButton = QtWidgets.QToolButton(self)
@@ -469,13 +511,13 @@ class MainWindow(QtWidgets.QMainWindow):
         ftButton.setDefaultAction(self.tab_editor.action('format_table'))
         toolbar.addWidget(ftButton)
 
-        toolbar.addAction(self.vimAction)
+        toolbar.addAction(self.action('vim_mode'))
         toolbar.addSeparator()
         toolbar.addAction(self.tab_editor.action('zoom_in'))
         toolbar.addAction(self.tab_editor.action('zoom_out'))
         toolbar.addAction(self.tab_editor.action('zoom_original'))
         toolbar.addSeparator()
-        toolbar.addAction(self.previewAction)
+        toolbar.addAction(self.action('preview'))
         self.addToolBar(toolbar)
 
     def setupStatusBar(self):
@@ -503,7 +545,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settings.setValue('view/explorer', self.dock_explorer.isVisible())
         self.settings.setValue('view/webview', self.dock_webview.isVisible())
         self.settings.setValue('view/codeview', self.dock_codeview.isVisible())
-        self.settings.setValue('vim_mode', self.vimAction.isChecked())
+        self.settings.setValue('vim_mode', self.action('vim_mode').isChecked())
 
         if not self.tab_editor.close():
             event.ignore()
@@ -790,6 +832,14 @@ class MainWindow(QtWidgets.QMainWindow):
         text += self.tr('\n')
         text += self.tr('QScintilla: %s\n') % widget.getScintillaVersion()
         QtWidgets.QMessageBox.about(self, title, text)
+
+    def onMenuAboutToShow(self, menu_id):
+        if self.codeview.hasFocus():
+            self.codeview.menuAboutToShow()
+        elif self.webview.hasFocus():
+            self.webview.menuAboutToShow()
+        else:
+            self.tab_editor.menuAboutToShow()
 
     def onExplorerNew(self, ext):
         index = self.tab_editor.new(ext)

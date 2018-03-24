@@ -3,12 +3,12 @@ from functools import partial
 
 from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
+from .gaction import GlobalAction
 from .util import toUtf8
 
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
     exportHtml = QtCore.pyqtSignal()
-    _actions = None
     _settings = None
     _find_dialog = None
 
@@ -23,51 +23,62 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
 
-        self._actions = {}
+        g_action = GlobalAction.instance()
+
         action = self.pageAction(self.page().Copy)
-        action.setShortcut(QtGui.QKeySequence.Copy)
-        self._actions['copy'] = action
+        cmd = g_action.register('copy', action, 'webview')
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.Copy)
 
         action = self.pageAction(self.page().SelectAll)
-        action.setShortcut(QtGui.QKeySequence.SelectAll)
-        self._actions['select_all'] = action
+        cmd = g_action.register('select_all', action, 'webview')
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.SelectAll)
 
         action = QtWidgets.QAction(self.tr('Export to PDF'), self)
         action.triggered.connect(partial(self._onAction, 'export_pdf'))
-        self._actions['export_pdf'] = action
+        cmd = g_action.register('export_pdf', action, 'webview.export')
+        cmd.setText(action.text())
 
         action = QtWidgets.QAction(self.tr('Export to HTML'), self)
         action.triggered.connect(partial(self._onAction, 'export_html'))
-        self._actions['export_html'] = action
+        cmd = g_action.register('export_html', action, 'webview.export')
+        cmd.setText(action.text())
 
         action = QtWidgets.QAction(self.tr('Find'), self)
-        action.setShortcut(QtGui.QKeySequence.Find)
         action.triggered.connect(partial(self._onAction, 'find'))
-        self._actions['find'] = action
+        cmd = g_action.register('find', action, 'webview')
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.Find)
 
         action = QtWidgets.QAction(self.tr('Find Next'), self)
-        action.setShortcut(QtGui.QKeySequence.FindNext)
         action.triggered.connect(partial(self._onAction, 'findnext'))
-        self._actions['find_next'] = action
+        cmd = g_action.register('find_next', action, 'webview')
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.FindNext)
 
         action = QtWidgets.QAction(self.tr('Find Previous'), self)
-        action.setShortcut(QtGui.QKeySequence.FindPrevious)
         action.triggered.connect(partial(self._onAction, 'findprev'))
-        self._actions['find_prev'] = action
+        cmd = g_action.register('find_prev', action, 'webview')
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.FindPrevious)
 
         action = QtWidgets.QAction(self.tr('Zoom In'), self)
-        action.setShortcut(QtGui.QKeySequence.ZoomIn)
         action.triggered.connect(partial(self._onAction, 'zoom_in'))
-        self._actions['zoom_in'] = action
+        cmd = g_action.register('zoom_in', action, 'webview')
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.ZoomIn)
 
         action = QtWidgets.QAction(self.tr('Zoom Original'), self)
         action.triggered.connect(partial(self._onAction, 'zoom_original'))
-        self._actions['zoom_original'] = action
+        cmd = g_action.register('zoom_original', action, 'webview')
+        cmd.setText(action.text())
 
         action = QtWidgets.QAction(self.tr('Zoom Out'), self)
-        action.setShortcut(QtGui.QKeySequence.ZoomOut)
         action.triggered.connect(partial(self._onAction, 'zoom_out'))
-        self._actions['zoom_out'] = action
+        cmd = g_action.register('zoom_out', action, 'webview')
+        cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence.ZoomOut)
 
         # popup menu
         self.popupMenu = QtWidgets.QMenu(self)
@@ -76,11 +87,11 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.menuExport(self.popupMenu)
 
         # zoom
-        scale = self._settings.value('webview/scale', 1.0, type=float)
+        scale = self._settings.value('scale', 1.0, type=float)
         self.setZoomFactor(scale)
 
     def closeEvent(self, event):
-        self._settings.setValue('webview/scale', self.zoomFactor())
+        self._settings.setValue('scale', self.zoomFactor())
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -121,13 +132,28 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     def onPdfPrintingFinished(self, filePath, success):
         pass
 
-    def action(self, action):
-        return self._actions.get(action)
+    def action(self, act_id):
+        g_action = GlobalAction.instance()
+        return g_action.get('' + act_id)
 
     def menuAboutToShow(self):
+        self.action('undo').setEnabled(False)
+        self.action('redo').setEnabled(False)
+        action = self.pageAction(self.page().Copy)
+        self.action('copy').setEnabled(action.isEnabled())
+        self.action('copy_table').setEnabled(False)
+        self.action('cut').setEnabled(False)
+        self.action('paste').setEnabled(False)
+        self.action('delete').setEnabled(False)
+        self.action('replace_next').setEnabled(False)
+        self.action('indent').setEnabled(False)
+        self.action('unindent').setEnabled(False)
+        self.action('format_table_vline').setEnabled(False)
+        self.action('format_table_comma').setEnabled(False)
+        self.action('format_table_space').setEnabled(False)
+        self.action('format_table_tab').setEnabled(False)
         self.action('export_pdf').setEnabled(self.isVisible())
-        # self.action('export_html').setEnabled(self.isVisible())
-        # page widget will set enabled
+        self.action('export_html').setEnabled(True)
 
     def menuEdit(self, menu):
         menu.addAction(self.action('copy'))

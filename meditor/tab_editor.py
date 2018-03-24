@@ -5,19 +5,12 @@ from functools import partial
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from .editor import Editor
-from . import __default_basename__, __monospace__
+from .editor import Editor, FILTER
+from .gaction import GlobalAction
+from . import __monospace__
 
 
 logger = logging.getLogger(__name__)
-
-
-FILTER = [
-    'All support files (*.rst *.md *.txt);;',
-    'reStructuredText files (*.rst *.rest);;',
-    'Markdown files (*.md *.markdown);;',
-    'Text files (*.txt)',
-]
 
 
 class TabEditor(QtWidgets.QTabWidget):
@@ -27,7 +20,6 @@ class TabEditor(QtWidgets.QTabWidget):
     verticalScrollBarChanged = QtCore.pyqtSignal(int, int)
     filenameChanged = QtCore.pyqtSignal('QString', 'QString')
     fileLoaded = QtCore.pyqtSignal(int)
-    _actions = None
     _enable_lexer = True
     _find_dialog = None
     _settings = None
@@ -49,67 +41,88 @@ class TabEditor(QtWidgets.QTabWidget):
         self.tabBarClicked.connect(self._onTabClicked)
         self.tabCloseRequested.connect(self._onTabCloseRequest)
 
-        self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
-        self._show_ws_eol = self._settings.value('editor/show_ws_eol', False, type=bool)
-        self._single_instance = self._settings.value('editor/single_instance', False, type=bool)
+        self._wrap_mode = self._settings.value('wrap_mode', 0, type=int)
+        self._show_ws_eol = self._settings.value('show_ws_eol', False, type=bool)
+        self._single_instance = self._settings.value('single_instance', False, type=bool)
 
-        self._actions = {}
+        g_action = GlobalAction.instance()
+
         action = QtWidgets.QAction(self.tr('&Open'), self)
-        action.setShortcut(QtGui.QKeySequence.Open)
         action.triggered.connect(self._onOpen)
-        action.setIcon(QtGui.QIcon.fromTheme('document-open'))
-        self._actions['open'] = action
+        cmd = g_action.register('open', action, 'tab_editor')
+        cmd.setShortcut(QtGui.QKeySequence.Open)
+        cmd.setIcon(QtGui.QIcon.fromTheme('document-open'))
+        cmd.setText(self.tr('Open'))
 
         action = QtWidgets.QAction(self.tr('&Save'), self)
-        action.setShortcut(QtGui.QKeySequence.Save)
         action.triggered.connect(self._onSave)
-        action.setIcon(QtGui.QIcon.fromTheme('document-save'))
-        self._actions['save'] = action
+        cmd = g_action.register('save', action, 'tab_editor')
+        cmd.setShortcut(QtGui.QKeySequence.Save)
+        cmd.setIcon(QtGui.QIcon.fromTheme('document-save'))
+        cmd.setText(self.tr('Save'))
 
         action = QtWidgets.QAction(self.tr('Save as...'), self)
-        action.setShortcut(QtGui.QKeySequence.SaveAs)
         action.triggered.connect(self._onSaveAs)
-        action.setIcon(QtGui.QIcon.fromTheme('document-save-as'))
-        self._actions['save_as'] = action
+        cmd = g_action.register('save_as', action, 'tab_editor')
+        cmd.setShortcut(QtGui.QKeySequence.SaveAs)
+        cmd.setIcon(QtGui.QIcon.fromTheme('document-save-as'))
+        cmd.setText(self.tr('Save as...'))
 
         action = QtWidgets.QAction(self.tr('Save all'), self)
         action.triggered.connect(self._onSaveAll)
-        self._actions['save_all'] = action
+        cmd = g_action.register('save_all', action, 'tab_editor')
+        cmd.setText(self.tr('Save all'))
 
         action = QtWidgets.QAction(self.tr('Close all'), self)
         action.triggered.connect(self._onCloseAll)
-        self._actions['close_all'] = action
+        cmd = g_action.register('close_all', action, 'tab_editor')
+        cmd.setText(self.tr('Close all'))
 
         action = QtWidgets.QAction(self.tr('Default font'), self)
         action.triggered.connect(self._onDefaultFont)
-        self._actions['default_font'] = action
+        cmd = g_action.register('default_font', action, 'tab_editor')
+        cmd.setText(self.tr('Default font'))
 
         action = QtWidgets.QAction(self.tr('Single Instance'), self, checkable=True)
         action.triggered.connect(self._onOneEditor)
-        action.setChecked(self._single_instance)
-        self._actions['single_instance'] = action
+        cmd = g_action.register('single_instance', action, 'tab_editor')
+        cmd.setText(self.tr('Single Instance'))
+        cmd.setCheckable(True)
+        cmd.setChecked(self._single_instance)
 
         action = QtWidgets.QAction(self.tr('Windows (CR + LF)'), self)
         action.triggered.connect(partial(self._onConvertEol, 'windows'))
-        self._actions['eol_windows'] = action
+        cmd = g_action.register('eol_windows', action, 'tab_editor')
+        cmd.setText(self.tr('Windows (CR + LF)'))
+
         action = QtWidgets.QAction(self.tr('Unix (LF)'), self)
         action.triggered.connect(partial(self._onConvertEol, 'unix'))
-        self._actions['eol_unix'] = action
+        cmd = g_action.register('eol_unix', action, 'tab_editor')
+        cmd.setText(self.tr('Unix (LF)'))
+
         action = QtWidgets.QAction(self.tr('Mac (CR)'), self)
         action.triggered.connect(partial(self._onConvertEol, 'mac'))
-        self._actions['eol_mac'] = action
+        cmd = g_action.register('eol_mac', action, 'tab_editor')
+        cmd.setText(self.tr('Mac (CR)'))
 
-        self._actions.update(Editor.createAction(self, self._onAction))
+        action = QtWidgets.QAction(self.tr('Wrap Line'), self, checkable=True)
+        action.triggered.connect(partial(self.do_action, 'wrap_line'))
+        cmd = g_action.register('wrap_line', action, 'tab_editor')
+        cmd.setCheckable(True)
+        cmd.setText(self.tr('Wrap Line'))
 
-        self.action('wrap_line').setChecked(self._wrap_mode > 0)
-        self.action('show_ws_eol').setChecked(self._show_ws_eol)
+        action = QtWidgets.QAction(self.tr('Show WS and EOL'), self, checkable=True)
+        action.triggered.connect(partial(self.do_action, 'show_ws_eol'))
+        cmd = g_action.register('show_ws_eol', action, 'tab_editor')
+        cmd.setCheckable(True)
+        cmd.setText(self.tr('Show WS and EOL'))
 
-        value = self._settings.value('editor/font', __monospace__, type=str)
+        value = self._settings.value('font', __monospace__, type=str)
         self._editor_font = QtGui.QFont()
         self._editor_font.fromString(value)
-        logger.info('editor font: %s' % (self._editor_font.toString()))
+        logger.info('font: %s' % (self._editor_font.toString()))
 
-        value = self._settings.value('editor/opened_files', type=str)
+        value = self._settings.value('opened_files', type=str)
         for v in value.split(';')[::-1]:
             filepath, _, zoom = v.rpartition(':')
             if not os.path.exists(filepath):
@@ -122,15 +135,15 @@ class TabEditor(QtWidgets.QTabWidget):
             self.new('.rst')
 
     def closeEvent(self, event):
-        self._settings.setValue('editor/font', self._editor_font.toString())
+        self._settings.setValue('font', self._editor_font.toString())
         opened = []
         for x in range(self.count()):
             editor = self.widget(x)
             opened.append('%s:%s' % (editor.getFileName(), editor.zoom()))
-        self._settings.setValue('editor/opened_files', ';'.join(opened))
-        self._settings.setValue('editor/wrap_mode', self._wrap_mode)
-        self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
-        self._settings.setValue('editor/single_instance', self._single_instance)
+        self._settings.setValue('opened_files', ';'.join(opened))
+        self._settings.setValue('wrap_mode', self._wrap_mode)
+        self._settings.setValue('show_ws_eol', self._show_ws_eol)
+        self._settings.setValue('single_instance', self._single_instance)
 
         self.do_close_all()
         if self.count() > 0:
@@ -155,17 +168,17 @@ class TabEditor(QtWidgets.QTabWidget):
         index = self.indexOf(widget)
         if index < 0:
             return
-        widget.do_modification_changed(value, self)
+        widget.do_modification_changed(value)
         self.updateTitle(index)
         self.modificationChanged.emit(index, value)
 
     def _onCopyAvailable(self, value):
         widget = self.currentWidget()
-        widget and widget.do_copy_available(value, self)
+        widget and widget.do_copy_available(value)
 
     def _onSelectionChanged(self):
         widget = self.currentWidget()
-        widget and widget.do_selection_changed(self)
+        widget and widget.do_selection_changed()
 
     def _onFilesDropped(self, value):
         for fname in value.split(';'):
@@ -188,6 +201,9 @@ class TabEditor(QtWidgets.QTabWidget):
         self.do_close_editor(index)
         if self.count() == 0:
             self.new('.rst')
+        else:
+            cur_index = self.currentIndex()
+            self.do_switch_editor(cur_index)
 
     def _onOpen(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -200,7 +216,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def _onSave(self):
         index = self.currentIndex()
-        self.do_save(index)
+        self.widget(index).do_save()
 
     def _onSaveAs(self):
         index = self.currentIndex()
@@ -245,13 +261,17 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.setWrapMode(self._wrap_mode)
 
         editor.setVimEmulator(self._vim_emulator)
-        editor.setEnabledEditAction(self._vim_emulator is None, self)
+        editor.setEnabledEditAction(self._vim_emulator is None)
+
+        self.action('wrap_line').setChecked(self._wrap_mode > 0)
+        self.action('show_ws_eol').setChecked(self._show_ws_eol)
 
         editor.do_action('show_ws_eol', self._show_ws_eol)
         return editor
 
-    def action(self, action):
-        return self._actions.get(action)
+    def action(self, act_id):
+        g_action = GlobalAction.instance()
+        return g_action.get('' + act_id)
 
     def new(self, ext):
         if self._single_instance:
@@ -356,11 +376,11 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def menuAboutToShow(self):
         widget = self.currentWidget()
-        widget.menuAboutToShow(self)
+        widget.menuAboutToShow()
 
     def menuEdit(self, menu):
         widget = self.currentWidget()
-        widget.menuEdit(menu, self)
+        widget.menuEdit(menu)
 
     def menuSetting(self, menu):
         menu.addAction(self.action('wrap_line'))
@@ -369,7 +389,7 @@ class TabEditor(QtWidgets.QTabWidget):
         menu.addSeparator()
         menu.addAction(self.action('default_font'))
 
-    def _onAction(self, action, value):
+    def do_action(self, action, value):
         widget = self.currentWidget()
         if action in ['wrap_line', 'show_ws_eol']:
             for x in range(self.count()):
@@ -389,83 +409,27 @@ class TabEditor(QtWidgets.QTabWidget):
     def do_close_editor(self, index):
         if index < 0:
             index = self.currentIndex()
-        if self.widget(index).isModified():
-            filepath = self.filepath(index)
-            msgBox = QtWidgets.QMessageBox(self)
-            msgBox.setIcon(QtWidgets.QMessageBox.Question)
-            msgBox.setText(self.tr('The document has been modified.'))
-            msgBox.setInformativeText(
-                self.tr('Do you want to save your changes?\n%s' % filepath)
-            )
-            msgBox.setStandardButtons(
-                QtWidgets.QMessageBox.Save |
-                QtWidgets.QMessageBox.Discard |
-                QtWidgets.QMessageBox.Cancel
-            )
-            msgBox.setDefaultButton(QtWidgets.QMessageBox.Save)
-            ret = msgBox.exec_()
-            if ret == QtWidgets.QMessageBox.Cancel:
-                return
-            if ret == QtWidgets.QMessageBox.Save:
-                self.do_save(index)
-            elif ret == QtWidgets.QMessageBox.Discard:
-                pass
-        # close
-        widget = self.widget(index)
-        self.removeTab(index)
-        widget.close()
-        del widget
+        if self.widget(index).do_close():
+            # close
+            widget = self.widget(index)
+            self.removeTab(index)
+            widget.close()
+            del widget
 
     def do_save_all(self):
         for x in range(self.count()):
-            self.do_save(x)
-
-    def do_save(self, index):
-        if index < 0:
-            index = self.currentIndex()
-        filepath = self.filepath(index)
-        dir_name = os.path.dirname(filepath)
-        filename = os.path.basename(filepath)
-        basename, _ = os.path.splitext(filename)
-        if not dir_name and basename == __default_basename__:
-            self.do_save_as(index)
-        else:
-            self.widget(index).save()
+            self.widget(x).do_save()
 
     def do_save_as(self, index):
         if index < 0:
             index = self.currentIndex()
-        filepath = self.filepath(index)
-        dir_name = os.path.dirname(filepath)
-        if not dir_name:
-            dir_name = os.getcwd()
-
-        filename = os.path.basename(filepath)
-        new_filepath, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            self.tr('Save file as ...'),
-            os.path.join(dir_name, filename),
-            ''.join(FILTER),
-        )
-        if not new_filepath:
-            return
-        new_filepath = os.path.abspath(new_filepath)
-        _, ext = os.path.splitext(new_filepath)
-        if not ext:
-            ext = selected_filter.split('(')[1][1:4].strip()
-            new_filepath = new_filepath + ext
-
-        new_name = new_filepath
-        old_name = self.widget(index).getFileName()
-        if not new_name:
-            new_name = old_name
-        self.widget(index).save(new_name)
+        fnames = self.widget(index).do_save_as()
 
         if index == self.currentIndex():
             self.updateTitle(index)
             self.previewRequest.emit(index, 'save')
-        if old_name != new_name:
-            self.filenameChanged.emit(old_name, new_name)
+        if fnames:
+            self.filenameChanged.emit(fnames[0], fnames[1])
 
     def do_switch_editor(self, index):
         widget = self.widget(index)
@@ -497,6 +461,6 @@ class TabEditor(QtWidgets.QTabWidget):
         self._vim_emulator = vim
         for x in range(self.count()):
             self.widget(x).setVimEmulator(self._vim_emulator)
-            self.widget(x).setEnabledEditAction(self._vim_emulator is None, self)
+            self.widget(x).setEnabledEditAction(self._vim_emulator is None)
             # invalid
             # QtGui.qt_set_sequence_auto_mnemonic(self._vim_emulator is None)
