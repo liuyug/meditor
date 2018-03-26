@@ -132,7 +132,7 @@ class MainWindow(QtWidgets.QMainWindow):
             partial(self.onDockVisibility, 'webview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_webview)
 
-        self.dock_codeview = QtWidgets.QDockWidget(self.tr('Code Preview'), self)
+        self.dock_codeview = QtWidgets.QDockWidget(self.tr('HTML Code'), self)
         self.dock_codeview.setObjectName('dock_codeview')
         self.codeview = CodeViewer(self.findDialog, self.dock_codeview)
         self.dock_codeview.setWidget(self.codeview)
@@ -223,6 +223,10 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd.setIcon(QtGui.QIcon.fromTheme('application-exit'))
         # edit
         # view
+        # action = self.dock_explorer.toggleViewAction()
+        # cmd = g_action.register('mainwindow.workspace', action)
+        # cmd.setText(action.text())
+        # cmd.setCheckable(True)
         # preview
         action = QtWidgets.QAction(self.tr('Preview'), self, checkable=True)
         action.triggered.connect(partial(self.onMenuPreview, 'preview'))
@@ -517,6 +521,8 @@ class MainWindow(QtWidgets.QMainWindow):
         toolbar.addAction(self.tab_editor.action('zoom_out'))
         toolbar.addAction(self.tab_editor.action('zoom_original'))
         toolbar.addSeparator()
+        # toolbar.addAction(self.action('workspace'))
+        toolbar.addAction(self.dock_explorer.toggleViewAction())
         toolbar.addAction(self.action('preview'))
         self.addToolBar(toolbar)
 
