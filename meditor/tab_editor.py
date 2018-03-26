@@ -41,9 +41,9 @@ class TabEditor(QtWidgets.QTabWidget):
         self.tabBarClicked.connect(self._onTabClicked)
         self.tabCloseRequested.connect(self._onTabCloseRequest)
 
-        self._wrap_mode = self._settings.value('wrap_mode', 0, type=int)
-        self._show_ws_eol = self._settings.value('show_ws_eol', False, type=bool)
-        self._single_instance = self._settings.value('single_instance', False, type=bool)
+        self._wrap_mode = self._settings.value('editor/wrap_mode', 0, type=int)
+        self._show_ws_eol = self._settings.value('editor/show_ws_eol', False, type=bool)
+        self._single_instance = self._settings.value('editor/single_instance', False, type=bool)
 
         g_action = GlobalAction.instance()
 
@@ -117,12 +117,12 @@ class TabEditor(QtWidgets.QTabWidget):
         cmd.setCheckable(True)
         cmd.setText(self.tr('Show WS and EOL'))
 
-        value = self._settings.value('font', __monospace__, type=str)
+        value = self._settings.value('editor/font', __monospace__, type=str)
         self._editor_font = QtGui.QFont()
         self._editor_font.fromString(value)
         logger.info('font: %s' % (self._editor_font.toString()))
 
-        value = self._settings.value('opened_files', type=str)
+        value = self._settings.value('editor/opened_files', type=str)
         for v in value.split(';')[::-1]:
             filepath, _, zoom = v.rpartition(':')
             if not os.path.exists(filepath):
@@ -135,15 +135,15 @@ class TabEditor(QtWidgets.QTabWidget):
             self.new('.rst')
 
     def closeEvent(self, event):
-        self._settings.setValue('font', self._editor_font.toString())
+        self._settings.setValue('editor/font', self._editor_font.toString())
         opened = []
         for x in range(self.count()):
             editor = self.widget(x)
             opened.append('%s:%s' % (editor.getFileName(), editor.zoom()))
-        self._settings.setValue('opened_files', ';'.join(opened))
-        self._settings.setValue('wrap_mode', self._wrap_mode)
-        self._settings.setValue('show_ws_eol', self._show_ws_eol)
-        self._settings.setValue('single_instance', self._single_instance)
+        self._settings.setValue('editor/opened_files', ';'.join(opened))
+        self._settings.setValue('editor/wrap_mode', self._wrap_mode)
+        self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
+        self._settings.setValue('editor/single_instance', self._single_instance)
 
         self.do_close_all()
         if self.count() > 0:
