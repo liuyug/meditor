@@ -87,11 +87,11 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.menuExport(self.popupMenu)
 
         # zoom
-        scale = self._settings.value('scale', 1.0, type=float)
+        scale = self._settings.value('webview/scale', 1.0, type=float)
         self.setZoomFactor(scale)
 
     def closeEvent(self, event):
-        self._settings.setValue('scale', self.zoomFactor())
+        self._settings.setValue('webview/scale', self.zoomFactor())
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
