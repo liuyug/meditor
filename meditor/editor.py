@@ -993,19 +993,20 @@ class Editor(QsciScintilla):
         else:
             self.save()
 
-    def do_save_as(self):
+    def do_save_as(self, new_fname=None):
         old_fname = self.getFileName()
         dir_name = os.path.dirname(old_fname)
         if not dir_name:
             dir_name = os.getcwd()
 
-        filename = os.path.basename(old_fname)
-        new_fname, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            self.tr('Save file as ...'),
-            os.path.join(dir_name, filename),
-            ''.join(FILTER),
-        )
+        if new_fname is None:
+            filename = os.path.basename(old_fname)
+            new_fname, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
+                self,
+                self.tr('Save file as ...'),
+                os.path.join(dir_name, filename),
+                ''.join(FILTER),
+            )
         if not new_fname:
             return
         new_fname = os.path.abspath(new_fname)
@@ -1025,9 +1026,9 @@ class Editor(QsciScintilla):
             fname = self.getFileName()
             msgBox = QtWidgets.QMessageBox(self)
             msgBox.setIcon(QtWidgets.QMessageBox.Question)
-            msgBox.setText(self.tr('The document has been modified.'))
+            msgBox.setText(self.tr('The document "%s" has been modified.') % fname)
             msgBox.setInformativeText(
-                self.tr('Do you want to save your changes?\n%s' % fname)
+                self.tr('Do you want to save your changes?')
             )
             msgBox.setStandardButtons(
                 QtWidgets.QMessageBox.Save |

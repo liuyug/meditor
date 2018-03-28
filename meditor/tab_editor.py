@@ -219,8 +219,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self.widget(index).do_save()
 
     def _onSaveAs(self):
-        index = self.currentIndex()
-        self.do_save_as(index)
+        self.do_save_as()
 
     def _onSaveAll(self):
         self.do_save_all()
@@ -250,7 +249,7 @@ class TabEditor(QtWidgets.QTabWidget):
         editor.selectionChanged.connect(self._onSelectionChanged)
 
         editor.filesDropped.connect(self._onFilesDropped)
-        editor.saveRequest.connect(partial(self.do_save_as, -1))
+        editor.saveRequest.connect(self.do_save_as)
         editor.saveAllRequest.connect(self.do_save_all)
         editor.loadRequest.connect(self.loadFile)
         editor.closeRequest.connect(partial(self.do_close_editor, -1))
@@ -420,14 +419,16 @@ class TabEditor(QtWidgets.QTabWidget):
         for x in range(self.count()):
             self.widget(x).do_save()
 
-    def do_save_as(self, index):
-        if index < 0:
-            index = self.currentIndex()
-        fnames = self.widget(index).do_save_as()
+    def do_save_as(self, new_fname=None):
+        index = self.currentIndex()
+        if not new_fname and new_fname is not None:
+            # new_fname == ''
+            fnames = self.widget(index).do_save()
+        else:
+            fnames = self.widget(index).do_save_as(new_fname)
 
-        if index == self.currentIndex():
-            self.updateTitle(index)
-            self.previewRequest.emit(index, 'save')
+        self.updateTitle(index)
+        self.previewRequest.emit(index, 'save')
         if fnames:
             self.filenameChanged.emit(fnames[0], fnames[1])
 
