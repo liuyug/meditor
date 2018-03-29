@@ -93,6 +93,11 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     def closeEvent(self, event):
         self._settings.setValue('webview/scale', self.zoomFactor())
 
+    def focusInEvent(self, event):
+        super(WebView, self).focusInEvent(event)
+        # XXX: don't run
+        print('focus', self)
+
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
             self.menuAboutToShow()

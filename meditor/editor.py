@@ -120,6 +120,10 @@ class Editor(QsciScintilla):
         g_action = GlobalAction.instance()
         g_action.unregister_by_widget(self)
 
+    def focusInEvent(self, event):
+        super(Editor, self).focusInEvent(event)
+        self.menuAboutToShow()
+
     def createAction(self):
         g_action = GlobalAction.instance()
 
