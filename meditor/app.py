@@ -123,7 +123,7 @@ class MainWindow(QtWidgets.QMainWindow):
             partial(self.onDockVisibility, 'explorer'))
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
         # right dock window
-        self.dock_webview = QtWidgets.QDockWidget(self.tr('Web Preview'), self)
+        self.dock_webview = QtWidgets.QDockWidget(self.tr('Preview'), self)
         self.dock_webview.setObjectName('dock_webview')
         self.webview = webview.WebView(
             self.settings, self.findDialog, self.dock_webview)
@@ -223,20 +223,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd.setIcon(QtGui.QIcon.fromTheme('application-exit'))
         # edit
         # view
-        # action = self.dock_explorer.toggleViewAction()
-        # cmd = g_action.register('mainwindow.workspace', action)
-        # cmd.setText(action.text())
-        # cmd.setCheckable(True)
         # preview
-        action = QtWidgets.QAction(self.tr('Preview'), self, checkable=True)
-        action.triggered.connect(partial(self.onMenuPreview, 'preview'))
-        cmd = g_action.register('mainwindow.preview', action)
-        cmd.setText(action.text())
-        cmd.setCheckable(True)
-        cmd.setChecked(
-            settings.value('view/webview', True, type=bool) or
-            settings.value('view/codeview', True, type=bool))
-
         action = QtWidgets.QAction(
             self.tr('Preview on save'), self, checkable=True)
         action.triggered.connect(
@@ -521,9 +508,8 @@ class MainWindow(QtWidgets.QMainWindow):
         toolbar.addAction(self.tab_editor.action('zoom_out'))
         toolbar.addAction(self.tab_editor.action('zoom_original'))
         toolbar.addSeparator()
-        # toolbar.addAction(self.action('workspace'))
         toolbar.addAction(self.dock_explorer.toggleViewAction())
-        toolbar.addAction(self.action('preview'))
+        toolbar.addAction(self.dock_webview.toggleViewAction())
         self.addToolBar(toolbar)
 
     def setupStatusBar(self):
@@ -718,13 +704,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.previewCurrentText()
 
     def onMenuPreview(self, label, checked):
-        if label == 'preview':
-            if checked:
-                self.dock_webview.setVisible(True)
-            else:
-                self.dock_webview.setVisible(False)
-                self.dock_codeview.setVisible(False)
-        elif label == 'previewonsave':
+        if label == 'previewonsave':
             self.settings.setValue('preview/onsave', checked)
         elif label == 'previewoninput':
             self.settings.setValue('preview/oninput', checked)
