@@ -233,6 +233,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd = g_action.register('mainwindow.preview_onsave', action)
         cmd.setText(action.text())
         cmd.setCheckable(True)
+        action.setChecked(value)
         cmd.setChecked(value)
 
         action = QtWidgets.QAction(
@@ -244,6 +245,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd = g_action.register('mainwindow.preview_oninput', action)
         cmd.setText(action.text())
         cmd.setCheckable(True)
+        action.setChecked(value)
         cmd.setChecked(value)
 
         action = QtWidgets.QAction(
@@ -255,6 +257,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd = g_action.register('mainwindow.preview_sync', action)
         cmd.setText(action.text())
         cmd.setCheckable(True)
+        action.setChecked(value)
         cmd.setChecked(value)
         # theme
         # docutils theme
