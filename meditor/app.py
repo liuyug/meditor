@@ -31,7 +31,7 @@ from .gaction import GlobalAction
 from . import qrc_icon_theme
 
 
-requestPreview = threading.Event()
+previewEvent = threading.Event()
 
 # for logger
 logger = None
@@ -39,11 +39,11 @@ logger = None
 
 def previewWorker(self):
     while True:
-        requestPreview.wait()
+        previewEvent.wait()
         if self.previewQuit:
             logger.debug('Preview exit')
             break
-        requestPreview.clear()
+        previewEvent.clear()
         logger.debug('Preview %s' % self.previewPath)
         ext = os.path.splitext(self.previewPath)[1].lower()
         if not self.previewText:
@@ -62,7 +62,7 @@ def previewWorker(self):
             self.previewPath = \
                 '<html><body><h1>Error</h1><p>Unknown extension: %s</p></body></html>' \
                 % ext
-        self.previewSignal.emit()
+        self.updatePreviewViewRequest.emit()
     return
 
 
@@ -73,7 +73,8 @@ class MainWindow(QtWidgets.QMainWindow):
     previewHtml = ''
     previewPath = None
     previewQuit = False
-    previewSignal = QtCore.pyqtSignal()
+    updatePreviewViewRequest = QtCore.pyqtSignal()
+    previewViewVisibleNotify = QtCore.pyqtSignal(bool)
     _toolbar = None
 
     def __init__(self, settings):
@@ -178,7 +179,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.restoreGeometry(settings.value('geometry', type=QtCore.QByteArray))
         self.restoreState(settings.value('windowState', type=QtCore.QByteArray))
 
-        self.previewSignal.connect(self.onUpdatePreviewView)
+        self.updatePreviewViewRequest.connect(self.onUpdatePreviewView)
         self.previewWorker = threading.Thread(target=previewWorker, args=(self,))
         logger.debug(' Preview worker start '.center(80, '-'))
         self.previewWorker.start()
@@ -553,7 +554,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settings.sync()
 
         self.previewQuit = True
-        requestPreview.set()
+        previewEvent.set()
         self.previewWorker.join()
         logger.info(' rsteditor end '.center(80, '='))
         event.accept()
@@ -699,12 +700,14 @@ class MainWindow(QtWidgets.QMainWindow):
             SHCNE_ASSOCCHANGED, SHCNF_IDLIST, None, None)
 
     def onDockVisibility(self, dock, value):
-        if value and dock == 'webview':
-            self.webview.setFocus(QtCore.Qt.TabFocusReason)
-        elif value and dock == 'codeview':
-            self.codeview.setFocus(QtCore.Qt.TabFocusReason)
         if value:
+            if dock == 'webview':
+                self.webview.setFocus(QtCore.Qt.TabFocusReason)
+            elif dock == 'codeview':
+                self.codeview.setFocus(QtCore.Qt.TabFocusReason)
             self.previewCurrentText()
+        if dock == 'webview' or dock == 'codeview':
+            self.previewViewVisibleNotify.emit(value)
 
     def onMenuPreview(self, label, checked):
         if label == 'previewonsave':
@@ -892,13 +895,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.move(qr.topLeft())
 
     def do_preview(self, index, force=False):
-        if requestPreview.is_set():
+        if previewEvent.is_set():
             logger.debug('Preview is working..., ignore')
         elif force or self.dock_codeview.isVisible() or self.dock_webview.isVisible():
             widget = self.tab_editor.widget(index)
             self.previewPath = widget.getFileName()
             self.previewText = widget.text()
-            requestPreview.set()
+            previewEvent.set()
 
     def previewCurrentText(self, force=False):
         self.do_preview(self.tab_editor.currentIndex(), force=force)

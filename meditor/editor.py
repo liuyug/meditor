@@ -279,21 +279,21 @@ class Editor(QsciScintilla):
     def inputMethodEvent(self, event):
         if self.isReadOnly():
             return
-        if self._vim and self._vim.handle(
-                -1, event.preeditString() or event.commitString(), self):
-            return
-
-        if event.preeditString():
+        input_string = event.preeditString()
+        if input_string:
+            commit_length = 0
             self.pauseLexer(True)
         else:
+            input_string = event.commitString()
+            commit_length = len(input_string)
             self.pauseLexer(False)
+            self._latest_input_count += commit_length
+            self._timer.start()
+
+        if self._vim and self._vim.handle(-1, input_string, self):
+            return
 
         super(Editor, self).inputMethodEvent(event)
-
-        length = len(event.commitString())
-        if length > 0:
-            self._latest_input_count += length
-            self._timer.start()
 
     def event(self, event):
         """in VIM mode, accept all shortcut event """
@@ -697,6 +697,7 @@ class Editor(QsciScintilla):
 
     def showFindDialog(self, finddialog, readonly=False):
         finddialog.setReadOnly(readonly)
+        finddialog.setDefaultFocus()
         finddialog.find_next.connect(self.do_find_next)
         finddialog.find_previous.connect(self.do_find_previous)
         if not readonly:

@@ -72,6 +72,9 @@ class FindReplaceDialog(QtWidgets.QDialog):
         self.ui.pushButton_replace.setEnabled(not self._readonly and enable)
         self.ui.pushButton_replaceall.setEnabled(not self._readonly and enable)
 
+    def setDefaultFocus(self):
+        return self.ui.lineEdit_find.setFocus()
+
     def getFindText(self):
         return self.ui.lineEdit_find.text()
 
