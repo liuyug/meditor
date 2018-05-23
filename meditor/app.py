@@ -521,6 +521,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusCursor = QtWidgets.QLabel('Cursor', self)
         self.statusBar().addPermanentWidget(self.statusCursor)
 
+        self.statusLength = QtWidgets.QLabel('Length', self)
+        self.statusBar().addPermanentWidget(self.statusLength)
+
         self.statusEncoding = QtWidgets.QLabel('ASCII', self)
         self.statusBar().addPermanentWidget(self.statusEncoding)
 
@@ -596,6 +599,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.statusEol.setText(value.center(length, ' '))
             elif key == 'cursor':
                 self.statusCursor.setText(value.center(length, ' '))
+            elif key == 'length':
+                self.statusLength.setText(value.center(length, ' '))
 
     def onMenuNewWindow(self):
         if sys.platform == 'win32' and self._app_exec.endswith('.py'):

@@ -52,12 +52,14 @@ class Editor(QsciScintilla):
     _enable_lexer = True
     _filename = None
     _tab_width = 4
-    _latest_input_count = 0
+    _preedit_show = False
+    # _latest_input_count = 0
     _latest_input_time = 0
+    _text_length = 0
     _timer_interval = 1
     _timer = None
     _edgeColumn = 80
-    _pauseLexer = False
+    _pause_lexer = False
     _lexerStart = 0
     _lexerEnd = 0
     _imsupport = None
@@ -281,17 +283,23 @@ class Editor(QsciScintilla):
             return
         input_string = event.preeditString()
         if input_string:
-            commit_length = 0
-            self.pauseLexer(True)
+            self._pause_lexer = True
+            self._preedit_show = True
+        #     self.pauseLexer(True)
+        #     commit_length = 0
         else:
-            input_string = event.commitString()
-            commit_length = len(input_string)
-            self.pauseLexer(False)
-            self._latest_input_count += commit_length
-            self._timer.start()
+            self._pause_lexer = False
+            self._preedit_show = False
+        #     self.pauseLexer(False)
+        #     input_string = event.commitString()
+        #     commit_length = len(input_string)
+        #     self._latest_input_count += commit_length
+        #     self._timer.start()
 
-        if self._vim and self._vim.handle(-1, input_string, self):
-            return
+        if self._vim:
+            input_string = event.preeditString() or event.commitString()
+            if self._vim.handle(-1, input_string, self):
+                return
 
         super(Editor, self).inputMethodEvent(event)
 
@@ -309,10 +317,10 @@ class Editor(QsciScintilla):
         else:
             super(Editor, self).keyPressEvent(event)
 
-        if text:
-            self._latest_input_time = time.time()
-            self._latest_input_count += len(text)
-            self._timer.start()
+        # if text:
+        #     self._latest_input_time = time.time()
+        #     self._latest_input_count += len(text)
+        #     self._timer.start()
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -449,13 +457,18 @@ class Editor(QsciScintilla):
         2. lastest input time > interval time
         """
         now = time.time()
-        if self._latest_input_count > 0:
-            if not self._pauseLexer  \
-                    and (now - self._latest_input_time) > self._timer_interval:
-                self.inputPreviewRequest.emit()
-                self._latest_input_count = 0
-            else:
-                self._timer.start()
+        # if self._latest_input_count > 0:
+        #     if not self._pauseLexer  \
+        #             and (now - self._latest_input_time) > self._timer_interval:
+        #         self.inputPreviewRequest.emit()
+        #         self._latest_input_count = 0
+        #     else:
+        #         self._timer.start()
+        if not self._preedit_show and \
+                (now - self._latest_input_time) > self._timer_interval:
+            self.inputPreviewRequest.emit()
+        else:
+            self._timer.start()
 
     def onCopyAvailable(self, value):
         self.do_copy_available(value)
@@ -474,7 +487,15 @@ class Editor(QsciScintilla):
         self.do_set_margin_width()
 
     def onTextChanged(self):
-        pass
+        if not self._preedit_show:
+            text_length = len(self.text())
+            print('text length', text_length)
+            if abs(text_length - self._text_length) > 5:
+                print('timer start')
+                self._text_length = text_length
+                self._timer.start()
+        value = self.toFriendlyValue(self.length())
+        self.statusChanged.emit('length:%s' % value)
 
     def isPasteAvailable(self):
         """ always return 1 in GTK+ """
@@ -682,11 +703,14 @@ class Editor(QsciScintilla):
         lines = self.lines()
         line, index = self.getCursorPosition()
         cursor = 'Ln %s/%s Col %s/80' % (line + 1, lines, index + 1)
+        length = self.toFriendlyValue(self.length())
+        self._text_length = len(self.text())
         status = [
             'encoding:%s' % self.encoding().upper(),
             'eol:%s' % EOL_DESCRIPTION[self.eolMode()],
             'lexer:%s' % (self.lexer().language() if self.lexer() else '--'),
             'cursor:%s' % cursor,
+            'length:%s' % length,
         ]
         return ';'.join(status)
 
@@ -808,7 +832,7 @@ class Editor(QsciScintilla):
         logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
 
     def pauseLexer(self, pause=True):
-        self._pauseLexer = pause
+        self._pause_lexer = pause
 
     def getScintillaVersion(self):
         version = '%s.%s.%s' % (
@@ -929,8 +953,8 @@ class Editor(QsciScintilla):
         if replaced_text:
             self.replaceSelectedText(replaced_text)
             # preview immediately
-            length = len(replaced_text)
-            self._latest_input_count += length
+            # length = len(replaced_text)
+            # self._latest_input_count += length
             self._timer.start()
 
     def do_copy_available(self, value):
@@ -1052,6 +1076,14 @@ class Editor(QsciScintilla):
 
     def setVimEmulator(self, vim):
         self._vim = vim
+
+    def toFriendlyValue(self, value):
+        unit = ['B', 'KB', 'MB', 'GB', 'TB']
+        for x in range(len(unit)):
+            if value < 1024:
+                break
+            value /= 1024
+        return '%.2f %s' % (value, unit[x])
 
 
 class CodeViewer(Editor):

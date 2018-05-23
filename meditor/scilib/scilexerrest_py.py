@@ -268,7 +268,7 @@ class QsciLexerRest(Qsci.QsciLexerCustom):
         """
         if not self.editor():
             return
-        if self.editor()._pauseLexer:
+        if self.editor()._pause_lexer:
             return
         logger.debug(('styling %s:%s' % (start, end)).center(70, '-'))
         logger.debug('end styled: %s' % self.editor().getEndStyled())
