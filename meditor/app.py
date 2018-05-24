@@ -785,7 +785,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onMenuAppStyleChanged(self, label, checked):
         self.settings.setValue('app_style', label)
-        QtWidgets.QApplication.setStyle(label)
+        QtWidgets.qApp.setStyle(label)
 
     def onMenuMathJax(self, label):
         if label == 'install':
@@ -1018,7 +1018,7 @@ def main():
 
     # application style
     value = settings.value('app_style', 'Windows', type=str)
-    QtWidgets.QApplication.setStyle(value)
+    app.setStyle(value)
 
     win.show()
     sys.exit(app.exec_())
