@@ -333,6 +333,17 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd.setText(action.text())
         cmd.setEnabled(not os.path.exists(__mathjax_full_path__))
         # settings
+        # # application style
+        value = settings.value('app_style', 'Windows', type=str)
+        settings.setValue('app_style', value)
+        self.appStyleGroup = QtWidgets.QActionGroup(self)
+        self.appStyleGroup.setExclusive(True)
+        for k in list(QtWidgets.QStyleFactory.keys()):
+            act = QtWidgets.QAction(k, self, checkable=True)
+            act.triggered.connect(partial(self.onMenuAppStyleChanged, k))
+            self.appStyleGroup.addAction(act)
+            if value == k:
+                act.setChecked(True)
 
         action = QtWidgets.QAction(self.tr('VIM Mode'), self, checkable=True)
         action.triggered.connect(partial(self.onMenuSettings, 'vim_mode'))
@@ -438,6 +449,13 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.action('install_mathjax'))
 
         menu = menubar.addMenu(self.tr('&Settings'))
+
+        submenu = QtWidgets.QMenu(self.tr('Application Style'), menu)
+        for act in self.appStyleGroup.actions():
+            submenu.addAction(act)
+        menu.addMenu(submenu)
+        menu.addSeparator()
+
         menu.addAction(self.action('vim_mode'))
         menu.addAction(self.action('high_dpi'))
 
@@ -765,6 +783,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.showMessage(
             self.tr('pygments change: %s' % label))
 
+    def onMenuAppStyleChanged(self, label, checked):
+        self.settings.setValue('app_style', label)
+        QtWidgets.QApplication.setStyle(label)
+
     def onMenuMathJax(self, label):
         if label == 'install':
             dlg = QtWidgets.QProgressDialog(self)
@@ -934,7 +956,6 @@ class MainWindow(QtWidgets.QMainWindow):
 def main():
     globalvars.init()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--style', choices=list(QtWidgets.QStyleFactory.keys()))
     parser.add_argument('--version', action='version',
                         version='%%(prog)s %s' % __app_version__)
     parser.add_argument('-v', '--verbose', help='verbose help',
@@ -988,13 +1009,17 @@ def main():
     settings.setValue('highdpi', value)
     if value:
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-    QtWidgets.QApplication.setStyle(args.style)
     app = QtWidgets.QApplication(sys.argv)
     logger.info('app scale factor: %s' % app.devicePixelRatio())
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
     if args.rstfile:
         win.tab_editor.loadFile(os.path.abspath(args.rstfile))
+
+    # application style
+    value = settings.value('app_style', 'Windows', type=str)
+    QtWidgets.QApplication.setStyle(value)
+
     win.show()
     sys.exit(app.exec_())
 
