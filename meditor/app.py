@@ -15,7 +15,8 @@ from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from pygments.formatters import get_formatter_by_name
 
 from . import __app_name__, __app_version__, __app_path__, \
-    __data_path__, __home_data_path__, __mathjax_full_path__, \
+    __data_path__, __home_data_path__, \
+    __mathjax_full_path__, __mathjax_min_path__, \
     pygments_styles
 from .editor import Editor, CodeViewer
 from .tab_editor import TabEditor
@@ -44,22 +45,37 @@ def previewWorker(self):
             logger.debug('Preview exit')
             break
         previewEvent.clear()
-        logger.debug('Preview %s' % self.previewPath)
-        ext = os.path.splitext(self.previewPath)[1].lower()
-        if not self.previewText:
+        previewText = self.previewData['text']
+        previewPath = self.previewData['path']
+        logger.debug('Preview %s' % previewPath)
+        ext = os.path.splitext(previewPath)[1].lower()
+        settings = {}
+        if not previewText:
             self.previewHtml = ''
         elif ext in ['.rst', '.rest']:
-            self.previewHtml = output.rst2htmlcode(self.previewText,
-                                                   theme=self.rst_theme)
+            if self.previewData['mathjax']:
+                if os.path.exists(__mathjax_full_path__):
+                    settings['mathjax'] = __mathjax_full_path__
+            self.previewHtml = output.rst2htmlcode(previewText,
+                                                   theme=self.rst_theme,
+                                                   settings=settings)
         elif ext in ['.md', '.markdown']:
-            self.previewHtml = output.md2htmlcode(self.previewText,
-                                                  theme=self.md_theme)
+            if self.previewData['mathjax']:
+                if os.path.exists(__mathjax_full_path__):
+                    mathjax_path = __mathjax_full_path__ + '?config=TeX-MML-AM_CHTML'
+                else:
+                    mathjax_path = __mathjax_min_path__
+                mathjax = """<script type="text/javascript" src="file:///%s"></script>""" % mathjax_path
+                settings['mathjax'] = mathjax
+            self.previewHtml = output.md2htmlcode(previewText,
+                                                  theme=self.md_theme,
+                                                  settings=settings)
         elif ext in ['.htm', '.html', '.php', '.asp']:
-            self.previewHtml = self.previewText
+            self.previewHtml = previewText
         elif ext in EXTENSION_LEXER:
-            self.previewHtml = output.htmlcode(self.previewText, self.previewPath)
+            self.previewHtml = output.htmlcode(previewText, previewPath)
         else:
-            self.previewPath = \
+            previewPath = \
                 '<html><body><h1>Error</h1><p>Unknown extension: %s</p></body></html>' \
                 % ext
         self.updatePreviewViewRequest.emit()
@@ -69,9 +85,8 @@ def previewWorker(self):
 class MainWindow(QtWidgets.QMainWindow):
     rst_theme = 'default'
     md_theme = 'default'
-    previewText = ''
+    previewData = None
     previewHtml = ''
-    previewPath = None
     previewQuit = False
     updatePreviewViewRequest = QtCore.pyqtSignal()
     previewViewVisibleNotify = QtCore.pyqtSignal(bool)
@@ -98,6 +113,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtGui.QIcon(self._icon_path)
             ))
         self.setAcceptDrops(True)
+        self.previewData = {
+            'text': '',
+            'path': '',
+            'mathjax': False,
+        }
         # main window
         self.findDialog = FindReplaceDialog(self)
 
@@ -228,7 +248,7 @@ class MainWindow(QtWidgets.QMainWindow):
         action = QtWidgets.QAction(
             self.tr('Preview on save'), self, checkable=True)
         action.triggered.connect(
-            partial(self.onMenuPreview, 'previewonsave'))
+            partial(self.onMenuPreview, 'preview_onsave'))
         value = settings.value('preview/onsave', True, type=bool)
         settings.setValue('preview/onsave', value)
         cmd = g_action.register('mainwindow.preview_onsave', action)
@@ -240,7 +260,7 @@ class MainWindow(QtWidgets.QMainWindow):
         action = QtWidgets.QAction(
             self.tr('Preview on input'), self, checkable=True)
         action.triggered.connect(
-            partial(self.onMenuPreview, 'previewoninput'))
+            partial(self.onMenuPreview, 'preview_oninput'))
         value = settings.value('preview/oninput', True, type=bool)
         settings.setValue('preview/oninput', value)
         cmd = g_action.register('mainwindow.preview_oninput', action)
@@ -252,7 +272,7 @@ class MainWindow(QtWidgets.QMainWindow):
         action = QtWidgets.QAction(
             self.tr('Scroll synchronize'), self, checkable=True)
         action.triggered.connect(
-            partial(self.onMenuPreview, 'previewsync'))
+            partial(self.onMenuPreview, 'preview_sync'))
         value = settings.value('preview/sync', True, type=bool)
         settings.setValue('preview/sync', value)
         cmd = g_action.register('mainwindow.preview_sync', action)
@@ -260,6 +280,19 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd.setCheckable(True)
         action.setChecked(value)
         cmd.setChecked(value)
+
+        action = QtWidgets.QAction(
+            self.tr('Preview with MathJax'), self, checkable=True)
+        action.triggered.connect(
+            partial(self.onMenuPreview, 'preview_mathjax'))
+        value = settings.value('preview/mathjax', False, type=bool)
+        settings.setValue('preview/mathjax', value)
+        cmd = g_action.register('mainwindow.preview_mathjax', action)
+        cmd.setText(action.text())
+        cmd.setCheckable(True)
+        action.setChecked(value)
+        cmd.setChecked(value)
+        self.previewData['mathjax'] = value
         # theme
         # docutils theme
         default_cssAction = QtWidgets.QAction(
@@ -463,6 +496,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.action('preview_onsave'))
         menu.addAction(self.action('preview_oninput'))
         menu.addAction(self.action('preview_sync'))
+        menu.addAction(self.action('preview_mathjax'))
 
         menu.addSeparator()
         self.tab_editor.menuSetting(menu)
@@ -733,12 +767,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.previewViewVisibleNotify.emit(value)
 
     def onMenuPreview(self, label, checked):
-        if label == 'previewonsave':
+        if label == 'preview_onsave':
             self.settings.setValue('preview/onsave', checked)
-        elif label == 'previewoninput':
+        elif label == 'preview_oninput':
             self.settings.setValue('preview/oninput', checked)
-        elif label == 'previewsync':
+        elif label == 'preview_sync':
             self.settings.setValue('preview/sync', checked)
+        elif label == 'preview_mathjax':
+            self.settings.setValue('preview/mathjax', checked)
+            self.previewData['mathjax'] = checked
+            self.previewCurrentText()
 
     def onMenuRstThemeChanged(self, label, checked):
         self.rst_theme = label
@@ -926,8 +964,8 @@ class MainWindow(QtWidgets.QMainWindow):
             logger.debug('Preview is working..., ignore')
         elif force or self.dock_codeview.isVisible() or self.dock_webview.isVisible():
             widget = self.tab_editor.widget(index)
-            self.previewPath = widget.getFileName()
-            self.previewText = widget.text()
+            self.previewData['text'] = widget.text()
+            self.previewData['path'] = widget.getFileName()
             previewEvent.set()
 
     def previewCurrentText(self, force=False):
@@ -935,10 +973,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onUpdatePreviewView(self):
         if self.dock_webview.isVisible():
-            self.webview.setHtml(self.previewHtml, self.previewPath)
+            self.webview.setHtml(self.previewHtml, self.previewData.get('path'))
         if self.dock_codeview.isVisible():
             self.codeview.setValue(self.previewHtml)
-            self.codeview.setFileName(self.previewPath + '.html')
+            self.codeview.setFileName(self.previewData.get('path') + '.html')
         widget = self.tab_editor.currentWidget()
         if not widget:
             return

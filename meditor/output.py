@@ -17,8 +17,7 @@ from docutils.core import publish_cmdline_to_binary
 from docutils.writers.odf_odt import Writer, Reader
 from docutils.writers import html5_polyglot
 
-from . import __data_path__, __home_data_path__, \
-    __mathjax_full_path__, __mathjax_min_path__
+from . import __data_path__, __home_data_path__
 
 logger = logging.getLogger(__name__)
 
@@ -111,8 +110,9 @@ def rst2htmlcode(rst_text, theme=None, settings={}):
     output = None
     try:
         overrides = {}
-        if os.path.exists(__mathjax_full_path__):
-            overrides['math_output'] = ' '.join(['MathJax', __mathjax_full_path__])
+        mathjax = settings.get('mathjax')
+        if mathjax:
+            overrides['math_output'] = ' '.join(['MathJax', mathjax])
         overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme))
@@ -256,12 +256,6 @@ def md2htmlcode(markup_file, theme=None, settings={}):
     head = []
     head.append('<meta charset="UTF-8" />')
     mathjax = settings.get('mathjax')
-    if not mathjax:
-        if os.path.exists(__mathjax_full_path__):
-            mathjax_path = __mathjax_full_path__ + '?config=TeX-MML-AM_CHTML'
-        else:
-            mathjax_path = __mathjax_min_path__
-        mathjax = """<script type="text/javascript" src="file:///%s"></script>""" % mathjax_path
     if mathjax:
         head.append(mathjax)
     head.append('<style type="text/css">')
