@@ -28,6 +28,8 @@ class TabEditor(QtWidgets.QTabWidget):
     _single_instance = False
     _editor_font = None
     _vim_emulator = None
+    _timer = None
+    _timer_interval = 1
 
     def __init__(self, settings, find_dialog, parent=None):
         super(TabEditor, self).__init__(parent)
@@ -138,6 +140,11 @@ class TabEditor(QtWidgets.QTabWidget):
         if self.count() == 0:
             self.new('.rst')
 
+        self._timer = QtCore.QTimer(self)
+        self._timer.setInterval(self._timer_interval * 1000)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self._onTimerTimeout)
+
     def closeEvent(self, event):
         self._settings.setValue('editor/font', self._editor_font.toString())
         opened = []
@@ -160,12 +167,24 @@ class TabEditor(QtWidgets.QTabWidget):
             return
         self.statusChanged.emit(index, status)
 
+    def _onTimerTimeout(self):
+        """
+        lastest input time > interval time
+        """
+        widget = self.currentWidget()
+        index = self.currentIndex()
+        if not widget._preedit_show:
+            self.previewRequest.emit(index, 'input')
+        else:
+            self._timer.start()
+
     def _onInputPreview(self):
         widget = self.sender()
         index = self.indexOf(widget)
         if index < 0:
             return
-        self.previewRequest.emit(index, 'input')
+        # delay preview
+        self._timer.start()
 
     def _onModificationChanged(self, value):
         widget = self.sender()

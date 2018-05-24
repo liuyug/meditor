@@ -53,11 +53,7 @@ class Editor(QsciScintilla):
     _filename = None
     _tab_width = 4
     _preedit_show = False
-    # _latest_input_count = 0
-    _latest_input_time = 0
     _text_length = 0
-    _timer_interval = 1
-    _timer = None
     _edgeColumn = 80
     _pause_lexer = False
     _lexerStart = 0
@@ -105,11 +101,6 @@ class Editor(QsciScintilla):
             QsciScintilla.SC_EFF_QUALITY_LCD_OPTIMIZED)
 
         self.createAction()
-
-        self._timer = QtCore.QTimer(self)
-        self._timer.setInterval(self._timer_interval * 1000)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._onTimerTimeout)
 
     @staticmethod
     def canOpened(filepath):
@@ -285,16 +276,9 @@ class Editor(QsciScintilla):
         if input_string:
             self._pause_lexer = True
             self._preedit_show = True
-        #     self.pauseLexer(True)
-        #     commit_length = 0
         else:
             self._pause_lexer = False
             self._preedit_show = False
-        #     self.pauseLexer(False)
-        #     input_string = event.commitString()
-        #     commit_length = len(input_string)
-        #     self._latest_input_count += commit_length
-        #     self._timer.start()
 
         if self._vim:
             input_string = event.preeditString() or event.commitString()
@@ -316,11 +300,6 @@ class Editor(QsciScintilla):
             return
         else:
             super(Editor, self).keyPressEvent(event)
-
-        # if text:
-        #     self._latest_input_time = time.time()
-        #     self._latest_input_count += len(text)
-        #     self._timer.start()
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
@@ -451,25 +430,6 @@ class Editor(QsciScintilla):
         self.do_modification_changed(None)
         self.action('replace_next').setEnabled(not self.isReadOnly())
 
-    def _onTimerTimeout(self):
-        """
-        1. latest input count > 0
-        2. lastest input time > interval time
-        """
-        now = time.time()
-        # if self._latest_input_count > 0:
-        #     if not self._pauseLexer  \
-        #             and (now - self._latest_input_time) > self._timer_interval:
-        #         self.inputPreviewRequest.emit()
-        #         self._latest_input_count = 0
-        #     else:
-        #         self._timer.start()
-        if not self._preedit_show and \
-                (now - self._latest_input_time) > self._timer_interval:
-            self.inputPreviewRequest.emit()
-        else:
-            self._timer.start()
-
     def onCopyAvailable(self, value):
         self.do_copy_available(value)
 
@@ -489,11 +449,9 @@ class Editor(QsciScintilla):
     def onTextChanged(self):
         if not self._preedit_show:
             text_length = len(self.text())
-            print('text length', text_length)
             if abs(text_length - self._text_length) > 5:
-                print('timer start')
+                self.inputPreviewRequest.emit()
                 self._text_length = text_length
-                self._timer.start()
         value = self.toFriendlyValue(self.length())
         self.statusChanged.emit('length:%s' % value)
 
@@ -953,9 +911,7 @@ class Editor(QsciScintilla):
         if replaced_text:
             self.replaceSelectedText(replaced_text)
             # preview immediately
-            # length = len(replaced_text)
-            # self._latest_input_count += length
-            self._timer.start()
+            self.inputPreviewRequest.emit()
 
     def do_copy_available(self, value):
         self.action('cut').setEnabled(value and not self.isReadOnly())
