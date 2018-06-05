@@ -201,6 +201,7 @@ def get_md_themes():
 
 
 def md2htmlcode(markup_file, theme=None, settings={}):
+    mathjax = settings.get('mathjax')
     extensions = [
         'markdown.extensions.extra',
         'markdown.extensions.abbr',
@@ -219,10 +220,13 @@ def md2htmlcode(markup_file, theme=None, settings={}):
         'markdown.extensions.smarty',
         'markdown.extensions.toc',
         'markdown.extensions.wikilinks',
-        mdx_mathjax.MathJaxExtension(asciimath_escape=True),
     ]
     extension_configs = {
     }
+
+    if mathjax:
+        extensions.append(mdx_mathjax.MathJaxExtension(asciimath_escape=True))
+
     try:
         overrides = {}
         logger.debug(overrides)
@@ -255,9 +259,10 @@ def md2htmlcode(markup_file, theme=None, settings={}):
     html.append('<head>')
     head = []
     head.append('<meta charset="UTF-8" />')
-    mathjax = settings.get('mathjax')
+
     if mathjax:
         head.append(mathjax)
+
     head.append('<style type="text/css">')
     if theme_css:
         head.append(theme_css)
