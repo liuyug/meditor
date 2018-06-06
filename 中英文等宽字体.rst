@@ -33,6 +33,34 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
 
 1liIL0oO
 
+特殊符号
+--------
+https://msdn.microsoft.com/en-us/goglobal/bb688134.aspx
+
+https://github.com/Microsoft/BashOnWindows/files/1362006/Microsoft.YaHei.Mono.zip
+
+
+
+Path:
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontLink\SystemLink
+
+New multi-string, with value name:
+Inconsolata
+
+Value data:
+
+CONSOLA.TTF,Consolas Regular
+SEGOEUISL.TTF,Segoe UI Semilight
+MSJH.TTC,Microsoft Jhenghei UI
+MSYH.TTC,Microsoft YaHei
+MALGUNSL.TTF,Malgun Gothic Semilight
+SEGUISYM.TTF,Segoe UI Symbol
+
+
+[ 🔊🎥📕 ] [ ☞☛ ] [ ↑↓↙↘ ]
+
+
+
 表格测试
 --------
 +------+-----------------+------------------+--------+
