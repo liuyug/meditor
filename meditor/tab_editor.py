@@ -253,7 +253,7 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def _onDefaultFont(self):
         dlg = QtWidgets.QFontDialog(self)
-        dlg.setMinimumSize(800, 600)
+        dlg.setMinimumSize(640, 480)
         dlg.setCurrentFont(self._editor_font)
         ret = dlg.exec_()
         if ret > 0:
