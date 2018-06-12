@@ -143,8 +143,9 @@ class Workspace(QtWidgets.QTreeWidget):
         item = self.currentItem()
         self.action('rename').setEnabled(bool(item) and item.type() != self.type_root)
         self.action('delete').setEnabled(bool(item))
-        self.action('delete').setText(
-            self.tr('Remove Workspace') if item.type() == self.type_root else self.tr('Delete'))
+        if item:
+            self.action('delete').setText(
+                self.tr('Remove Workspace') if item.type() == self.type_root else self.tr('Delete'))
         self.popupMenu.popup(pos)
 
     def onItemActivated(self, item, col):
