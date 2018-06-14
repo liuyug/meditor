@@ -626,6 +626,8 @@ class Editor(QsciScintilla):
                     self.tr('Write file'),
                     self.tr('Do not write "%s": %s') % (filename, err),
                 )
+                with open(filename + '.error', 'wb') as f:
+                    f.write(text)
         return False
 
     def newFile(self, filepath):
