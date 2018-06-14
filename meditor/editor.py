@@ -614,11 +614,14 @@ class Editor(QsciScintilla):
         else:
             filename = self.getFileName()
         if filename:
+            err_bak = filename + '.error.bak'
             try:
                 text = self.getValue()
                 with open(filename, 'wt', encoding=self.encoding(), newline='') as f:
                     f.write(text)
                 self.setModified(False)
+                if os.path.exists(err_bak):
+                    os.remove(err_bak)
                 return True
             except Exception as err:
                 QtWidgets.QMessageBox.information(
@@ -626,7 +629,7 @@ class Editor(QsciScintilla):
                     self.tr('Write file'),
                     self.tr('Do not write "%s": %s') % (filename, err),
                 )
-                with open(filename + '.error', 'wb') as f:
+                with open(err_bak, 'wb') as f:
                     f.write(text)
         return False
 
