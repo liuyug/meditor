@@ -3,6 +3,7 @@ import sys
 import time
 import os.path
 import logging
+import locale
 from functools import partial
 
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -581,19 +582,27 @@ class Editor(QsciScintilla):
     def encoding(self):
         return self._file_encoding
 
+    def detect_file_encoding(self, filename=None):
+        ansi_encoding = locale.getpreferredencoding()
+
+        if filename and os.path.exists(filename):
+            encoding = ''
+            with open(filename, 'rb') as f:
+                encoding = chardet.detect(f.read()).get('encoding')
+                if not encoding:
+                    raise ValueError('can not detect file encoding: %s' % filename)
+
+            encoding = encoding.upper()
+            if encoding in ['ASCII', 'GB2312']:
+                encoding = ansi_encoding
+        else:
+            encoding = ansi_encoding
+        return encoding
+
     def read(self, filename, encoding=None):
         try:
             if encoding is None:
-                with open(filename, 'rb') as f:
-                    encoding = chardet.detect(f.read(8192)).get('encoding')
-                    if not encoding:
-                        encoding = 'utf-8'
-                    else:
-                        encoding = encoding.lower()
-                    if encoding == 'ascii':
-                        encoding = 'utf-8'
-                    elif encoding == 'gb2312':
-                        encoding = 'gbk'
+                encoding = self.detect_file_encoding(filename)
             with open(filename, 'rt', encoding=encoding, newline='') as f:
                 text = f.read()
             self._file_encoding = encoding
@@ -614,14 +623,14 @@ class Editor(QsciScintilla):
         else:
             filename = self.getFileName()
         if filename:
-            err_bak = filename + '.error.bak'
+            err_bak = '##_' + filename + '.error.bak'
             try:
                 text = self.getValue()
-                with open(filename, 'wt', encoding=self.encoding(), newline='') as f:
+                with open(err_bak, 'wt', encoding=self.encoding(), newline='') as f:
                     f.write(text)
+                os.remove(filename)
+                os.rename(err_bak, filename)
                 self.setModified(False)
-                if os.path.exists(err_bak):
-                    os.remove(err_bak)
                 return True
             except Exception as err:
                 QtWidgets.QMessageBox.information(
@@ -629,8 +638,6 @@ class Editor(QsciScintilla):
                     self.tr('Write file'),
                     self.tr('Do not write "%s": %s') % (filename, err),
                 )
-                with open(err_bak, 'wb') as f:
-                    f.write(text)
         return False
 
     def newFile(self, filepath):
@@ -651,12 +658,14 @@ class Editor(QsciScintilla):
             os.path.join(__data_path__, 'template', 'skeleton%s' % ext),
         ]
         text = ''
+        encoding = locale.getpreferredencoding()
         for skeleton in skeletons:
             if os.path.exists(skeleton):
-                with open(skeleton, 'r', encoding='utf-8') as f:
+                encoding = self.detect_file_encoding(skeleton)
+                with open(skeleton, 'r', encoding=encoding) as f:
                     text = f.read()
                 break
-        self._file_encoding = 'utf-8'
+        self._file_encoding = encoding
         self.setFileName(filepath)
         self.setValue(text)
 
