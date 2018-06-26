@@ -50,29 +50,32 @@ class Editor(QsciScintilla):
     loadRequest = QtCore.pyqtSignal('QString')
     closeRequest = QtCore.pyqtSignal()
     closeAppRequest = QtCore.pyqtSignal()
+
+    _settings = None
+    _find_dialog = None
+
     _enable_lexer = True
     _filename = None
     _tab_width = 4
     _preedit_show = False
     _text_length = 0
-    _edgeColumn = 80
     _pause_lexer = False
     _lexerStart = 0
     _lexerEnd = 0
-    _imsupport = None
     _file_encoding = 'utf8'
     _modified = False
-    _find_dialog = None
     _min_margin_width = 3
     _font = None
     _margin_font = None
     _vim = None
 
-    def __init__(self, find_dialog, parent=None):
+    def __init__(self, settings, find_dialog, parent=None):
         super(Editor, self).__init__(parent)
+        self._settings = settings
         self._find_dialog = find_dialog
         # Scintilla
         self._font = self.font()
+
         self._margin_font = QtGui.QFont(self._font)
         self._margin_font.setPointSize(self._font.pointSize() - 2)
         self._margin_font.setWeight(self._margin_font.Light)
@@ -81,15 +84,36 @@ class Editor(QsciScintilla):
         fontmetrics = QtGui.QFontMetrics(self._margin_font)
         self.setMarginWidth(0, fontmetrics.width('0' * self._min_margin_width))
         self.setMarginWidth(1, 0)
+        value = self._settings.value('editor/margin_color', '#ff0000', type=str)
+        self._settings.setValue('editor/margin_color', value)
+        self.setMarginsForegroundColor(QtGui.QColor(value))
+
         self.setIndentationsUseTabs(False)
         self.setAutoIndent(False)
         self.setTabWidth(self._tab_width)
         self.setIndentationGuides(True)
-        self.setEdgeMode(QsciScintilla.EdgeLine)
-        self.setEdgeColumn(self._edgeColumn)
+
+        value = self._settings.value('editor/edge_color', '#ffc000', type=str)
+        self._settings.setValue('editor/edge_color', value)
+        self.setEdgeColor(QtGui.QColor(value))
+        value = self._settings.value('editor/edge_column', 80, type=int)
+        self._settings.setValue('editor/edge_column', value)
+        self.setEdgeColumn(value)
+        value = self._settings.value('editor/edge_visible', True, type=bool)
+        self._settings.setValue('editor/edge_visible', value)
+        if value:
+            self.setEdgeMode(QsciScintilla.EdgeLine)
+
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.setUtf8(True)
-        self.setCaretLineVisible(True)
+
+        value = self._settings.value('editor/caretline_color', '#ffffcd', type=str)
+        self._settings.setValue('editor/caretline_color', value)
+        self.setCaretLineBackgroundColor(QtGui.QColor(value))
+        value = self._settings.value('editor/caretline_visible', True, type=bool)
+        self._settings.setValue('editor/caretline_visible', value)
+        self.setCaretLineVisible(value)
+
         self.setWrapVisualFlags(QsciScintilla.WrapFlagByBorder)
 
         self.cursorPositionChanged.connect(self.onCursorPositionChanged)
@@ -1058,8 +1082,8 @@ class Editor(QsciScintilla):
 
 class CodeViewer(Editor):
     """ code viewer, readonly """
-    def __init__(self, find_dialog, parent=None):
-        super(CodeViewer, self).__init__(find_dialog, parent)
+    def __init__(self, settings, find_dialog, parent=None):
+        super(CodeViewer, self).__init__(settings, find_dialog, parent)
         self.setReadOnly(True)
         self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.copyAvailable.connect(self.onCopyAvailable)

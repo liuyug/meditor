@@ -264,7 +264,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self._single_instance = value
 
     def _newEditor(self):
-        editor = Editor(self._find_dialog, self)
+        editor = Editor(self._settings, self._find_dialog, self)
         editor.setFont(self._editor_font)
         editor.statusChanged.connect(self._onStatusChanged)
         editor.verticalScrollBar().valueChanged.connect(self._onVerticalScrollBarChanged)

@@ -155,7 +155,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.dock_codeview = QtWidgets.QDockWidget(self.tr('HTML Code'), self)
         self.dock_codeview.setObjectName('dock_codeview')
-        self.codeview = CodeViewer(self.findDialog, self.dock_codeview)
+        self.codeview = CodeViewer(self.settings, self.findDialog, self.dock_codeview)
         self.dock_codeview.setWidget(self.codeview)
         self.dock_codeview.visibilityChanged.connect(
             partial(self.onDockVisibility, 'codeview'))
@@ -887,6 +887,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if widget.lexer():
             text += self.tr('Editor lexer: %s\n') % widget.lexer().__module__
         text += self.tr('\n')
+        text += self.tr('PyQt5: %s\n') % QtCore.PYQT_VERSION_STR
         text += self.tr('QScintilla: %s\n') % widget.getScintillaVersion()
         QtWidgets.QMessageBox.about(self, title, text)
 
