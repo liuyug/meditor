@@ -121,9 +121,20 @@ class Editor(QsciScintilla):
         self.textChanged.connect(self.onTextChanged)
 
         # Font Quality
-        self.SendScintilla(
-            QsciScintilla.SCI_SETFONTQUALITY,
-            QsciScintilla.SC_EFF_QUALITY_LCD_OPTIMIZED)
+        value = self._settings.value('editor/font_quality', 'cleartype', type=str)
+        self._settings.setValue('editor/font_quality', value)
+        if value == 'none':
+            self.SendScintilla(QsciScintilla.SCI_SETFONTQUALITY,
+                               QsciScintilla.SC_EFF_QUALITY_NON_ANTIALIASED)
+        elif value == 'standard':
+            self.SendScintilla(QsciScintilla.SCI_SETFONTQUALITY,
+                               QsciScintilla.SC_EFF_QUALITY_ANTIALIASED)
+        elif value == 'cleartype':
+            self.SendScintilla(QsciScintilla.SCI_SETFONTQUALITY,
+                               QsciScintilla.SC_EFF_QUALITY_LCD_OPTIMIZED)
+        else:
+            self.SendScintilla(QsciScintilla.SCI_SETFONTQUALITY,
+                               QsciScintilla.SC_EFF_QUALITY_DEFAULT)
 
         self.createAction()
 
