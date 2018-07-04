@@ -74,12 +74,8 @@ class Editor(QsciScintilla):
         self._settings = settings
         self._find_dialog = find_dialog
         # Scintilla
-        self._font = self.font()
+        self.setFont(self.font())
 
-        self._margin_font = QtGui.QFont(self._font)
-        self._margin_font.setPointSize(self._font.pointSize() - 2)
-        self._margin_font.setWeight(self._margin_font.Light)
-        self.setMarginsFont(self._margin_font)
         self.setMarginType(0, QsciScintilla.NumberMargin)
         fontmetrics = QtGui.QFontMetrics(self._margin_font)
         self.setMarginWidth(0, fontmetrics.width('0' * self._min_margin_width))
