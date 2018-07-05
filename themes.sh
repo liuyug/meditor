@@ -110,15 +110,15 @@ else
     git clone http://github.com/raycon/vscode-markdown-css $theme_name
 fi
 (
-cd $theme_name
+cd $theme_name/preview
 cp -f *.css $md_share_theme/$theme_name
 
 (
 cd $md_share_theme/$theme_name
-sed -i -r 's/.vscode-dark //' markdown-dark-material.css
-sed -i -r 's/.vscode-dark,//' markdown-dark-material.css
-sed -i -r 's/.vscode-light //' markdown-light.css
-sed -i -r 's/.vscode-light,//' markdown-light.css
+sed -i -r 's/.vscode-dark //' dark-material.css
+sed -i -r 's/.vscode-dark,//' dark-material.css
+sed -i -r 's/.vscode-light //' light-default.css
+sed -i -r 's/.vscode-light,//' light-default.css
 )
 )
 
