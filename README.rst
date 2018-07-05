@@ -98,7 +98,9 @@ install with download from github::
     # install meditor
     python3 setup.py install . --user
 
+.. note::
 
+    If you run as user 'root' it need add environment variable "export QTWEBENGINE_DISABLE_SANDBOX=1" to disable sandboxing.
 
 Screen Shot
 ===========
