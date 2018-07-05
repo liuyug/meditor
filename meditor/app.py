@@ -1049,10 +1049,7 @@ def main():
     settings.setValue('highdpi', value)
     if value:
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-    argv = []
-    if args.no_sandbox:
-        argv = ['--no-sandbox']
-    app = QtWidgets.QApplication(argv)
+    app = QtWidgets.QApplication(sys.argv)
     logger.info('app scale factor: %s' % app.devicePixelRatio())
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
