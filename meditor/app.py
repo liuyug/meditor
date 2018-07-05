@@ -999,6 +999,7 @@ def main():
                         version='%%(prog)s %s' % __app_version__)
     parser.add_argument('-v', '--verbose', help='verbose help',
                         action='count', default=0)
+    parser.add_argument('--no-sandbox', action='store_true', help='disable qtwebengine sandbox')
     parser.add_argument('--log-file', help='output to log file')
     parser.add_argument('rstfile', nargs='?', help='rest file')
     args = parser.parse_args()
@@ -1048,7 +1049,10 @@ def main():
     settings.setValue('highdpi', value)
     if value:
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-    app = QtWidgets.QApplication(sys.argv)
+    argv = []
+    if args.no_sandbox:
+        argv = ['--no-sandbox']
+    app = QtWidgets.QApplication(argv)
     logger.info('app scale factor: %s' % app.devicePixelRatio())
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
