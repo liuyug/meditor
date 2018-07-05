@@ -30,6 +30,7 @@ def create_qrc(theme_dir, qrc_file, added_icons=None):
         root_alias = root_dir[len(theme_dir) + 1:]
         for f in files:
             icon_name, ext = os.path.splitext(f)
+            print(icon_name, ext)
             if ext in ['.png', '.svg']:
                 if added_icons and icon_name not in added_icons:
                     continue

@@ -103,7 +103,12 @@ class MainWindow(QtWidgets.QMainWindow):
         logger.info('app name: %s' % self._app_exec)
         self._icon_path = os.path.join(__data_path__, 'meditor-text-editor.ico')
 
-        if sys.platform != 'linux':
+        if sys.platform == 'linux':
+            value = settings.value('embed_icon', False, type=bool)
+        else:
+            value = settings.value('embed_icon', True, type=bool)
+        settings.setValue('embed_icon', value)
+        if value:
             logger.info('embed_qrc: %s' % qrc_icon_theme.__doc__)
             QtGui.QIcon.setThemeName('embed_qrc')
 
@@ -1049,6 +1054,7 @@ def main():
     settings.setValue('highdpi', value)
     if value:
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+
     app = QtWidgets.QApplication(sys.argv)
     logger.info('app scale factor: %s' % app.devicePixelRatio())
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
