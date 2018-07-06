@@ -18,4 +18,5 @@ python3 icon_theme.py --collect meditor --theme $theme --qrc $theme_qrc
 pyrcc5 -o meditor/$theme_py $theme_qrc
 
 # rm -f $theme_qrc
+# rm -f index.theme
 
