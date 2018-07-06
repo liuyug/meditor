@@ -8,14 +8,6 @@ import configparser
 import xml.etree.ElementTree as etree
 
 
-class ConfigParser2(configparser.ConfigParser):
-    def __init__(self, defaults=None):
-        configparser.ConfigParser.__init__(self, defaults)
-
-    def optionxform(self, optionstr):
-        return optionstr
-
-
 def collect_iconames(source_dir):
     icon_names = []
     regex_iconame = re.compile(r'QIcon\.fromTheme\((\'|\")([\w\-]+)\1')
@@ -37,7 +29,8 @@ def create_qrc(theme_dir, qrc_file, added_icons=None):
     theme_dirs = []
 
     index_theme = os.path.join(theme_dir, 'index.theme')
-    theme_cfg = ConfigParser2()
+    theme_cfg = configparser.ConfigParser()
+    theme_cfg.optionxform = str
     theme_cfg.read(index_theme)
     theme_name = theme_cfg.get('Icon Theme', 'Name', fallback='')
     theme_comment = theme_cfg.get('Icon Theme', 'Comment', fallback='')
@@ -67,7 +60,8 @@ def create_qrc(theme_dir, qrc_file, added_icons=None):
             theme_dirs.append(inherit_dir)
 
             index_theme = os.path.join(inherit_dir, 'index.theme')
-            cfg = ConfigParser2()
+            cfg = configparser.ConfigParser()
+            cfg.optionxform = str
             cfg.read(index_theme)
 
             icon_directories = set(cfg.get('Icon Theme', 'Directories').strip(',').split(','))
