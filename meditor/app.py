@@ -109,8 +109,9 @@ class MainWindow(QtWidgets.QMainWindow):
             value = settings.value('embed_icon', True, type=bool)
         settings.setValue('embed_icon', value)
         if value:
-            logger.info('embed_qrc: %s' % qrc_icon_theme.__doc__)
             QtGui.QIcon.setThemeName('embed_qrc')
+            logger.info('Icon theme search paths: %s' % '; '.join(QtGui.QIcon.themeSearchPaths()))
+            logger.info('Icon theme name: %s' % QtGui.QIcon.themeName())
 
         self.setWindowIcon(
             QtGui.QIcon.fromTheme(
@@ -388,6 +389,7 @@ class MainWindow(QtWidgets.QMainWindow):
         value = settings.value('vim_mode', False, type=bool)
         cmd = g_action.register('mainwindow.vim_mode', action)
         cmd.setText(action.text())
+        cmd.setIcon(QtGui.QIcon.fromTheme('gvim'))
         cmd.setCheckable(True)
         cmd.setChecked(value)
 
