@@ -446,7 +446,7 @@ class Workspace(QtWidgets.QTreeWidget):
             QtWidgets.QMessageBox.critical(
                 self,
                 self.tr('Error'),
-                err,
+                self.tr('%s => %s:\n%s' % (src, dest, err)),
             )
             return
         if os.path.isfile(dest):

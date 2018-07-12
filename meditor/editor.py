@@ -659,7 +659,8 @@ class Editor(QsciScintilla):
                 text = self.getValue()
                 with open(err_bak, 'wt', encoding=self.encoding(), newline='') as f:
                     f.write(text)
-                os.remove(filename)
+                if os.path.exists(filename):
+                    os.remove(filename)
                 os.rename(err_bak, filename)
                 self.setModified(False)
                 return True
