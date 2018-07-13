@@ -25,6 +25,7 @@ class Workspace(QtWidgets.QTreeWidget):
     fileDeleted = QtCore.pyqtSignal('QString')
     fileRenamed = QtCore.pyqtSignal('QString', 'QString')
     fileNew = QtCore.pyqtSignal('QString')
+    showMessageRequest = QtCore.pyqtSignal('QString')
 
     def __init__(self, settings, parent, style=None):
         super(Workspace, self).__init__(parent)
@@ -395,6 +396,7 @@ class Workspace(QtWidgets.QTreeWidget):
                     shutil.rmtree(path)
                 else:
                     os.remove(path)
+                    self.showMessageRequest.emit(self.tr('delete "%s"' % path))
                     self.fileDeleted.emit(path)
                 return True
             except OSError as err:
@@ -417,6 +419,7 @@ class Workspace(QtWidgets.QTreeWidget):
                     self.tr('File "%s" has existed!') % (value))
             else:
                 os.mkdir(path)
+                self.showMessageRequest.emit(self.tr('New directory "%s"' % path))
                 return value
 
     def doRenamePath(self, path):
@@ -442,6 +445,7 @@ class Workspace(QtWidgets.QTreeWidget):
             return
         try:
             os.rename(src, dest)
+            self.showMessageRequest.emit(self.tr('rename "%s" => "%s"' % (src, dest)))
         except OSError as err:
             QtWidgets.QMessageBox.critical(
                 self,

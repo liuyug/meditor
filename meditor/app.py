@@ -180,6 +180,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_codeview.setVisible(value)
         # event
         self.tab_editor.statusChanged.connect(self.onEditorStatusChange)
+        self.tab_editor.showMessageRequest.connect(self.showMessage)
         self.tab_editor.verticalScrollBarChanged.connect(self.onEditorVScrollBarChanged)
         self.tab_editor.previewRequest.connect(self.onEditorPreviewRequest)
         self.tab_editor.modificationChanged.connect(self.onEditorModified)
@@ -188,6 +189,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.webview.exportHtml.connect(partial(self.onMenuExport, 'html'))
 
+        self.explorer.showMessageRequest.connect(self.showMessage)
         self.explorer.fileLoaded.connect(self.onExplorerFileLoaded)
         self.explorer.fileNew.connect(self.onExplorerNew)
         self.explorer.fileDeleted.connect(self.onExplorerFileDeleted)
@@ -907,22 +909,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tab_editor.menuAboutToShow()
 
     def onExplorerNew(self, ext):
-        index = self.tab_editor.new(ext)
-        self.showMessage(self.tr('new "%s"' % self.tab_editor.filepath(index)))
+        self.tab_editor.new(ext)
 
     def onExplorerFileLoaded(self, path):
         if not os.path.exists(path):
             return
         index = self.tab_editor.loadFile(path)
         if index is None:
-            self.showMessage(self.tr('load "%s"' % path))
+            self.showMessage(self.tr('Shell run "%s"' % path))
             subprocess.Popen(path, shell=True)
 
     def onExplorerFileDeleted(self, path):
         for x in range(self.tab_editor.count()):
             editor = self.tab_editor.widget(x)
             if path == editor.getFileName():
-                self.showMessage(self.tr('delete "%s"' % path))
                 self.tab_editor.removeTab(x)
                 del editor
                 break
@@ -931,7 +931,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onEditorFileLoaded(self, index):
         self.updateWindowTitle(index)
-        self.showMessage(self.tr('load "%s"' % self.tab_editor.filepath(index)))
 
     def onEditorVScrollBarChanged(self, value):
         if self.settings.value('preview/sync', type=bool):
@@ -943,7 +942,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onEditorModified(self, index, value):
         self.updateWindowTitle(index)
-        self.showMessage(self.tr('modified "%s"' % self.tab_editor.filepath(index)))
 
     def onEditorPreviewRequest(self, index, source):
         if source == 'input' and not self.settings.value('preview/oninput', type=bool):
@@ -953,8 +951,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.do_preview(index)
 
     def onFileRenamed(self, old_name, new_name):
-        self.showMessage(
-            self.tr('rename "%s" => "%s"' % (old_name, new_name)))
         if self.sender() == self.explorer:
             self.tab_editor.rename(old_name, new_name)
         elif self.sender() == self.tab_editor:

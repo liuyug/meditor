@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class TabEditor(QtWidgets.QTabWidget):
     statusChanged = QtCore.pyqtSignal(int, 'QString')
+    showMessageRequest = QtCore.pyqtSignal('QString')
     previewRequest = QtCore.pyqtSignal(int, 'QString')
     modificationChanged = QtCore.pyqtSignal(int, bool)
     verticalScrollBarChanged = QtCore.pyqtSignal(int, int)
@@ -240,6 +241,7 @@ class TabEditor(QtWidgets.QTabWidget):
     def _onSave(self):
         index = self.currentIndex()
         self.widget(index).do_save()
+        self.showMessageRequest.emit('save to "%s"' % self.filepath(index))
 
     def _onSaveAs(self):
         self.do_save_as()
@@ -305,6 +307,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self.fileLoaded.emit(index)
         self.statusChanged.emit(index, self.widget(index).status())
         self.previewRequest.emit(index, 'new')
+        self.showMessageRequest.emit(self.tr('new "%s"' % self.filepath(index)))
         return index
 
     def open(self, filepath):
@@ -316,6 +319,7 @@ class TabEditor(QtWidgets.QTabWidget):
             index = self.insertTab(0, editor, title)
             self.setCurrentIndex(index)
             self.fileLoaded.emit(index)
+            self.showMessageRequest.emit(self.tr('load "%s"' % self.filepath(index)))
             self.statusChanged.emit(index, self.widget(index).status())
             self.previewRequest.emit(index, 'open')
             return index
@@ -373,27 +377,28 @@ class TabEditor(QtWidgets.QTabWidget):
             self.widget(x).enableLexer(enable)
 
     def loadFile(self, path):
+        """ load by function call """
         if not path:
             index = self.new('.rst')
             return index
+        path = os.path.abspath(path)
+        if not Editor.canOpened(path):
+            return
+        for index in range(self.count()):
+            if path == self.filepath(index):
+                self.setCurrentIndex(index)
+                self.fileLoaded.emit(index)
+                self.showMessageRequest.emit(self.tr('load "%s"' % self.filepath(index)))
+                self.statusChanged.emit(index, self.widget(index).status())
+                self.previewRequest.emit(index, 'open')
+                return index
+        if os.path.exists(path):
+            logger.debug('Loading file: %s', path)
+            index = self.open(path)
         else:
-            path = os.path.abspath(path)
-            if not Editor.canOpened(path):
-                return
-            for index in range(self.count()):
-                if path == self.filepath(index):
-                    self.setCurrentIndex(index)
-                    self.fileLoaded.emit(index)
-                    self.statusChanged.emit(index, self.widget(index).status())
-                    self.previewRequest.emit(index, 'open')
-                    return index
-            if os.path.exists(path):
-                logger.debug('Loading file: %s', path)
-                index = self.open(path)
-            else:
-                logger.debug('Creating file: %s', path)
-                index = self.new(path)
-            return index
+            logger.debug('Creating file: %s', path)
+            index = self.new(path)
+        return index
 
     def menuAboutToShow(self):
         widget = self.currentWidget()
@@ -451,6 +456,7 @@ class TabEditor(QtWidgets.QTabWidget):
             fnames = self.widget(index).do_save()
         else:
             fnames = self.widget(index).do_save_as(new_fname)
+            self.showMessageRequest.emit(self.tr('save as to "%s"' % self.filepath(index)))
 
         self.updateTitle(index)
         self.previewRequest.emit(index, 'save')
@@ -465,6 +471,7 @@ class TabEditor(QtWidgets.QTabWidget):
             self.setCurrentIndex(index)
         widget.setFocus(QtCore.Qt.TabFocusReason)
         self.fileLoaded.emit(index)
+        self.showMessageRequest.emit(self.tr('switch to "%s"' % self.filepath(index)))
         self.statusChanged.emit(index, widget.status())
         self.previewRequest.emit(index, 'open')
 
@@ -481,6 +488,7 @@ class TabEditor(QtWidgets.QTabWidget):
                 editor.setFileName(new)
                 self.updateTitle(x)
                 self.fileLoaded.emit(x)
+                self.showMessageRequest.emit(self.tr('rename "%s" => "%s"' % (old, new)))
                 return
 
     def setVimEmulator(self, vim):
