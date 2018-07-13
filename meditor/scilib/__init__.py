@@ -1,72 +1,86 @@
-from .input import _SciImSupport
 from .scilexerdefault import QsciLexerDefault
 from .scilexerrest_py import QsciLexerRest
 from .scilexerart import QsciLexerArt
 from PyQt5 import Qsci
 
 
-EXTENSION_LEXER = {
-    '.avs': Qsci.QsciLexerAVS,
-    '.sh': Qsci.QsciLexerBash,
-    '.bash': Qsci.QsciLexerBash,
-    '.bat': Qsci.QsciLexerBatch,
-    '.cmd': Qsci.QsciLexerBatch,
-    '.cmake': Qsci.QsciLexerCMake,
-    '.cpp': Qsci.QsciLexerCPP,
-    '.cxx': Qsci.QsciLexerCPP,
-    '.cc': Qsci.QsciLexerCPP,
-    '.c': Qsci.QsciLexerCPP,
-    '.hpp': Qsci.QsciLexerCPP,
-    '.hxx': Qsci.QsciLexerCPP,
-    '.hh': Qsci.QsciLexerCPP,
-    '.h': Qsci.QsciLexerCPP,
-    '.css': Qsci.QsciLexerCSS,
-    '.cs': Qsci.QsciLexerCSharp,
-    '.coffee': Qsci.QsciLexerCoffeeScript,
-    '.d': Qsci.QsciLexerD,
-    '.diff': Qsci.QsciLexerDiff,
-    '.f': Qsci.QsciLexerFortran,
-    '.f77': Qsci.QsciLexerFortran77,
-    '.html': Qsci.QsciLexerHTML,
-    '.htm': Qsci.QsciLexerHTML,
-    '.asp': Qsci.QsciLexerHTML,
-    '.php': Qsci.QsciLexerHTML,
-    '.idl': Qsci.QsciLexerIDL,
-    '.json': Qsci.QsciLexerJSON,
-    '.java': Qsci.QsciLexerJava,
-    '.js': Qsci.QsciLexerJavaScript,
-    '.lua': Qsci.QsciLexerLua,
-    '.makefile': Qsci.QsciLexerMakefile,
-    '.markdown': Qsci.QsciLexerMarkdown,
-    '.md': Qsci.QsciLexerMarkdown,
-    '.matlib': Qsci.QsciLexerMatlab,
-    '.octave': Qsci.QsciLexerOctave,
-    '.po': Qsci.QsciLexerPO,
-    '.pot': Qsci.QsciLexerPO,
-    '.pov': Qsci.QsciLexerPOV,
-    '.inc': Qsci.QsciLexerPOV,
-    '.pas': Qsci.QsciLexerPascal,
-    '.pl': Qsci.QsciLexerPerl,
-    '.pm': Qsci.QsciLexerPerl,
-    '.ps': Qsci.QsciLexerPostScript,
-    '.ini': Qsci.QsciLexerProperties,
-    '.properties': Qsci.QsciLexerProperties,
-    '.py': Qsci.QsciLexerPython,
-    '.rb': Qsci.QsciLexerRuby,
-    '.sql': Qsci.QsciLexerSQL,
-    '.spice': Qsci.QsciLexerSpice,
-    '.tcl': Qsci.QsciLexerTCL,
-    '.tex': Qsci.QsciLexerTeX,
-    '.vhdl': Qsci.QsciLexerVHDL,
-    '.verilog': Qsci.QsciLexerVerilog,
-    '.xml': Qsci.QsciLexerXML,
-    '.yaml': Qsci.QsciLexerYAML,
-    '.yml': Qsci.QsciLexerYAML,
-    '.rst': QsciLexerRest,
-    '.rest': QsciLexerRest,
-    '.txt': QsciLexerDefault,
-    '.log': QsciLexerDefault,
-    '.csv': QsciLexerDefault,
-    '.nfo': QsciLexerArt,
-    '.art': QsciLexerArt,
+LEXER_EXTENSION = {
+    'QsciLexerAVS': ['.avs'],
+    'QsciLexerBash': ['.sh', '.bash'],
+    'QsciLexerBatch': ['.bat', '.cmd'],
+    'QsciLexerCMake': ['.cmake'],
+    'QsciLexerCPP': ['.cpp', '.cxx', '.cc', '.c', '.hpp', '.hxx', '.hh', '.h'],
+    'QsciLexerCSS': ['.css'],
+    'QsciLexerCSharp': ['.cs'],
+    'QsciLexerCoffeeScript': ['.coffee'],
+    'QsciLexerD': ['.d'],
+    'QsciLexerDiff': ['.diff'],
+    'QsciLexerFortran': ['.f'],
+    'QsciLexerFortran77': ['.f77'],
+    'QsciLexerHTML': ['.html', '.htm', '.asp', '.php'],
+    'QsciLexerIDL': ['.idl'],
+    'QsciLexerJSON': ['.json'],
+    'QsciLexerJava': ['.java'],
+    'QsciLexerJavaScript': ['.js'],
+    'QsciLexerLua': ['.lua'],
+    'QsciLexerMakefile': ['.makefile'],
+    'QsciLexerMarkdown': ['.markdown', '.md'],
+    'QsciLexerMatlab': ['.matlab'],
+    'QsciLexerOctave': ['.octave'],
+    'QsciLexerPO': ['.po', '.pot'],
+    'QsciLexerPOV': ['.pov', '.inc'],
+    'QsciLexerPascal': ['.pas'],
+    'QsciLexerPerl': ['.pl', '.pm'],
+    'QsciLexerPostScript': ['.ps'],
+    'QsciLexerProperties': ['.ini', 'properties'],
+    'QsciLexerPython': ['.py'],
+    'QsciLexerRuby': ['.rb'],
+    'QsciLexerSQL': ['.sql'],
+    'QsciLexerSpice': ['.spice'],
+    'QsciLexerTCL': ['.tcl'],
+    'QsciLexerTeX': ['.tex'],
+    'QsciLexerVHDL': ['.vhdl'],
+    'QsciLexerVerilog': ['.verilog'],
+    'QsciLexerXML': ['.xml'],
+    'QsciLexerYAML': ['.yaml', '.yml'],
 }
+
+
+class ExtensionLexer:
+    _extension_lexer = {
+        '.rst': QsciLexerRest,
+        '.rest': QsciLexerRest,
+        '.txt': QsciLexerDefault,
+        '.log': QsciLexerDefault,
+        '.csv': QsciLexerDefault,
+        '.dot': QsciLexerDefault,
+        '.desktop': QsciLexerDefault,
+        '.spec': QsciLexerDefault,
+        '.nfo': QsciLexerArt,
+        '.art': QsciLexerArt,
+    }
+
+    def __init__(self):
+        for lexer in dir(Qsci):
+            if not lexer.startswith('QsciLexer'):
+                continue
+            if lexer in ['QsciLexer', 'QsciLexerCustom']:
+                continue
+            if lexer in LEXER_EXTENSION:
+                lexer_class = getattr(Qsci, lexer)
+                for ext in LEXER_EXTENSION[lexer]:
+                    self._extension_lexer[ext] = lexer_class
+            else:
+                print('missing lexer: %s' % lexer)
+
+    def __contains__(self, ext):
+        return ext.lower() in self._extension_lexer
+
+    def __getitem__(self, ext):
+        return self._extension_lexer.get(ext.lower())
+
+    def get(self, ext):
+        return self._extension_lexer.get(ext.lower())
+
+
+EXTENSION_LEXER = ExtensionLexer()

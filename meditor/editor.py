@@ -25,6 +25,7 @@ FILTER = [
     'reStructuredText files (*.rst *.rest);;',
     'Markdown files (*.md *.markdown);;',
     'Text files (*.txt)',
+    'All files (*.*)',
 ]
 
 
@@ -139,7 +140,7 @@ class Editor(QsciScintilla):
         basename, ext = os.path.splitext(filepath)
         if not ext:
             ext = basename
-        return ext.lower() in EXTENSION_LEXER
+        return ext in EXTENSION_LEXER
 
     def closeEvent(self, event):
         g_action = GlobalAction.instance()
