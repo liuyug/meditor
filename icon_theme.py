@@ -37,8 +37,9 @@ def create_qrc(theme_dir, qrc_file, added_icons=None):
     theme_inherits = theme_cfg.get('Icon Theme', 'Inherits', fallback=None)
     print('%s: %s' % (theme_name, theme_comment))
 
-    theme_cfg.set('Icon Theme', 'Name', 'embed_qrc')
-    theme_cfg.set('Icon Theme', 'Comment', 'embed qt resource')
+    # use original theme name
+    # theme_cfg.set('Icon Theme', 'Name', 'embed_qrc')
+    # theme_cfg.set('Icon Theme', 'Comment', 'embed qt resource')
     theme_cfg.remove_option('Icon Theme', 'Inherits')
     theme_icon_directories = set(theme_cfg.get('Icon Theme', 'Directories').strip(',').split(','))
 
@@ -92,7 +93,7 @@ def create_qrc(theme_dir, qrc_file, added_icons=None):
                         element_qresource, 'file', alias=os.path.join(root_alias, f))
                     element.text = os.path.relpath(os.path.join(root_dir, f))
         require_icons -= current_icons
-    print('missing icon:', require_icons)
+    print('missing icon:', require_icons or None)
 
     theme_cfg.set('Icon Theme', 'Directories', ','.join(theme_icon_directories))
     with open('index.theme', 'w') as f:

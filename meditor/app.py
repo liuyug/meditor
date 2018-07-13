@@ -85,6 +85,7 @@ def previewWorker(self):
 class MainWindow(QtWidgets.QMainWindow):
     rst_theme = 'default'
     md_theme = 'default'
+    icon_theme = 'default'
     previewData = None
     previewHtml = ''
     previewQuit = False
@@ -109,6 +110,10 @@ class MainWindow(QtWidgets.QMainWindow):
             value = settings.value('embed_icon', True, type=bool)
         settings.setValue('embed_icon', value)
         if value:
+            qrc_icon_theme.qInitResources()
+            icon_index = QtCore.QSettings(':/icons/embed_qrc/index.theme', QtCore.QSettings.IniFormat)
+            self.icon_theme = icon_index.value('Icon Theme/Name', 'default', type=str)
+            del icon_index
             QtGui.QIcon.setThemeName('embed_qrc')
             logger.info('Icon theme search paths: %s' % '; '.join(QtGui.QIcon.themeSearchPaths()))
             logger.info('Icon theme name: %s' % QtGui.QIcon.themeName())
@@ -890,6 +895,7 @@ class MainWindow(QtWidgets.QMainWindow):
         text = self.tr("%s %s\n\nThe editor for Markup Text\n\n"
                        ) % (__app_name__, __app_version__)
         text += self.tr('Platform: %s\n') % (sys.platform)
+        text += self.tr('Icon Theme: %s\n') % (self.icon_theme)
         text += self.tr('Home data path: %s\n') % (__home_data_path__)
         text += self.tr('Application data path: %s\n') % (__data_path__)
         widget = self.tab_editor.currentWidget()
