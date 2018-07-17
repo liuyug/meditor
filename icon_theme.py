@@ -105,11 +105,10 @@ def create_qrc(theme_dir, qrc_file, added_icons=None):
 
 def main():
     parser = argparse.ArgumentParser(description='Qt Resource for Tango Theme')
-    parser.add_argument(
-        '--list', action='store_true', help='Linux system icon Themes')
+    parser.add_argument('-L', '--list', action='store_true', help='Linux system icon Themes')
     qrc = parser.add_argument_group('create theme QT resource')
     qrc.add_argument('--theme', help='use icon theme')
-    qrc.add_argument('--collect', help='collect all icon names from source code')
+    qrc.add_argument('--source', help='python source code directory.')
     qrc.add_argument('--qrc', help='output QT qrc file')
 
     args = parser.parse_args()
@@ -120,9 +119,10 @@ def main():
         for theme_dir in os.listdir(prefix):
             themes[theme_dir] = os.path.join(prefix, theme_dir)
     if args.list:
-        print(list(themes.keys()))
-    elif args.qrc:
-        icon_names = collect_iconames(args.collect)
+        for t in sorted(list(themes.keys())):
+            print('%s : %s' % (t, themes[t]))
+    elif args.qrc and args.theme and args.source:
+        icon_names = collect_iconames(args.source)
         create_qrc(themes[args.theme], args.qrc, icon_names)
     else:
         parser.print_help()

@@ -4,7 +4,7 @@ if [ x"$1" == "x" ]; then
     themes=`python3 icon_theme.py --list`
     echo "Usage: $0 <theme name>"
     echo "current themes:"
-    echo "    $themes"
+    echo "$themes"
     exit 1
 fi
 
