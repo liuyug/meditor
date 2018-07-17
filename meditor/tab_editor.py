@@ -241,6 +241,7 @@ class TabEditor(QtWidgets.QTabWidget):
     def _onSave(self):
         index = self.currentIndex()
         self.widget(index).do_save()
+        self.previewRequest.emit(index, 'save')
         self.showMessageRequest.emit('save to "%s"' % self.filepath(index))
 
     def _onSaveAs(self):
