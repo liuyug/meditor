@@ -113,7 +113,13 @@ def main():
 
     args = parser.parse_args()
     themes = {}
-    for prefix in ['/usr/share/icons', '/usr/local/share/icons']:
+    icons_dir = [
+        '/usr/share/icons',
+        '/usr/local/share/icons',
+        '%s/.icons' % os.path.expanduser('~'),
+        '%s/.local/share/icons' % os.path.expanduser('~'),
+    ]
+    for prefix in icons_dir:
         if not os.path.exists(prefix):
             continue
         for theme_dir in os.listdir(prefix):
