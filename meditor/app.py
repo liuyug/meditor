@@ -85,7 +85,7 @@ def previewWorker(self):
 class MainWindow(QtWidgets.QMainWindow):
     rst_theme = 'default'
     md_theme = 'default'
-    icon_theme = 'default'
+    icon_theme = None
     previewData = None
     previewHtml = ''
     previewQuit = False
@@ -112,11 +112,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if value:
             qrc_icon_theme.qInitResources()
             icon_index = QtCore.QSettings(':/icons/embed_qrc/index.theme', QtCore.QSettings.IniFormat)
-            self.icon_theme = icon_index.value('Icon Theme/Name', 'default', type=str)
+            icon_theme = icon_index.value('Icon Theme/Name', 'default', type=str)
             del icon_index
             QtGui.QIcon.setThemeName('embed_qrc')
-            logger.info('Icon theme search paths: %s' % '; '.join(QtGui.QIcon.themeSearchPaths()))
-            logger.info('Icon theme name: %s' % QtGui.QIcon.themeName())
+            self.icon_theme = 'Embed: %s' % icon_theme
+        else:
+            self.icon_theme = 'System'
+        logger.info('Icon theme name: %s' % self.icon_theme)
 
         self.setWindowIcon(
             QtGui.QIcon.fromTheme(
