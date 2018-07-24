@@ -109,6 +109,10 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             value = settings.value('embed_icon', True, type=bool)
         settings.setValue('embed_icon', value)
+        # Reference: QIcon::themeSearchPaths()
+        # The default value will depend on the platform:
+        # On X11, the search path will use the XDG_DATA_DIRS environment variable if available.
+        # By default all platforms will have the resource directory :\icons as a fallback.
         if value:
             qrc_icon_theme.qInitResources()
             icon_index = QtCore.QSettings(':/icons/embed_qrc/index.theme', QtCore.QSettings.IniFormat)
