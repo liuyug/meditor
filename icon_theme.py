@@ -73,7 +73,7 @@ def create_qrc(themes, cur_theme, qrc_file, added_icons=None):
         inherits = cfg.get('Icon Theme', 'Inherits', fallback=None)
         if inherits:
             for inherit in inherits.strip(',').split(','):
-                if inherit not in theme_inherits:
+                if inherit in themes and inherit not in theme_inherits:
                     theme_inherits.append(inherit)
         index += 1
 
