@@ -7,6 +7,13 @@ import os.path
 import configparser
 import xml.etree.ElementTree as etree
 
+standard_icons_dir = [
+    '/usr/share/icons',
+    '/usr/local/share/icons',
+    '%s/.icons' % os.path.expanduser('~'),
+    '%s/.local/share/icons' % os.path.expanduser('~'),
+]
+
 
 def collect_iconames(source_dir):
     icon_names = []
@@ -22,62 +29,62 @@ def collect_iconames(source_dir):
     return icon_names
 
 
-def create_qrc(theme_dir, qrc_file, added_icons=None):
+def create_qrc(themes, cur_theme, qrc_file, added_icons=None):
+    if cur_theme not in themes:
+        print('Do not find theme: %s', cur_theme)
+        return
     tree = etree.Element('RCC', version='1.0')
     element_qresource = etree.SubElement(tree, 'qresource', prefix='icons/embed_qrc')
-
-    theme_dirs = []
-
-    index_theme = os.path.join(theme_dir, 'index.theme')
-    theme_cfg = configparser.ConfigParser()
-    theme_cfg.optionxform = str
-    theme_cfg.read(index_theme)
-    theme_name = theme_cfg.get('Icon Theme', 'Name', fallback='')
-    theme_comment = theme_cfg.get('Icon Theme', 'Comment', fallback='')
-    theme_inherits = theme_cfg.get('Icon Theme', 'Inherits', fallback=None)
-    print('%s: %s' % (theme_name, theme_comment))
-
-    # use original theme name
-    # theme_cfg.set('Icon Theme', 'Name', 'embed_qrc')
-    # theme_cfg.set('Icon Theme', 'Comment', 'embed qt resource')
-    theme_cfg.remove_option('Icon Theme', 'Inherits')
-    theme_icon_directories = set(theme_cfg.get('Icon Theme', 'Directories').strip(',').split(','))
-
-    theme_dirs.append(theme_dir)
-    print('add searching directory: %s' % theme_dir)
-
     element = etree.SubElement(element_qresource, 'file', alias='index.theme')
     element.text = 'index.theme'
 
-    while theme_inherits:
-        inherit_themes = theme_inherits.split(',')
-        theme_inherits = None
-        for inherit_theme in inherit_themes:
-            inherit_dir = os.path.abspath(os.path.join(theme_dir, '..', inherit_theme))
-            if not os.path.exists(inherit_dir):
-                print('skip directory: %s' % inherit_dir)
-                continue
-            print('add searching directory: %s' % inherit_dir)
-            theme_dirs.append(inherit_dir)
+    theme_inherits = [cur_theme]
+    theme_icon_directories = set()
 
-            index_theme = os.path.join(inherit_dir, 'index.theme')
-            cfg = configparser.ConfigParser()
-            cfg.optionxform = str
-            cfg.read(index_theme)
+    theme_cfg = configparser.ConfigParser()
+    theme_cfg.optionxform = str
+    theme_cfg.add_section('Icon Theme')
 
-            icon_directories = set(cfg.get('Icon Theme', 'Directories').strip(',').split(','))
-            theme_icon_directories |= icon_directories
-            items_dict = dict(cfg.items())
-            del items_dict['Icon Theme']
-            theme_cfg.read_dict(items_dict)
+    index = 0
+    while index < len(theme_inherits):
+        theme_name = theme_inherits[index]
+        print('add searching directory: %s' % themes[theme_name])
 
-            theme_inherits = cfg.get('Icon Theme', 'Inherits', fallback=None)
+        index_theme = os.path.join(themes[theme_name], 'index.theme')
+        cfg = configparser.ConfigParser()
+        cfg.optionxform = str
+        cfg.read(index_theme)
+        if index == 0:
+            # theme_cfg.set('Icon Theme', 'Name', 'embed_qrc')
+            # theme_cfg.set('Icon Theme', 'Comment', 'embed qt resource')
+            name = cfg.get('Icon Theme', 'Name', fallback='')
+            comment = cfg.get('Icon Theme', 'Comment', fallback='')
+            theme_cfg.set('Icon Theme', 'Name', name)
+            theme_cfg.set('Icon Theme', 'Comment', comment)
+
+        icon_directories = set(cfg.get('Icon Theme', 'Directories').strip(',').split(','))
+        theme_icon_directories |= icon_directories
+
+        # add all sections except "Icon Theme"
+        items_dict = dict(cfg.items())
+        del items_dict['Icon Theme']
+        theme_cfg.read_dict(items_dict)
+
+        inherits = cfg.get('Icon Theme', 'Inherits', fallback=None)
+        if inherits:
+            for inherit in inherits.strip(',').split(','):
+                if inherit not in theme_inherits:
+                    theme_inherits.append(inherit)
+        index += 1
 
     if added_icons:
         require_icons = set(added_icons)
     else:
         require_icons = None
-    for theme_dir in theme_dirs:
+    for theme_name in theme_inherits:
+        if not require_icons:
+            break
+        theme_dir = themes[theme_name]
         print('search directory "%s" ...' % theme_dir)
         current_icons = set()
         for root_dir, dirs, files in os.walk(theme_dir):
@@ -85,7 +92,7 @@ def create_qrc(theme_dir, qrc_file, added_icons=None):
             for f in files:
                 icon_name, ext = os.path.splitext(f)
                 if ext in ['.png', '.svg']:
-                    if require_icons and icon_name not in require_icons:
+                    if icon_name not in require_icons:
                         continue
                     print('add icon:', icon_name, ext, root_alias)
                     current_icons.add(icon_name)
@@ -93,7 +100,7 @@ def create_qrc(theme_dir, qrc_file, added_icons=None):
                         element_qresource, 'file', alias=os.path.join(root_alias, f))
                     element.text = os.path.relpath(os.path.join(root_dir, f))
         require_icons -= current_icons
-    print('missing icon:', require_icons or None)
+    print('missing icon:', require_icons)
 
     theme_cfg.set('Icon Theme', 'Directories', ','.join(theme_icon_directories))
     with open('index.theme', 'w') as f:
@@ -112,24 +119,22 @@ def main():
     qrc.add_argument('--qrc', help='output QT qrc file')
 
     args = parser.parse_args()
+
+    # all themes
+    # themes = {[theme name] = theme_dir, ...}
     themes = {}
-    icons_dir = [
-        '/usr/share/icons',
-        '/usr/local/share/icons',
-        '%s/.icons' % os.path.expanduser('~'),
-        '%s/.local/share/icons' % os.path.expanduser('~'),
-    ]
-    for prefix in icons_dir:
+    for prefix in standard_icons_dir:
         if not os.path.exists(prefix):
             continue
-        for theme_dir in os.listdir(prefix):
-            themes[theme_dir] = os.path.join(prefix, theme_dir)
+        for theme in os.listdir(prefix):
+            themes[theme] = os.path.join(prefix, theme)
+
     if args.list:
         for t in sorted(list(themes.keys())):
             print('%s : %s' % (t, themes[t]))
     elif args.qrc and args.theme and args.source:
         icon_names = collect_iconames(args.source)
-        create_qrc(themes[args.theme], args.qrc, icon_names)
+        create_qrc(themes, args.theme, args.qrc, icon_names)
     else:
         parser.print_help()
 
