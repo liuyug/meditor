@@ -9,6 +9,7 @@ import logging
 import logging.handlers
 import argparse
 import threading
+import platform
 from functools import partial
 
 from PyQt5 import QtGui, QtCore, QtWidgets, QtPrintSupport
@@ -900,7 +901,7 @@ class MainWindow(QtWidgets.QMainWindow):
         title = self.tr('About %s') % (__app_name__)
         text = self.tr("%s %s\n\nThe editor for Markup Text\n\n"
                        ) % (__app_name__, __app_version__)
-        text += self.tr('Platform: %s\n') % (sys.platform)
+        text += self.tr('Platform: %s\n') % (platform.platform())
         text += self.tr('Icon Theme: %s\n') % (self.icon_theme)
         text += self.tr('Home data path: %s\n') % (__home_data_path__)
         text += self.tr('Application data path: %s\n') % (__data_path__)
@@ -908,6 +909,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if widget.lexer():
             text += self.tr('Editor lexer: %s\n') % widget.lexer().__module__
         text += self.tr('\n')
+        text += self.tr('Python: %s\n') % platform.python_version()
         text += self.tr('PyQt5: %s\n') % QtCore.PYQT_VERSION_STR
         text += self.tr('QScintilla: %s\n') % widget.getScintillaVersion()
         QtWidgets.QMessageBox.about(self, title, text)
