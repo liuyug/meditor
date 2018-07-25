@@ -120,7 +120,7 @@ class MainWindow(QtWidgets.QMainWindow):
             icon_theme = icon_index.value('Icon Theme/Name', 'default', type=str)
             del icon_index
             QtGui.QIcon.setThemeName('embed_qrc')
-            self.icon_theme = 'Embed: %s' % icon_theme
+            self.icon_theme = 'Embed[%s]' % icon_theme
         else:
             self.icon_theme = 'System'
         logger.info('Icon theme name: %s' % self.icon_theme)
