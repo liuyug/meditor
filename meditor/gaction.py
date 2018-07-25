@@ -5,19 +5,15 @@ from functools import partial
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction
 
+from .util import singleton
 
+
+@singleton
 class GlobalAction():
-    __global_action = None
     _commands = None
 
     def __init__(self):
         self._commands = {}
-
-    @classmethod
-    def instance(cls):
-        if cls.__global_action is None:
-            cls.__global_action = GlobalAction()
-        return cls.__global_action
 
     def register(self, act_id, action, group=None):
         if act_id not in self._commands:

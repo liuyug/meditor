@@ -48,7 +48,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self._show_ws_eol = self._settings.value('editor/show_ws_eol', False, type=bool)
         self._single_instance = self._settings.value('editor/single_instance', False, type=bool)
 
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
 
         action = QtWidgets.QAction(self.tr('&Open'), self)
         action.triggered.connect(self._onOpen)
@@ -294,7 +294,7 @@ class TabEditor(QtWidgets.QTabWidget):
         return editor
 
     def action(self, act_id):
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
         return g_action.get('' + act_id)
 
     def new(self, ext):

@@ -23,7 +23,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
 
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
 
         action = self.pageAction(self.page().Copy)
         cmd = g_action.register('copy', action, 'webview')
@@ -138,7 +138,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         pass
 
     def action(self, act_id):
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
         return g_action.get('' + act_id)
 
     def menuAboutToShow(self):

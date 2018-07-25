@@ -228,7 +228,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def setupMenu(self):
         settings = self.settings
         # action
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
         # file
         action = QtWidgets.QAction(self.tr('New &window'), self)
         action.triggered.connect(self.onMenuNewWindow)
@@ -532,7 +532,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.addAction(self.action('about_qt'))
 
     def action(self, act_id):
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
         return g_action.get('mainwindow.' + act_id)
 
     def setupToolbar(self, toolbar):

@@ -43,7 +43,7 @@ class Workspace(QtWidgets.QTreeWidget):
         self.itemActivated.connect(self.onItemActivated)
         self.currentItemChanged.connect(self.onCurrentItemChanged)
         # popup menu
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
 
         action = QtWidgets.QAction(self.tr('reStructuredText'), self)
         action.triggered.connect(partial(self.onNewFile, '.rst'))
@@ -499,5 +499,5 @@ class Workspace(QtWidgets.QTreeWidget):
         self.onRefresh(node)
 
     def action(self, act_id):
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
         return g_action.get('' + act_id)

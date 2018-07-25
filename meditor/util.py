@@ -86,3 +86,20 @@ def unzip(src, dest=None, progress=None):
                 return False
         zip_file.extract(f, dest)
     return True
+
+
+def singleton(cls):
+    """ for Python Class Singleton
+    Usage::
+
+        @singleton
+        class MyClass:
+            pass
+    """
+    instances = {}
+
+    def getinstance(*args, **kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+    return getinstance

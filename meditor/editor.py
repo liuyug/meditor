@@ -143,7 +143,7 @@ class Editor(QsciScintilla):
         return ext in EXTENSION_LEXER
 
     def closeEvent(self, event):
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
         g_action.unregister_by_widget(self)
 
     def focusInEvent(self, event):
@@ -151,7 +151,7 @@ class Editor(QsciScintilla):
         self.menuAboutToShow()
 
     def createAction(self):
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
 
         action = QtWidgets.QAction(self.tr('&Undo'), self)
         action.triggered.connect(partial(self.do_action, 'undo'))
@@ -299,7 +299,7 @@ class Editor(QsciScintilla):
         cmd.setText(self.tr('delimeter "<TAB>"'))
 
     def action(self, act_id):
-        g_action = GlobalAction.instance()
+        g_action = GlobalAction()
         return g_action.get('' + act_id)
 
     def inputMethodEvent(self, event):

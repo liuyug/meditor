@@ -1,6 +1,9 @@
 from .scilexerdefault import QsciLexerDefault
 from .scilexerrest_py import QsciLexerRest
 from .scilexerart import QsciLexerArt
+
+from ..util import singleton
+
 from PyQt5 import Qsci
 
 
@@ -46,6 +49,7 @@ LEXER_EXTENSION = {
 }
 
 
+@singleton
 class ExtensionLexer:
     _extension_lexer = {
         '.rst': QsciLexerRest,
