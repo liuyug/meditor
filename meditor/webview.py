@@ -5,6 +5,19 @@ from PyQt5 import QtGui, QtCore, QtWidgets, QtWebEngineWidgets
 
 from .gaction import GlobalAction
 from .util import toUtf8
+from . import __app_name__, __app_version__
+
+hello_html = """
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8" />
+<title>Hello %s v%s</title>
+</head>
+<body>
+<h1>Hello %s v%s!</h1>
+</body>
+</html>
+""" % (__app_name__, __app_version__, __app_name__, __app_version__)
 
 
 class WebView(QtWebEngineWidgets.QWebEngineView):
@@ -19,9 +32,9 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.settings().setAttribute(self.settings().PluginsEnabled, False)
         self.setAcceptDrops(False)
 
-        self.page().setHtml('')
         self.page().loadFinished.connect(self.onLoadFinished)
         self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
+        self.page().renderProcessTerminated.connect(self.onRenderProcessTerminated)
 
         g_action = GlobalAction()
 
@@ -89,6 +102,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         # zoom
         scale = self._settings.value('webview/scale', 1.0, type=float)
         self.setZoomFactor(scale)
+        self.setHtml(hello_html)
 
     def closeEvent(self, event):
         self._settings.setValue('webview/scale', self.zoomFactor())
@@ -130,6 +144,9 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         pass
 
     def onPdfPrintingFinished(self, filePath, success):
+        pass
+
+    def onRenderProcessTerminated(self, status, exit_code):
         pass
 
     def action(self, act_id):

@@ -622,8 +622,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.tab_editor.close():
             event.ignore()
             return
-        self.explorer.close()
         self.webview.close()
+        self.explorer.close()
         self.codeview.close()
         self.findDialog.done(0)
 
