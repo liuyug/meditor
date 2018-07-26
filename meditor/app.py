@@ -24,7 +24,7 @@ from .tab_editor import TabEditor
 from .vim import VimEmulator
 from .scilib import EXTENSION_LEXER
 from . import webview
-from . import explorer
+from . import workspace
 from . import output
 from . import globalvars
 from .util import toUtf8, toBytes, download, unzip
@@ -154,13 +154,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(widget)
 
         # left dock window
-        self.dock_explorer = QtWidgets.QDockWidget(self.tr('Workspace'), self)
-        self.dock_explorer.setObjectName('dock_explorer')
-        self.explorer = explorer.Workspace(self.settings, self.dock_explorer)
-        self.dock_explorer.setWidget(self.explorer)
-        self.dock_explorer.visibilityChanged.connect(
-            partial(self.onDockVisibility, 'explorer'))
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_explorer)
+        self.dock_workspace = QtWidgets.QDockWidget(self.tr('Workspace'), self)
+        self.dock_workspace.setObjectName('dock_workspace')
+        self.workspace = workspace.Workspace(self.settings, self.dock_workspace)
+        self.dock_workspace.setWidget(self.workspace)
+        self.dock_workspace.visibilityChanged.connect(
+            partial(self.onDockVisibility, 'workspace'))
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock_workspace)
         # right dock window
         self.dock_webview = QtWidgets.QDockWidget(self.tr('Preview'), self)
         self.dock_webview.setObjectName('dock_webview')
@@ -179,9 +179,9 @@ class MainWindow(QtWidgets.QMainWindow):
             partial(self.onDockVisibility, 'codeview'))
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_codeview)
 
-        value = settings.value('view/explorer', True, type=bool)
-        settings.setValue('view/explorer', value)
-        self.dock_explorer.setVisible(value)
+        value = settings.value('view/workspace', True, type=bool)
+        settings.setValue('view/workspace', value)
+        self.dock_workspace.setVisible(value)
 
         value = settings.value('view/webview', True, type=bool)
         settings.setValue('view/webview', value)
@@ -201,11 +201,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.webview.exportHtml.connect(partial(self.onMenuExport, 'html'))
 
-        self.explorer.showMessageRequest.connect(self.showMessage)
-        self.explorer.fileLoaded.connect(self.onExplorerFileLoaded)
-        self.explorer.fileNew.connect(self.onExplorerNew)
-        self.explorer.fileDeleted.connect(self.onExplorerFileDeleted)
-        self.explorer.fileRenamed.connect(self.onFileRenamed)
+        self.workspace.showMessageRequest.connect(self.showMessage)
+        self.workspace.fileLoaded.connect(self.onWorkspaceFileLoaded)
+        self.workspace.fileNew.connect(self.onWorkspaceNew)
+        self.workspace.fileDeleted.connect(self.onWorkspaceFileDeleted)
+        self.workspace.fileRenamed.connect(self.onFileRenamed)
 
         # setup main frame
         self._toolbar = QtWidgets.QToolBar('ToolBar')
@@ -441,12 +441,12 @@ class MainWindow(QtWidgets.QMainWindow):
         menu = menubar.addMenu(self.tr('&File'))
 
         submenu = menu.addMenu(QtGui.QIcon.fromTheme('document-new'), self.tr('&New'))
-        submenu.addAction(self.explorer.action('new_rst'))
-        submenu.addAction(self.explorer.action('new_md'))
+        submenu.addAction(self.workspace.action('new_rst'))
+        submenu.addAction(self.workspace.action('new_md'))
         menu.addMenu(submenu)
         menu.addAction(self.action('new_window'))
         menu.addAction(self.tab_editor.action('open'))
-        menu.addAction(self.explorer.action('open_workspace'))
+        menu.addAction(self.workspace.action('open_workspace'))
 
         menu.addSeparator()
         menu.addAction(self.tab_editor.action('save'))
@@ -476,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.aboutToShow.connect(partial(self.onMenuAboutToShow, 'edit'))
 
         menu = menubar.addMenu(self.tr('&View'))
-        menu.addAction(self.dock_explorer.toggleViewAction())
+        menu.addAction(self.dock_workspace.toggleViewAction())
         menu.addAction(self.dock_webview.toggleViewAction())
         menu.addAction(self.dock_codeview.toggleViewAction())
         menu.addSeparator()
@@ -539,15 +539,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def setupToolbar(self, toolbar):
         newButton = QtWidgets.QToolButton(self)
         menu = QtWidgets.QMenu('', self)
-        menu.addAction(self.explorer.action('new_rst'))
-        menu.addAction(self.explorer.action('new_md'))
+        menu.addAction(self.workspace.action('new_rst'))
+        menu.addAction(self.workspace.action('new_md'))
         newButton.setMenu(menu)
         newButton.setPopupMode(newButton.MenuButtonPopup)
-        newButton.setDefaultAction(self.explorer.action('new_rst'))
+        newButton.setDefaultAction(self.workspace.action('new_rst'))
         toolbar.addWidget(newButton)
 
         toolbar.addAction(self.tab_editor.action('open'))
-        toolbar.addAction(self.explorer.action('open_workspace'))
+        toolbar.addAction(self.workspace.action('open_workspace'))
         toolbar.addAction(self.tab_editor.action('save'))
         toolbar.addSeparator()
         toolbar.addAction(self.tab_editor.action('undo'))
@@ -585,7 +585,7 @@ class MainWindow(QtWidgets.QMainWindow):
         toolbar.addAction(self.tab_editor.action('zoom_out'))
         toolbar.addAction(self.tab_editor.action('zoom_original'))
         toolbar.addSeparator()
-        toolbar.addAction(self.dock_explorer.toggleViewAction())
+        toolbar.addAction(self.dock_workspace.toggleViewAction())
         toolbar.addAction(self.dock_webview.toggleViewAction())
         self.addToolBar(toolbar)
 
@@ -614,7 +614,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         self.settings.setValue('geometry', self.saveGeometry())
         self.settings.setValue('windowState', self.saveState())
-        self.settings.setValue('view/explorer', self.dock_explorer.isVisible())
+        self.settings.setValue('view/workspace', self.dock_workspace.isVisible())
         self.settings.setValue('view/webview', self.dock_webview.isVisible())
         self.settings.setValue('view/codeview', self.dock_codeview.isVisible())
         self.settings.setValue('vim_mode', self.action('vim_mode').isChecked())
@@ -623,7 +623,7 @@ class MainWindow(QtWidgets.QMainWindow):
             event.ignore()
             return
         self.webview.close()
-        self.explorer.close()
+        self.workspace.close()
         self.codeview.close()
         self.findDialog.done(0)
 
@@ -894,7 +894,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for help_path in help_paths:
             if os.path.exists(help_path):
                 break
-        self.explorer.appendRootPath(help_path, expand=True)
+        self.workspace.appendRootPath(help_path, expand=True)
         self.tab_editor.loadFile(help_path)
 
     def onMenuAbout(self):
@@ -922,10 +922,10 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.tab_editor.menuAboutToShow()
 
-    def onExplorerNew(self, ext):
+    def onWorkspaceNew(self, ext):
         self.tab_editor.new(ext)
 
-    def onExplorerFileLoaded(self, path):
+    def onWorkspaceFileLoaded(self, path):
         if not os.path.exists(path):
             return
         index = self.tab_editor.loadFile(path)
@@ -933,7 +933,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.showMessage(self.tr('Shell run "%s"' % path))
             subprocess.Popen(path, shell=True)
 
-    def onExplorerFileDeleted(self, path):
+    def onWorkspaceFileDeleted(self, path):
         for x in range(self.tab_editor.count()):
             editor = self.tab_editor.widget(x)
             if path == editor.getFileName():
@@ -965,11 +965,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.do_preview(index)
 
     def onFileRenamed(self, old_name, new_name):
-        if self.sender() == self.explorer:
+        if self.sender() == self.workspace:
             self.tab_editor.rename(old_name, new_name)
         elif self.sender() == self.tab_editor:
-            self.explorer.refreshPath(old_name)
-            self.explorer.refreshPath(new_name)
+            self.workspace.refreshPath(old_name)
+            self.workspace.refreshPath(new_name)
 
     def moveCenter(self):
         qr = self.frameGeometry()
