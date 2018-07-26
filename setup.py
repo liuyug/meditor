@@ -69,7 +69,7 @@ setup(
     author='Yugang LIU',
     author_email='liuyug@gmail.com',
     url='https://github.com/liuyug/meditor.git',
-    license='GPLv3',
+    license='MIT',
     description='Editor for reStructuredText and Markdown',
     long_description=long_description,
     keywords='reStructuredText Markdown editor preview',
