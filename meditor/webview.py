@@ -32,9 +32,9 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.settings().setAttribute(self.settings().PluginsEnabled, False)
         self.setAcceptDrops(False)
 
-        self.page().loadFinished.connect(self.onLoadFinished)
-        self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
-        self.page().renderProcessTerminated.connect(self.onRenderProcessTerminated)
+        # self.page().loadFinished.connect(self.onLoadFinished)
+        # self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
+        # self.page().renderProcessTerminated.connect(self.onRenderProcessTerminated)
 
         g_action = GlobalAction()
 
