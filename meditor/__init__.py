@@ -3,7 +3,7 @@ import os.path
 from collections import OrderedDict
 
 __app_name__ = 'Markup Editor'
-__app_version__ = '2.13.34'
+__app_version__ = '2.13.36'
 __default_basename__ = 'unknown'
 __app_path__ = 'meditor'
 
