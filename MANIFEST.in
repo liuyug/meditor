@@ -2,6 +2,7 @@ recursive-include win32 *
 recursive-include screenshot *
 include MANIFEST.in
 include README.rst
+include LICENSE
 include requirements.txt
 include screenshot.png
 include setup.py
