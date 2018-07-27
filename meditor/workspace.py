@@ -168,7 +168,11 @@ class Workspace(QtWidgets.QTreeWidget):
             path = item.data(0, self.role_path)
             if item.type() == self.type_folder:
                 path = os.path.join(path, item.text(0))
-            os.chdir(path)
+            if os.path.exists(path):
+                os.chdir(path)
+            else:
+                path = item.data(0, self.role_path)
+                self.refreshPath(path)
 
     def onNewFile(self, label):
         self.fileNew.emit(label)
@@ -322,7 +326,7 @@ class Workspace(QtWidgets.QTreeWidget):
         child.setData(0, self.role_path, path)
         return child
 
-    def expandDir(self, parent):
+    def expandDir(self, item):
         def pathkey(key):
             if os.path.isdir(os.path.join(path, key)):
                 prefix = '0_'
@@ -331,17 +335,17 @@ class Workspace(QtWidgets.QTreeWidget):
             key = prefix + key
             return key.lower()
 
-        if parent.type() == self.type_root:
-            path = parent.data(0, self.role_path)
-        elif parent.type() == self.type_folder:
-            path = os.path.join(parent.data(0, self.role_path), parent.text(0))
+        if item.type() == self.type_root:
+            path = item.data(0, self.role_path)
+        elif item.type() == self.type_folder:
+            path = os.path.join(item.data(0, self.role_path), item.text(0))
         dirs = sorted(os.listdir(path), key=pathkey)
         children = []
         for d in dirs:
             if d.startswith('.'):
                 continue
             children.append(self.createNode(path, d))
-        parent.addChildren(children)
+        item.addChildren(children)
 
     def appendRootPath(self, path, expand=False):
         if not os.path.exists(path):
@@ -393,6 +397,8 @@ class Workspace(QtWidgets.QTreeWidget):
         if ret == QtWidgets.QMessageBox.Yes:
             try:
                 if os.path.isdir(path):
+                    parent_path = os.path.dirname(path)
+                    os.chdir(parent_path)
                     shutil.rmtree(path)
                 else:
                     os.remove(path)
@@ -401,7 +407,7 @@ class Workspace(QtWidgets.QTreeWidget):
                 return True
             except OSError as err:
                 QtWidgets.QMessageBox.critical(
-                    self, self.tr('Error'), err)
+                    self, self.tr('Error'), str(err))
         return False
 
     def doNewDirectory(self, root):
@@ -444,6 +450,8 @@ class Workspace(QtWidgets.QTreeWidget):
             )
             return
         try:
+            parent_path = os.path.dirname(dest)
+            os.chdir(parent_path)
             os.rename(src, dest)
             self.showMessageRequest.emit(self.tr('rename "%s" => "%s"' % (src, dest)))
         except OSError as err:
@@ -493,7 +501,7 @@ class Workspace(QtWidgets.QTreeWidget):
         for path in paths:
             for index in range(node.childCount()):
                 child = node.child(index)
-                if path == child.data(0, self.role_path):
+                if path == child.text(0):
                     node = child
                     break
         self.onRefresh(node)
