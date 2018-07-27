@@ -1,0 +1,3 @@
+[submodule "meditor.wiki"]
+	path = meditor.wiki
+	url = https://github.com/liuyug/meditor.wiki.git
