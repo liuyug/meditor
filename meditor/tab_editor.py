@@ -315,7 +315,7 @@ class TabEditor(QtWidgets.QTabWidget):
         if self._single_instance:
             self.do_close_all()
         editor = self._newEditor()
-        if editor.read(filepath):
+        if editor.open(filepath):
             title = ('*' if editor.isModified() else '') + os.path.basename(editor.getFileName())
             index = self.insertTab(0, editor, title)
             self.setCurrentIndex(index)

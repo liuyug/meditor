@@ -625,7 +625,7 @@ class Editor(QsciScintilla):
             encoding = ansi_encoding
         return encoding
 
-    def read(self, filename, encoding=None):
+    def open(self, filename, encoding=None):
         try:
             if encoding is None:
                 encoding = self.detect_file_encoding(filename)
