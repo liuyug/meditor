@@ -658,7 +658,7 @@ class Editor(QsciScintilla):
         else:
             filename = self.getFileName()
         if filename:
-            err_bak = '~' + filename + '~'
+            err_bak = filename + '.bak~'
             try:
                 text = self.getValue()
                 with open(err_bak, 'wt', encoding=self.encoding(), newline='') as f:
