@@ -241,6 +241,18 @@ class Workspace(QtWidgets.QTreeWidget):
 
     def dragMoveEvent(self, event):
         super(Workspace, self).dragMoveEvent(event)
+        mimeData = event.mimeData()
+        if not mimeData.hasUrls() and mimeData.hasFormat('application/x-qabstractitemmodeldatalist'):
+            bytearray = mimeData.data('application/x-qabstractitemmodeldatalist')
+            paths = []
+            for drag_item in self._decodeMimeData(bytearray):
+                path = os.path.join(
+                    drag_item.data(0, self.role_path), drag_item.text(0))
+                if os.path.exists(path):
+                    url = QtCore.QUrl.fromLocalFile(path)
+                    paths.append(url)
+            mimeData.setUrls(paths)
+
         if (event.source() == self and
                 self.dragDropMode() == QtWidgets.QAbstractItemView.InternalMove):
             item = self.itemAt(event.pos())
