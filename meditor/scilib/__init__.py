@@ -83,7 +83,7 @@ class ExtensionLexer:
         return self._extension_lexer.get(ext.lower())
 
     def get(self, ext):
-        return self._extension_lexer.get(ext.lower())
+        return self._extension_lexer.get(ext.lower(), QsciLexerDefault)
 
 
 EXTENSION_LEXER = ExtensionLexer()

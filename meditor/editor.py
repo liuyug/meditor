@@ -137,6 +137,7 @@ class Editor(QsciScintilla):
 
     @staticmethod
     def canOpened(filepath):
+        return True
         basename, ext = os.path.splitext(filepath)
         if not ext:
             ext = basename
@@ -622,7 +623,7 @@ class Editor(QsciScintilla):
             with open(filename, 'rb') as f:
                 encoding = chardet.detect(f.read()).get('encoding')
                 if not encoding:
-                    raise ValueError('can not detect file encoding: %s' % filename)
+                    return 'Unknown'
 
             encoding = encoding.upper()
             if encoding in ['ASCII', 'GB2312']:
@@ -635,8 +636,13 @@ class Editor(QsciScintilla):
         try:
             if encoding is None:
                 encoding = self.detect_file_encoding(filename)
-            with open(filename, 'rt', encoding=encoding, newline='') as f:
-                text = f.read()
+            if encoding is 'Unknown':
+                with open(filename, 'rt', errors='surrogateescape') as f:
+                    text = f.read()
+                self.setReadOnly(True)
+            else:
+                with open(filename, 'rt', encoding=encoding, errors='surrogateescape', newline='') as f:
+                    text = f.read()
             self._file_encoding = encoding
             self.setFileName(filename)
             self.setValue(text)
@@ -650,12 +656,14 @@ class Editor(QsciScintilla):
         return False
 
     def save(self, filename=None):
+        if self.isReadOnly():
+            return False
         if filename and filename != self.getFileName():
             self.setFileName(filename)
         else:
             filename = self.getFileName()
         if filename:
-            err_bak = filename + '.error.bak'
+            err_bak = '~' + filename + '~'
             try:
                 text = self.getValue()
                 with open(err_bak, 'wt', encoding=self.encoding(), newline='') as f:
