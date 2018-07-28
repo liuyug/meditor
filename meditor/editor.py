@@ -629,13 +629,15 @@ class Editor(QsciScintilla):
         try:
             if encoding is None:
                 encoding = self.detect_file_encoding(filename)
-            if encoding is 'Unknown':
-                with open(filename, 'rt', errors='surrogateescape') as f:
-                    text = f.read()
-                self.setReadOnly(True)
-            else:
+            if encoding != 'Unknown':
                 with open(filename, 'rt', encoding=encoding, errors='surrogateescape', newline='') as f:
                     text = f.read()
+            else:
+                encoding = 'ascii'
+                with open(filename, 'rb') as f:
+                    data = f.read()
+                    text = data.decode(encoding, errors='surrogateescape').replace('\0', 'x')
+                self.setReadOnly(True)
             self._file_encoding = encoding
             self.setFileName(filename)
             self.setValue(text)
@@ -717,6 +719,7 @@ class Editor(QsciScintilla):
             'lexer:%s' % (self.lexer().language() if self.lexer() else '--'),
             'cursor:%s' % cursor,
             'length:%s' % length,
+            'readonly:%s' % ('RO' if self.isReadOnly() else 'RW'),
         ]
         return ';'.join(status)
 
