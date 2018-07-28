@@ -137,7 +137,6 @@ class Editor(QsciScintilla):
 
     @staticmethod
     def canOpened(filepath):
-        return True
         basename, ext = os.path.splitext(filepath)
         if not ext:
             ext = basename
@@ -345,8 +344,6 @@ class Editor(QsciScintilla):
             for url in mimedata.urls():
                 if not url.isLocalFile():
                     return
-                if not self.canOpened(os.path.abspath(url.toLocalFile())):
-                    return
             event.acceptProposedAction()
 
     def dragMoveEvent(self, event):
@@ -354,8 +351,6 @@ class Editor(QsciScintilla):
         if mimedata.hasUrls():
             for url in mimedata.urls():
                 if not url.isLocalFile():
-                    return
-                if not self.canOpened(os.path.abspath(url.toLocalFile())):
                     return
             event.acceptProposedAction()
 
@@ -366,8 +361,6 @@ class Editor(QsciScintilla):
             files = []
             for url in urls:
                 fname = os.path.abspath(url.toLocalFile())
-                if not self.canOpened(fname):
-                    return
                 files.append(fname)
             if files:
                 self.filesDropped.emit(';'.join(files))

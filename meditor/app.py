@@ -641,8 +641,6 @@ class MainWindow(QtWidgets.QMainWindow):
             for url in mimedata.urls():
                 if not url.isLocalFile():
                     return
-                if not Editor.canOpened(os.path.abspath(url.toLocalFile())):
-                    return
             event.acceptProposedAction()
 
     def dragMoveEvent(self, event):
@@ -650,8 +648,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if mimedata.hasUrls():
             for url in mimedata.urls():
                 if not url.isLocalFile():
-                    return
-                if not Editor.canOpened(os.path.abspath(url.toLocalFile())):
                     return
             event.acceptProposedAction()
 
@@ -928,8 +924,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def onWorkspaceFileLoaded(self, path):
         if not os.path.exists(path):
             return
-        index = self.tab_editor.loadFile(path)
-        if index is None:
+        if Editor.canOpened(path):
+            self.tab_editor.loadFile(path)
+        else:
             self.showMessage(self.tr('Shell run "%s"' % path))
             subprocess.Popen(path, shell=True)
 

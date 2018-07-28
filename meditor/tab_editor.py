@@ -383,8 +383,6 @@ class TabEditor(QtWidgets.QTabWidget):
             index = self.new('.rst')
             return index
         path = os.path.abspath(path)
-        if not Editor.canOpened(path):
-            return
         for index in range(self.count()):
             if path == self.filepath(index):
                 self.setCurrentIndex(index)
