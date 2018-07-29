@@ -651,12 +651,17 @@ class Editor(QsciScintilla):
         return False
 
     def save(self, filename=None):
-        if self.isReadOnly():
-            return False
         if filename and filename != self.getFileName():
             self.setFileName(filename)
         else:
             filename = self.getFileName()
+            if self.isReadOnly():
+                QtWidgets.QMessageBox.information(
+                    self,
+                    self.tr('Save file'),
+                    self.tr('The file "%s" is read only!') % (filename),
+                )
+                return False
         if filename:
             err_bak = filename + '.bak~'
             try:
@@ -719,7 +724,6 @@ class Editor(QsciScintilla):
             'lexer:%s' % (self.lexer().language() if self.lexer() else '--'),
             'cursor:%s' % cursor,
             'length:%s' % length,
-            'readonly:%s' % ('RO' if self.isReadOnly() else 'RW'),
         ]
         return ';'.join(status)
 

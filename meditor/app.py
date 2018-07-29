@@ -597,9 +597,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusLength = QtWidgets.QLabel('Length', self)
         self.statusBar().addPermanentWidget(self.statusLength)
 
-        self.statusReadOnly = QtWidgets.QLabel('ReadOnly', self)
-        self.statusBar().addPermanentWidget(self.statusReadOnly)
-
         self.statusEncoding = QtWidgets.QLabel('ASCII', self)
         self.statusBar().addPermanentWidget(self.statusEncoding)
 
@@ -673,8 +670,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.statusCursor.setText(value.center(length, ' '))
             elif key == 'length':
                 self.statusLength.setText(value.center(length, ' '))
-            elif key == 'readonly':
-                self.statusReadOnly.setText(value.center(length, ' '))
 
     def onMenuNewWindow(self):
         if sys.platform == 'win32' and self._app_exec.endswith('.py'):
