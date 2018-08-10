@@ -24,6 +24,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
     exportHtml = QtCore.pyqtSignal()
     _settings = None
     _find_dialog = None
+    _loadding = False
 
     def __init__(self, settings, find_dialog, parent=None):
         super(WebView, self).__init__(parent)
@@ -32,7 +33,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.settings().setAttribute(self.settings().PluginsEnabled, False)
         self.setAcceptDrops(False)
 
-        # self.page().loadFinished.connect(self.onLoadFinished)
+        self.page().loadFinished.connect(self.onLoadFinished)
         # self.page().pdfPrintingFinished.connect(self.onPdfPrintingFinished)
         # self.page().renderProcessTerminated.connect(self.onRenderProcessTerminated)
 
@@ -141,7 +142,7 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
             self.setZoomFactor(factor - 0.1)
 
     def onLoadFinished(self, ok):
-        pass
+        self._loadding = False
 
     def onPdfPrintingFinished(self, filePath, success):
         pass
@@ -194,11 +195,20 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
 
     def setHtml(self, html, url=None):
         url = url or ''
+        self._loadding = True
         self.page().setHtml(toUtf8(html), QtCore.QUrl.fromLocalFile(url))
 
     def scrollRatioPage(self, value, maximum):
         scrollJS = 'window.scrollTo(0, document.body.scrollHeight * %s / %s);'
         self.page().runJavaScript(scrollJS % (value, maximum))
+
+    def scrollTextPage(self, text):
+        chars = ' !"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~1234567890'
+        text = text.strip().strip(chars)
+
+        flags = self.page().FindFlags()
+        flags |= self.page().FindCaseSensitively
+        self.page().findText(text, flags)
 
     def print_(self, printer):
         """ QWebEngineView don't support print in Qt5.7 """

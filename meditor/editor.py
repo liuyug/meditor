@@ -410,6 +410,22 @@ class Editor(QsciScintilla):
     def getCurrentPosition(self):
         return self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
 
+    def getLineVisible(self, line):
+        # always return 1 ??!!
+        return self.SendScintilla(QsciScintilla.SCI_GETLINEVISIBLE, line) > 0
+
+    def getSyncScrollText(self):
+        # TODO: need to test more!!!
+        line, index = self.getCursorPosition()
+        text = ''
+        top_line = self.firstVisibleLine()
+        if line >= top_line:
+            text = self.text(line)
+        else:
+            line = top_line
+            text = self.text(line)
+        return text
+
     def getPrinter(self, resolution):
         return QsciPrinter(resolution)
 

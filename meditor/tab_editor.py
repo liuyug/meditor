@@ -18,7 +18,7 @@ class TabEditor(QtWidgets.QTabWidget):
     showMessageRequest = QtCore.pyqtSignal('QString')
     previewRequest = QtCore.pyqtSignal(int, 'QString')
     modificationChanged = QtCore.pyqtSignal(int, bool)
-    verticalScrollBarChanged = QtCore.pyqtSignal(int, int)
+    verticalScrollBarChanged = QtCore.pyqtSignal(int)
     filenameChanged = QtCore.pyqtSignal('QString', 'QString')
     fileLoaded = QtCore.pyqtSignal(int)
     _enable_lexer = True
@@ -212,7 +212,7 @@ class TabEditor(QtWidgets.QTabWidget):
         index = self.currentIndex()
         if index < 0:
             return
-        self.verticalScrollBarChanged.emit(index, value)
+        self.verticalScrollBarChanged.emit(index)
 
     def _onConvertEol(self, value):
         widget = self.currentWidget()

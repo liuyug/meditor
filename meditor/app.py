@@ -943,13 +943,25 @@ class MainWindow(QtWidgets.QMainWindow):
     def onEditorFileLoaded(self, index):
         self.updateWindowTitle(index)
 
-    def onEditorVScrollBarChanged(self, value):
-        if self.settings.value('preview/sync', type=bool):
-            widget = self.tab_editor.currentWidget()
+    def do_scroll_preview(self):
+        widget = self.tab_editor.currentWidget()
+        if not widget:
+            return
+        if False:
+            # text scroll
+            text = widget.getSyncScrollText()
+            self.webview.scrollTextPage(text)
+        else:
+            # ratio scroll
             dy = widget.getVScrollValue()
-            editor_vmax = widget.getVScrollMaximum()
-            if editor_vmax:
-                self.webview.scrollRatioPage(dy, editor_vmax)
+            vmax = widget.getVScrollMaximum()
+            if vmax:
+                self.webview.scrollRatioPage(dy, vmax)
+        widget.setFocus()
+
+    def onEditorVScrollBarChanged(self, index):
+        if self.settings.value('preview/sync', type=bool):
+            self.do_scroll_preview()
 
     def onEditorModified(self, index, value):
         self.updateWindowTitle(index)
@@ -992,14 +1004,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.dock_codeview.isVisible():
             self.codeview.setValue(self.previewHtml)
             self.codeview.setFileName(self.previewData.get('path') + '.html')
-        widget = self.tab_editor.currentWidget()
-        if not widget:
-            return
-        dy = widget.getVScrollValue()
-        editor_vmax = widget.getVScrollMaximum()
-        if editor_vmax:
-            self.webview.scrollRatioPage(dy, editor_vmax)
-        widget.setFocus()
+        self.do_scroll_preview()
 
     def updateWindowTitle(self, index):
         title = __app_name__ + ' - ' + self.tab_editor.title(index, full=True)
