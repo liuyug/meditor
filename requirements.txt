@@ -8,4 +8,5 @@ docutils
 Markdown
 python-markdown-mathjax
 python-markdown-graphviz
+python-docutils-graphviz
 mtable

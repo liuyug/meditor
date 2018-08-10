@@ -11,12 +11,14 @@ from pygments.util import ClassNotFound
 import markdown
 import mdx_mathjax
 import mdx_graphviz
+import docutils_graphviz
 
 from docutils.core import publish_string
 from docutils.core import publish_cmdline
 from docutils.core import publish_cmdline_to_binary
 from docutils.writers.odf_odt import Writer, Reader
 from docutils.writers import html5_polyglot
+from docutils.parsers.rst import directives
 
 from . import __data_path__, __home_data_path__
 
@@ -108,6 +110,9 @@ def get_theme_settings(theme):
 
 
 def rst2htmlcode(rst_text, theme=None, settings={}):
+    # register graphviz directive
+    directives.register_directive('dot', docutils_graphviz.Graphviz)
+
     output = None
     try:
         overrides = {}
@@ -130,6 +135,9 @@ def rst2htmlcode(rst_text, theme=None, settings={}):
 
 
 def rst2html(rst_file, filename, theme=None, settings={}):
+    # register graphviz directive
+    directives.register_directive('dot', docutils_graphviz.Graphviz)
+
     output = None
     try:
         overrides = {}
@@ -156,6 +164,9 @@ def rst2html(rst_file, filename, theme=None, settings={}):
 
 
 def rst2odt(rst_file, filename, theme=None, settings={}):
+    # register graphviz directive
+    directives.register_directive('dot', docutils_graphviz.Graphviz)
+
     output = None
     try:
         overrides = {}
