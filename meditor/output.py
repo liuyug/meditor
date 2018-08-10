@@ -10,6 +10,7 @@ from pygments.util import ClassNotFound
 
 import markdown
 import mdx_mathjax
+import mdx_graphviz
 
 from docutils.core import publish_string
 from docutils.core import publish_cmdline
@@ -226,6 +227,7 @@ def md2htmlcode(markup_file, theme=None, settings={}):
 
     if mathjax:
         extensions.append(mdx_mathjax.MathJaxExtension(asciimath_escape=True))
+    extensions.append(mdx_graphviz.makeExtension())
 
     try:
         overrides = {}

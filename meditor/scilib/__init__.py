@@ -59,6 +59,7 @@ class ExtensionLexer:
         '.csv': QsciLexerDefault,
         '.desktop': QsciLexerDefault,
         '.spec': QsciLexerDefault,
+        '.gv': QsciLexerDefault,
         '.nfo': QsciLexerArt,
         '.art': QsciLexerArt,
     }

@@ -23,6 +23,7 @@ Feature
 + Customized template
 + Peview CSS Themes
 + Multiple editor windows
++ support Markdown Graphviz
 
 VIM
 ===
