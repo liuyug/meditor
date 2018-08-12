@@ -71,6 +71,8 @@ def previewWorker(self):
             self.previewHtml = output.md2htmlcode(previewText,
                                                   theme=self.md_theme,
                                                   settings=settings)
+        elif ext in ['.gv']:
+            self.previewHtml = output.graphviz2htmlcode(previewText)
         elif ext in ['.htm', '.html', '.php', '.asp']:
             self.previewHtml = previewText
         elif ext in EXTENSION_LEXER:

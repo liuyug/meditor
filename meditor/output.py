@@ -313,3 +313,42 @@ def htmlcode(text, filepath):
     formatter = HtmlFormatter(linenos='inline', full=True, filename=filepath)
 
     return highlight(text, lexer, formatter)
+
+
+def graphviz2htmlcode(markup_text, theme=None, settings={}):
+    import base64
+    import graphviz
+
+    filetype = settings.get('filetype', 'svg')
+    alt = settings.get('filename', 'dot-file')
+
+    try:
+        output = ''
+        src = graphviz.Source(markup_text)
+        output = src.pipe(format=filetype)
+
+        if filetype == 'svg':
+            img = '<div class="graphviz">%s</div>' % output.decode('utf-8')
+        elif filetype == 'png':
+            output = base64.b64encode(output).decode()
+            data_path = "data:image/%s;base64,%s" % (filetype, output)
+            img = '<img src="%s" alt="%s" />' % (data_path, alt)
+    except Exception as err:
+        img = '%s\n%s' % (err, output)
+
+    html = []
+    html.append('<!DOCTYPE html>')
+    html.append('<html>')
+    html.append('<head>')
+
+    head = []
+    head.append('<meta charset="UTF-8" />')
+
+    html.extend(head)
+    html.append('</head>')
+    html.append('<body>')
+    html.append(img)
+    html.append('</body>')
+    html.append('</html>')
+
+    return '\n'.join(html)
