@@ -88,6 +88,7 @@ def previewWorker(self):
 class MainWindow(QtWidgets.QMainWindow):
     rst_theme = 'default'
     md_theme = 'default'
+    settings = None
     icon_theme = None
     previewData = None
     previewHtml = ''
@@ -132,7 +133,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 'accessories-text-editor',
                 QtGui.QIcon(self._icon_path)
             ))
-        self.setAcceptDrops(True)
+
+        value = self.settings.value('global_drop', False, type=bool)
+        self.settings.setValue('global_drop', value)
+        self.setAcceptDrops(value)
+
         self.previewData = {
             'text': '',
             'path': '',
