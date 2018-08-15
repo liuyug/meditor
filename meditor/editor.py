@@ -24,7 +24,7 @@ FILTER = [
     'All support files (*.rst *.md *.txt);;',
     'reStructuredText files (*.rst *.rest);;',
     'Markdown files (*.md *.markdown);;',
-    'Text files (*.txt)',
+    'Text files (*.txt);;',
     'All files (*.*)',
 ]
 
