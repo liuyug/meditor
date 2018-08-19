@@ -448,6 +448,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu = menubar.addMenu(self.tr('&File'))
 
         submenu = menu.addMenu(QtGui.QIcon.fromTheme('document-new'), self.tr('&New'))
+        submenu.addAction(self.workspace.action('new_txt'))
         submenu.addAction(self.workspace.action('new_rst'))
         submenu.addAction(self.workspace.action('new_md'))
         menu.addMenu(submenu)
@@ -546,11 +547,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def setupToolbar(self, toolbar):
         newButton = QtWidgets.QToolButton(self)
         menu = QtWidgets.QMenu('', self)
+        menu.addAction(self.workspace.action('new_txt'))
         menu.addAction(self.workspace.action('new_rst'))
         menu.addAction(self.workspace.action('new_md'))
         newButton.setMenu(menu)
         newButton.setPopupMode(newButton.MenuButtonPopup)
-        newButton.setDefaultAction(self.workspace.action('new_rst'))
+        newButton.setDefaultAction(self.workspace.action('new_txt'))
         toolbar.addWidget(newButton)
 
         toolbar.addAction(self.tab_editor.action('open'))

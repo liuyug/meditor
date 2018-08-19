@@ -49,13 +49,18 @@ class Workspace(QtWidgets.QTreeWidget):
         action.triggered.connect(partial(self.onNewFile, '.rst'))
         cmd = g_action.register('new_rst', action)
         cmd.setText(self.tr('reStructuredText'))
-        cmd.setShortcut(QtGui.QKeySequence.New)
-        cmd.setIcon(QtGui.QIcon.fromTheme('document-new'))
 
         action = QtWidgets.QAction(self.tr('Markdown'), self)
         action.triggered.connect(partial(self.onNewFile, '.md'))
         cmd = g_action.register('new_md', action)
         cmd.setText(self.tr('Markdown'))
+
+        action = QtWidgets.QAction(self.tr('Txt'), self)
+        action.triggered.connect(partial(self.onNewFile, '.txt'))
+        cmd = g_action.register('new_txt', action)
+        cmd.setText(self.tr('Text'))
+        cmd.setShortcut(QtGui.QKeySequence.New)
+        cmd.setIcon(QtGui.QIcon.fromTheme('document-new'))
 
         action = QtWidgets.QAction(self.tr('New &directory'), self)
         action.triggered.connect(self.onNewDirectory)
@@ -93,6 +98,7 @@ class Workspace(QtWidgets.QTreeWidget):
         self.popupMenu = QtWidgets.QMenu(self)
 
         submenu = self.popupMenu.addMenu(self.tr('New'))
+        submenu.addAction(self.action('new_txt'))
         submenu.addAction(self.action('new_rst'))
         submenu.addAction(self.action('new_md'))
         self.popupMenu.addMenu(submenu)
@@ -521,4 +527,3 @@ class Workspace(QtWidgets.QTreeWidget):
     def action(self, act_id):
         g_action = GlobalAction()
         return g_action.get('' + act_id)
-
