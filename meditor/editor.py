@@ -653,7 +653,8 @@ class Editor(QsciScintilla):
                 with open(filename, 'rb') as f:
                     data = f.read()
                     text = data.decode(encoding, errors='surrogateescape').replace('\0', 'x')
-                self.setReadOnly(True)
+                if len(text) > 0:
+                    self.setReadOnly(True)
             self._file_encoding = encoding
             self.setFileName(filename)
             self.setValue(text)
