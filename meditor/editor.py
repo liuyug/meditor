@@ -666,35 +666,30 @@ class Editor(QsciScintilla):
             )
         return False
 
-    def save(self, filename=None):
-        if filename and filename != self.getFileName():
-            self.setFileName(filename)
-        else:
-            filename = self.getFileName()
-            if self.isReadOnly():
-                QtWidgets.QMessageBox.information(
-                    self,
-                    self.tr('Save file'),
-                    self.tr('The file "%s" is read only!') % (filename),
-                )
-                return False
-        if filename:
-            err_bak = filename + '.bak~'
-            try:
-                text = self.getValue()
-                with open(err_bak, 'wt', encoding=self.encoding(), newline='') as f:
-                    f.write(text)
-                if os.path.exists(filename):
-                    os.remove(filename)
-                os.rename(err_bak, filename)
-                self.setModified(False)
-                return True
-            except Exception as err:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    self.tr('Write file'),
-                    self.tr('Do not write "%s": %s') % (filename, err),
-                )
+    def _save(self, filename):
+        if self.isReadOnly():
+            QtWidgets.QMessageBox.information(
+                self,
+                self.tr('Save file'),
+                self.tr('The file "%s" is read only!') % (filename),
+            )
+            return False
+        err_bak = filename + '.bak~'
+        try:
+            text = self.getValue()
+            with open(err_bak, 'wt', encoding=self.encoding(), newline='') as f:
+                f.write(text)
+            if os.path.exists(filename):
+                os.remove(filename)
+            os.rename(err_bak, filename)
+            self.setModified(False)
+            return True
+        except Exception as err:
+            QtWidgets.QMessageBox.information(
+                self,
+                self.tr('Write file'),
+                self.tr('Do not write "%s": %s') % (filename, err),
+            )
         return False
 
     def newFile(self, filepath):
@@ -1045,9 +1040,10 @@ class Editor(QsciScintilla):
         filename = os.path.basename(fname)
         basename, _ = os.path.splitext(filename)
         if not dir_name and basename == __default_basename__:
-            self.do_save_as()
+            return self.do_save_as()
         else:
-            self.save()
+            self._save(fname)
+            return fname, None
 
     def do_save_as(self, new_fname=None):
         old_fname = self.getFileName()
@@ -1071,9 +1067,8 @@ class Editor(QsciScintilla):
             ext = selected_filter.split('(')[1][1:4].strip()
             new_fname = new_fname + ext
 
-        if not new_fname:
-            new_fname = old_fname
-        self.save(new_fname)
+        self.setFileName(new_fname)
+        self._save(new_fname)
 
         return old_fname, new_fname
 

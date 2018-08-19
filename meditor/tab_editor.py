@@ -240,9 +240,11 @@ class TabEditor(QtWidgets.QTabWidget):
 
     def _onSave(self):
         index = self.currentIndex()
-        self.widget(index).do_save()
+        old, new = self.widget(index).do_save()
         self.previewRequest.emit(index, 'save')
         self.showMessageRequest.emit('save to "%s"' % self.filepath(index))
+        if old != new:
+            self.filenameChanged.emit(old, new)
 
     def _onSaveAs(self):
         self.do_save_as()
@@ -452,15 +454,15 @@ class TabEditor(QtWidgets.QTabWidget):
         index = self.currentIndex()
         if not new_fname and new_fname is not None:
             # new_fname == ''
-            fnames = self.widget(index).do_save()
+            old, new = self.widget(index).do_save()
         else:
-            fnames = self.widget(index).do_save_as(new_fname)
+            old, new = self.widget(index).do_save_as(new_fname)
             self.showMessageRequest.emit(self.tr('save as to "%s"' % self.filepath(index)))
 
         self.updateTitle(index)
         self.previewRequest.emit(index, 'save')
-        if fnames:
-            self.filenameChanged.emit(fnames[0], fnames[1])
+        if old != new:
+            self.filenameChanged.emit(old, new)
 
     def do_switch_editor(self, index):
         widget = self.widget(index)
