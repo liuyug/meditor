@@ -986,8 +986,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.sender() == self.workspace:
             self.tab_editor.rename(old_name, new_name)
         elif self.sender() == self.tab_editor:
-            self.workspace.refreshPath(old_name)
-            self.workspace.refreshPath(new_name)
+            old_name and self.workspace.refreshPath(old_name)
+            new_name and self.workspace.refreshPath(new_name)
 
     def moveCenter(self):
         qr = self.frameGeometry()
