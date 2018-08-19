@@ -1,6 +1,7 @@
 import os.path
 import logging
 import json
+import subprocess
 from collections import OrderedDict
 
 from pygments import highlight
@@ -333,8 +334,14 @@ def graphviz2htmlcode(markup_text, theme=None, settings={}):
             output = base64.b64encode(output).decode()
             data_path = "data:image/%s;base64,%s" % (filetype, output)
             img = '<img src="%s" alt="%s" />' % (data_path, alt)
+    except subprocess.CalledProcessError as exec_err:
+        errs = []
+        errs.append('%s' % exec_err)
+        exec_err.stderr and errs.append(exec_err.stderr.decode())
+        errs.append(output)
+        img = '<br />'.join(errs)
     except Exception as err:
-        img = '%s\n%s' % (err, output)
+        img = '%s<br />%s' % (err, output)
 
     html = []
     html.append('<!DOCTYPE html>')
