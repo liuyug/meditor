@@ -641,7 +641,7 @@ class Editor(QsciScintilla):
             encoding = ansi_encoding
         return encoding
 
-    def open(self, filename, encoding=None):
+    def _open(self, filename, encoding=None):
         try:
             if encoding is None:
                 encoding = self.detect_file_encoding(filename)
@@ -1034,6 +1034,9 @@ class Editor(QsciScintilla):
         self.convertEols(EOL_DESCRIPTION[value])
         self.setEolMode(EOL_DESCRIPTION[value])
         self.statusChanged.emit('eol:%s' % EOL_DESCRIPTION[self.eolMode()])
+
+    def do_open(self, filename, encoding=None):
+        return self._open(filename, encoding)
 
     def do_save(self):
         fname = self.getFileName()
