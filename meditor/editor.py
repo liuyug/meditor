@@ -1064,7 +1064,7 @@ class Editor(QsciScintilla):
                 ''.join(FILTER),
             )
         if not new_fname:
-            return
+            return None, None
         new_fname = os.path.abspath(new_fname)
         _, ext = os.path.splitext(new_fname)
         if not ext:
