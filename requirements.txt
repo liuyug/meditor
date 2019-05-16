@@ -1,4 +1,5 @@
 PyQt5
+PyQtWebEngine
 QScintilla
 Pygments
 chardet
