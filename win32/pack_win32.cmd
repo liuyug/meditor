@@ -1,5 +1,7 @@
 cls
 
+rem check module: modulegraph run.py
+
 pushd ..
 
 rmdir build /s /q

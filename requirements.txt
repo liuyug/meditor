@@ -1,6 +1,6 @@
-PyQt5
-PyQtWebEngine
-QScintilla
+PyQt5==5.10.1
+QScintilla==2.10.4
+# PyQtWebEngine
 Pygments
 chardet
 
