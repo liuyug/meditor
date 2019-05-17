@@ -6,7 +6,7 @@ chardet
 
 # markup text
 docutils
-Markdown
+Markdown==2.6.11
 python-markdown-mathjax
 python-markdown-graphviz
 python-docutils-graphviz
