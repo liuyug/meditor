@@ -323,6 +323,8 @@ class Editor(QsciScintilla):
     def event(self, event):
         """in VIM mode, accept all shortcut event """
         if self._vim and event.type() == event.ShortcutOverride and event.key():
+            if event.key() == self._vim.shortkey:
+                return super(Editor, self).event(event)
             event.accept()
             return True
         return super(Editor, self).event(event)

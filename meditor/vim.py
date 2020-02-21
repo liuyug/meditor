@@ -167,6 +167,7 @@ class VimCommand(QtWidgets.QLineEdit):
 
 
 class VimEmulator(QtWidgets.QWidget):
+    shortkey = QtCore.Qt.Key_F8
     _mode_label = None
     _leader_label = None
     _command_edit = None

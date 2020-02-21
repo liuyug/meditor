@@ -410,6 +410,7 @@ class MainWindow(QtWidgets.QMainWindow):
         value = settings.value('vim_mode', False, type=bool)
         cmd = g_action.register('mainwindow.vim_mode', action)
         cmd.setText(action.text())
+        cmd.setShortcut(QtGui.QKeySequence(self.vim.shortkey))
         cmd.setIcon(QtGui.QIcon.fromTheme('gvim'))
         cmd.setCheckable(True)
         cmd.setChecked(value)
@@ -484,9 +485,15 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.aboutToShow.connect(partial(self.onMenuAboutToShow, 'edit'))
 
         menu = menubar.addMenu(self.tr('&View'))
-        menu.addAction(self.dock_workspace.toggleViewAction())
-        menu.addAction(self.dock_webview.toggleViewAction())
-        menu.addAction(self.dock_codeview.toggleViewAction())
+        act = self.dock_workspace.toggleViewAction()
+        act.setShortcut(QtGui.QKeySequence('F5'))
+        menu.addAction(act)
+        act = self.dock_webview.toggleViewAction()
+        act.setShortcut(QtGui.QKeySequence('F6'))
+        menu.addAction(act)
+        act = self.dock_codeview.toggleViewAction()
+        act.setShortcut(QtGui.QKeySequence('F7'))
+        menu.addAction(act)
         menu.addSeparator()
         menu.addAction(self._toolbar.toggleViewAction())
 
@@ -886,7 +893,8 @@ class MainWindow(QtWidgets.QMainWindow):
             ret = msgBox.exec_()
             if ret == QtWidgets.QMessageBox.Ok:
                 self.close()
-        elif action == 'vim_mode':
+        elif action == 'vim_mode':  # toggle
+            value = not self.vim.isVisible()
             self.tab_editor.setVimEmulator(self.vim if value else None)
             self.vim.setVisible(value)
 
