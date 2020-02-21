@@ -44,10 +44,11 @@ except Exception as err:
 __mathjax_full_path__ = os.path.join(__home_data_path__, 'MathJax-master', 'MathJax.js')
 __mathjax_min_path__ = os.path.join(__data_path__, 'math', 'MathJax.min.js')
 
-__monospace__ = 'Courier'
 if sys.platform == 'win32':
     __monospace__ = 'Consolas'
 elif sys.platform == 'linux':
     __monospace__ = 'DejaVu Sans Mono'
 elif sys.platform == 'macos':
     __monospace__ = 'Monaco'
+else:
+    __monospace__ = 'Monospace'

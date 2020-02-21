@@ -375,9 +375,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.codeStyleGroup = QtWidgets.QActionGroup(self)
         self.codeStyleGroup.setExclusive(True)
         for k, v in pygments_styles.items():
-                act = QtWidgets.QAction(v, self, checkable=True)
-                act.triggered.connect(partial(self.onMenuCodeStyleChanged, k))
-                self.codeStyleGroup.addAction(act)
+            act = QtWidgets.QAction(v, self, checkable=True)
+            act.triggered.connect(partial(self.onMenuCodeStyleChanged, k))
+            self.codeStyleGroup.addAction(act)
 
         value = settings.value('pygments', 'null', type=str)
         settings.setValue('pygments', value)
@@ -753,7 +753,7 @@ class MainWindow(QtWidgets.QMainWindow):
             widget.print_(printer)
 
     def onMenuFileAssociation(self):
-        reg_base = 'HKEY_CURRENT_USER\Software\Classes'
+        reg_base = 'HKEY_CURRENT_USER\\Software\\Classes'
         settings = QtCore.QSettings(reg_base, QtCore.QSettings.NativeFormat)
 
         for ext in ['.md', '.markdown', '.rst', '.rest']:
@@ -880,8 +880,7 @@ class MainWindow(QtWidgets.QMainWindow):
             msgBox.setText(message)
             msgBox.setInformativeText(self.tr('Restart it now?'))
             msgBox.setStandardButtons(
-                QtWidgets.QMessageBox.Ok |
-                QtWidgets.QMessageBox.Cancel
+                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
             )
             msgBox.setDefaultButton(QtWidgets.QMessageBox.Cancel)
             ret = msgBox.exec_()
@@ -908,6 +907,7 @@ class MainWindow(QtWidgets.QMainWindow):
                        ) % (__app_name__, __app_version__)
         text += self.tr('Platform: %s\n') % (platform.platform())
         text += self.tr('Icon Theme: %s\n') % (self.icon_theme)
+        text += self.tr('Setting path: %s\n') % (self.settings.fileName())
         text += self.tr('Home data path: %s\n') % (__home_data_path__)
         text += self.tr('Application data path: %s\n') % (__data_path__)
         widget = self.tab_editor.currentWidget()
@@ -1072,7 +1072,7 @@ def main():
     # for pyinstaller
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5'))
 
-    settings = QtCore.QSettings(__app_path__, 'config')
+    settings = QtCore.QSettings(__app_path__)
     value = settings.value('highdpi', False, type=bool)
     settings.setValue('highdpi', value)
     if value:
