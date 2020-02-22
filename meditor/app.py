@@ -1080,7 +1080,7 @@ def main():
     # for pyinstaller
     QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5'))
 
-    settings = QtCore.QSettings(__app_path__)
+    settings = QtCore.QSettings(__app_path__, 'config')
     value = settings.value('highdpi', False, type=bool)
     settings.setValue('highdpi', value)
     if value:
