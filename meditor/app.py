@@ -425,6 +425,15 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd.setCheckable(True)
         cmd.setChecked(value)
 
+        # pin to desktop
+        action = QtWidgets.QAction(self.tr('Stays on desktop'), self)
+        action.triggered.connect(partial(self.onMenuSettings, 'pin_desktop'))
+        cmd = g_action.register('mainwindow.pin_desktop', action)
+        cmd.setText(action.text())
+        # cmd.setIcon(QtGui.QIcon.fromTheme('gvim'))
+        cmd.setCheckable(True)
+        cmd.setChecked(False)
+
         # help
         action = QtWidgets.QAction(self.tr('&Help Documents'), self)
         action.triggered.connect(self.onMenuHelp)
@@ -527,6 +536,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         menu.addAction(self.action('vim_mode'))
         menu.addAction(self.action('high_dpi'))
+        menu.addAction(self.action('pin_desktop'))
 
         menu.addSeparator()
         menu.addAction(self.action('preview_onsave'))
@@ -603,6 +613,7 @@ class MainWindow(QtWidgets.QMainWindow):
         toolbar.addSeparator()
         toolbar.addAction(self.dock_workspace.toggleViewAction())
         toolbar.addAction(self.dock_webview.toggleViewAction())
+        toolbar.addAction(self.action('pin_desktop'))
         self.addToolBar(toolbar)
 
     def setupStatusBar(self):
@@ -897,6 +908,10 @@ class MainWindow(QtWidgets.QMainWindow):
             value = not self.vim.isVisible()
             self.tab_editor.setVimEmulator(self.vim if value else None)
             self.vim.setVisible(value)
+        elif action == 'pin_desktop':
+            flags = self.windowFlags()
+            self.setWindowFlags(flags ^ QtCore.Qt.WindowStaysOnTopHint)
+            self.show()
 
     def onMenuHelp(self):
         help_paths = [
