@@ -638,13 +638,21 @@ class MainWindow(QtWidgets.QMainWindow):
     def showMessage(self, message):
         self.statusBar().showMessage(message, 5000)
 
-    def closeEvent(self, event):
+    def updateSettings(self):
         self.settings.setValue('geometry', self.saveGeometry())
         self.settings.setValue('windowState', self.saveState())
         self.settings.setValue('view/workspace', self.dock_workspace.isVisible())
         self.settings.setValue('view/webview', self.dock_webview.isVisible())
         self.settings.setValue('view/codeview', self.dock_codeview.isVisible())
         self.settings.setValue('vim_mode', self.action('vim_mode').isChecked())
+        self.tab_editor.updateSettings()
+        self.webview.updateSettings()
+        self.workspace.updateSettings()
+
+        self.settings.sync()
+
+    def closeEvent(self, event):
+        self.updateSettings()
 
         if not self.tab_editor.close():
             event.ignore()
@@ -997,6 +1005,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def onEditorModified(self, index, value):
         self.updateWindowTitle(index)
+        if not value:
+            # Save and modified flag are changed to False.
+            self.updateSettings()
 
     def onEditorPreviewRequest(self, index, source):
         if source == 'input' and not self.settings.value('preview/oninput', type=bool):

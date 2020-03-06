@@ -128,13 +128,16 @@ class Workspace(QtWidgets.QTreeWidget):
             root = self.topLevelItem(0)
             self.setCurrentItem(root)
 
-    def closeEvent(self, event):
+    def updateSettings(self):
         root_paths = []
         for index in range(self.topLevelItemCount()):
             root = self.topLevelItem(index)
             path = root.data(0, self.role_path)
             root_paths.append('%s:%s' % (path, root.isExpanded()))
         self._settings.setValue('workspace/workspace', ';'.join(root_paths))
+
+    def closeEvent(self, event):
+        self.updateSettings()
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:

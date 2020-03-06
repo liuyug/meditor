@@ -146,7 +146,7 @@ class TabEditor(QtWidgets.QTabWidget):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._onTimerTimeout)
 
-    def closeEvent(self, event):
+    def updateSettings(self):
         self._settings.setValue('editor/font', self._editor_font.toString())
         opened = []
         for x in range(self.count()):
@@ -157,6 +157,8 @@ class TabEditor(QtWidgets.QTabWidget):
         self._settings.setValue('editor/show_ws_eol', self._show_ws_eol)
         self._settings.setValue('editor/single_instance', self._single_instance)
 
+    def closeEvent(self, event):
+        self.updateSettings()
         self.do_close_all()
         if self.count() > 0:
             event.ignore()

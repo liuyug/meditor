@@ -105,8 +105,11 @@ class WebView(QtWebEngineWidgets.QWebEngineView):
         self.setZoomFactor(scale)
         self.setHtml(hello_html)
 
-    def closeEvent(self, event):
+    def updateSettings(self):
         self._settings.setValue('webview/scale', self.zoomFactor())
+
+    def closeEvent(self, event):
+        self.updateSettings()
 
     def contextMenuEvent(self, event):
         if event.reason() == event.Mouse:
