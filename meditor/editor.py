@@ -276,6 +276,7 @@ class Editor(QsciScintilla):
         action = QtWidgets.QAction(self.tr('Format Table'), self)
         action.triggered.connect(partial(self.do_action, 'format_table'))
         cmd = g_action.register('format_table', action, 'editor')
+        cmd.setIcon(QtGui.QIcon.fromTheme('format-justify-fill'))
         cmd.setText(self.tr('Format Table'))
 
         action = QtWidgets.QAction(self.tr('delimeter "|"'), self)

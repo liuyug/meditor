@@ -430,7 +430,7 @@ class MainWindow(QtWidgets.QMainWindow):
         action.triggered.connect(partial(self.onMenuSettings, 'pin_desktop'))
         cmd = g_action.register('mainwindow.pin_desktop', action)
         cmd.setText(action.text())
-        # cmd.setIcon(QtGui.QIcon.fromTheme('gvim'))
+        cmd.setIcon(QtGui.QIcon.fromTheme('up'))
         cmd.setCheckable(True)
         cmd.setChecked(False)
 
