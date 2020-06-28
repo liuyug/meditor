@@ -64,7 +64,7 @@ def previewWorker(self):
         elif ext in ['.md', '.markdown']:
             if self.previewData['mathjax']:
                 if os.path.exists(__mathjax_full_path__):
-                    mathjax_path = __mathjax_full_path__ + '?config=TeX-MML-AM_CHTML'
+                    mathjax_path = __mathjax_full_path__
                 else:
                     mathjax_path = __mathjax_min_path__
                 mathjax = """<script type="text/javascript" src="file:///%s"></script>""" % mathjax_path
@@ -883,16 +883,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if label == 'install':
             dlg = QtWidgets.QProgressDialog(self)
             dlg.setWindowModality(QtCore.Qt.WindowModal)
-            dlg.forceShow()
             dlg.setWindowTitle('Wait')
             url = 'https://github.com/mathjax/MathJax/archive/master.zip'
             dest_file = os.path.join(__home_data_path__, 'MathJax.zip')
-            dlg.setLabelText('Download MathJax...')
+            dlg.setLabelText('Download MathJax to %s...' % __home_data_path__)
+            dlg.forceShow()
             success = download(url, dest_file, dlg)
             if success:
-                dlg.setLabelText('Uncompress MathJax...')
+                dlg.setLabelText('Uncompress MathJax to %s...' % __home_data_path__)
                 success = unzip(dest_file, __home_data_path__, dlg)
-                self.mathjaxAction.setEnabled(False)
+                self.action('install_mathjax').setEnabled(False)
                 os.remove(dest_file)
 
     def onMenuSettings(self, action, value):
@@ -1104,6 +1104,7 @@ def main():
     logger.debug(args)
     logger.warn('app  data path: ' + __data_path__)
     logger.warn('home data path: ' + __home_data_path__)
+    logger.warn('mathjax path: ' + __mathjax_full_path__ or __mathjax_min_path__)
     logger.warn('log file path: ' + log_file)
 
     qt_path = os.path.join(os.path.dirname(QtCore.__file__))

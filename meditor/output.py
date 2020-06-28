@@ -120,6 +120,7 @@ def rst2htmlcode(rst_text, theme=None, settings={}):
         mathjax = settings.get('mathjax')
         if mathjax:
             overrides['math_output'] = ' '.join(['MathJax', mathjax])
+            del settings['mathjax']
         overrides.update(default_overrides)
         overrides.update(settings)
         overrides.update(get_theme_settings(theme))
@@ -144,7 +145,7 @@ def rst2html(rst_file, filename, theme=None, settings={}):
         overrides = {}
         overrides['math_output'] = ' '.join([
             'MathJax',
-            'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js'
+            'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
         ])
         overrides.update(default_overrides)
         overrides.update(settings)
@@ -275,6 +276,33 @@ def md2htmlcode(markup_file, theme=None, settings={}):
     head.append('<meta charset="UTF-8" />')
 
     if mathjax:
+        mathjax_config = """<script>
+MathJax = {
+    loader: {load: ['input/asciimath', 'output/chtml', 'ui/menu']},
+    tex: {
+        inlineMath: [['$', '$']]
+    },
+    svg: {
+        fontCache: 'global'
+    },
+    options: {
+    renderActions: {
+        /* add a new named action not to override the original 'find' action */
+        find_script_mathtex: [10, function (doc) {
+            for (const node of document.querySelectorAll('script[type^="math/tex"], script[type^="math/asciimath"]')) {
+                const display = !!node.type.match('/; *mode=display/');
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = {node: text, delim: '', n: 0};
+                math.end = {node: text, delim: '', n: 0};
+                doc.math.push(math);
+            }
+        }, '']
+    }}
+};
+</script>"""
+        head.append(mathjax_config)
         head.append(mathjax)
 
     head.append('<style type="text/css">')
@@ -298,9 +326,8 @@ def md2html(md_file, filename, theme):
     with open(md_file, encoding='UTF-8') as f:
         md_text = f.read()
     settings = {}
-    settings['mathjax'] = """<script type="text/javascript" async
-  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML">
-</script>"""
+    settings['mathjax'] = """<script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>"""
     html = md2htmlcode(md_text, theme=theme, settings=settings)
     with open(filename, 'wt') as f:
         f.write(html)

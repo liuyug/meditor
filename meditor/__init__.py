@@ -41,7 +41,7 @@ try:
 except Exception as err:
     print('pygments error:', err)
 
-__mathjax_full_path__ = os.path.join(__home_data_path__, 'MathJax-master', 'MathJax.js')
+__mathjax_full_path__ = os.path.join(__home_data_path__, 'MathJax-master', 'es5', 'tex-mml-chtml.js')
 __mathjax_min_path__ = os.path.join(__data_path__, 'math', 'MathJax.min.js')
 
 if sys.platform == 'win32':
