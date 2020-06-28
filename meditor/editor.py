@@ -842,7 +842,7 @@ class Editor(QsciScintilla):
 
     def setLexerByFilename(self, filename):
         lexer = None
-        t1 = time.clock()
+        t1 = time.process_time()
         if self._enable_lexer and filename:
             _, ext = os.path.splitext(filename)
             ext = ext.lower()
@@ -856,7 +856,7 @@ class Editor(QsciScintilla):
             self.statusChanged.emit('lexer:%s' % lexer.language())
         else:
             self.statusChanged.emit('lexer:--')
-        t2 = time.clock()
+        t2 = time.process_time()
         logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
 
     def pauseLexer(self, pause=True):
