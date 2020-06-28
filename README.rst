@@ -56,6 +56,25 @@ vim mode:
 +   visual block
 +   command: ``:w``, ``:q``
 
+MathJax
+=======
+reStructuredText
+----------------
+.. math::
+
+    E = m c ^ 2
+
+Markdown
+--------
+inline::
+
+    \( E=mc^2 \)
+
+block::
+
+    \[ E=mc^2 \]
+    $$ E=mc^2 $$
+
 Install
 =======
 in Linux::
