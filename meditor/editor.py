@@ -857,7 +857,7 @@ class Editor(QsciScintilla):
         else:
             self.statusChanged.emit('lexer:--')
         t2 = time.process_time()
-        logger.info('Lexer waste time: %s(%s)' % (t2 - t1, filename))
+        logger.warn('Lexer waste time: %s(%s)' % (t2 - t1, filename))
 
     def pauseLexer(self, pause=True):
         self._pause_lexer = pause

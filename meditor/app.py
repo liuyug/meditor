@@ -6,6 +6,7 @@ import os.path
 import sys
 import subprocess
 import logging
+import datetime
 import logging.handlers
 import argparse
 import threading
@@ -81,6 +82,7 @@ def previewWorker(self):
             previewPath = \
                 '<html><body><h1>Error</h1><p>Unknown extension: %s</p></body></html>' \
                 % ext
+        logger.warn('preview %s' % previewPath)
         self.updatePreviewViewRequest.emit()
     return
 
@@ -105,7 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ext = os.path.splitext(self._app_exec)[1]
             if ext not in ['.py', '.exe']:
                 self._app_exec += '.exe'
-        logger.info('app name: %s' % self._app_exec)
+        logger.warn('app name: %s' % self._app_exec)
         self._icon_path = os.path.join(__data_path__, 'meditor-text-editor.ico')
 
         if sys.platform == 'linux':
@@ -126,7 +128,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.icon_theme = 'Embed[%s]' % icon_theme
         else:
             self.icon_theme = 'System'
-        logger.info('Icon theme name: %s' % self.icon_theme)
+        logger.warn('Icon theme name: %s' % self.icon_theme)
 
         self.setWindowIcon(
             QtGui.QIcon.fromTheme(
@@ -667,7 +669,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previewQuit = True
         previewEvent.set()
         self.previewWorker.join()
-        logger.info(' rsteditor end '.center(80, '='))
+        logger.warn(' rsteditor end '.center(80, '='))
         event.accept()
 
     def dragEnterEvent(self, event):
@@ -1066,7 +1068,7 @@ def main():
     parser.add_argument('rstfile', nargs='?', help='rest file')
     args = parser.parse_args()
 
-    globalvars.logging_level = logging.WARNING - (args.verbose * 10)
+    globalvars.logging_level = logging.ERROR - (args.verbose * 10)
     if globalvars.logging_level <= logging.DEBUG:
         globalvars.logging_level = logging.DEBUG
         formatter = logging.Formatter('[%(module)s %(lineno)d] %(message)s')
@@ -1081,9 +1083,10 @@ def main():
     app_logger.setLevel(logging.DEBUG)
     app_logger.addHandler(console_handler)
 
-    if args.log_file:
+    log_file = args.log_file or os.path.join(__home_data_path__, __app_name__ + '.log')
+    if log_file:
         file_handler = logging.handlers.TimedRotatingFileHandler(
-            filename=args.log_file,
+            filename=log_file,
             when='D',
             interval=1,
             backupCount=7,
@@ -1096,10 +1099,12 @@ def main():
     global logger
     logger = logging.getLogger(__name__)
 
-    logger.info('=== %s v%s begin ===' % (__app_name__, __app_version__))
+    now = datetime.datetime.now()
+    logger.warn('=== %s v%s start on %s ===' % (__app_name__, __app_version__, now))
     logger.debug(args)
-    logger.info('app  data path: ' + __data_path__)
-    logger.info('home data path: ' + __home_data_path__)
+    logger.warn('app  data path: ' + __data_path__)
+    logger.warn('home data path: ' + __home_data_path__)
+    logger.warn('log file path: ' + log_file)
 
     qt_path = os.path.join(os.path.dirname(QtCore.__file__))
     QtWidgets.QApplication.addLibraryPath(qt_path)
@@ -1113,7 +1118,7 @@ def main():
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
 
     app = QtWidgets.QApplication(sys.argv)
-    logger.info('app scale factor: %s' % app.devicePixelRatio())
+    logger.warn('app scale factor: %s' % app.devicePixelRatio())
     logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
     if args.rstfile:

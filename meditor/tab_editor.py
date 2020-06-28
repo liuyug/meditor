@@ -127,7 +127,7 @@ class TabEditor(QtWidgets.QTabWidget):
         value = self._settings.value('editor/font', __monospace__, type=str)
         self._editor_font = QtGui.QFont()
         self._editor_font.fromString(value)
-        logger.info('font: %s' % (self._editor_font.toString()))
+        logger.warn('font: %s' % (self._editor_font.toString()))
 
         value = self._settings.value('editor/opened_files', type=str)
         for v in value.split(';')[::-1]:
