@@ -279,9 +279,6 @@ def md2htmlcode(markup_file, theme=None, settings={}):
         mathjax_config = """<script>
 MathJax = {
     loader: {load: ['input/asciimath', 'output/chtml', 'ui/menu']},
-    tex: {
-        inlineMath: [['$', '$']]
-    },
     svg: {
         fontCache: 'global'
     },
