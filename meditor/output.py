@@ -350,6 +350,7 @@ def graphviz2htmlcode(markup_text, theme=None, settings={}):
     try:
         output = ''
         src = graphviz.Source(markup_text)
+        # TODO: add Waiting Dialog
         output = src.pipe(format=filetype)
 
         if filetype == 'svg':
@@ -364,8 +365,10 @@ def graphviz2htmlcode(markup_text, theme=None, settings={}):
         exec_err.stderr and errs.append(exec_err.stderr.decode())
         errs.append(output)
         img = '<br />'.join(errs)
+        logger.error(img)
     except Exception as err:
         img = '%s<br />%s' % (err, output)
+        logger.error(img)
 
     html = []
     html.append('<!DOCTYPE html>')

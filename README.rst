@@ -60,9 +60,15 @@ MathJax
 =======
 reStructuredText
 ----------------
-.. math::
+inline::
 
-    E = m c ^ 2
+    :math:`E=mc^2`
+
+block::
+
+    .. math::
+
+        E=mc^2
 
 Markdown
 --------
@@ -74,6 +80,42 @@ block::
 
     \[ E=mc^2 \]
     $$ E=mc^2 $$
+
+Graphviz
+========
+Install `Graphviz <https://www.graphviz.org/>`_ first! The command "dot" should be in syste
+m PATH.
+reStructuredText
+----------------
+::
+
+    .. dot:: svg
+        :width: 100%
+        :height: 100%
+        :alt: image.svg
+
+        digraph G {
+            node[fontname="simsun"]
+            edge[fontname="simsun"]
+
+            rankdir=LR
+            Earth [peripheries=2]
+            Mars
+            Earth -> Mars
+        }
+
+Markdown
+--------
+::
+
+    {% dot attack_plan.svg
+        digraph G {
+            rankdir=LR
+            Earth [peripheries=2]
+            Mars
+            Earth -> Mars
+        }
+    %}
 
 Install
 =======
