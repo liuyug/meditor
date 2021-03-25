@@ -24,4 +24,6 @@ pyinstaller --clean --noconfirm --noconsole^
  --exclude-module pycparser^
  run.py
 
+echo [Paths] > "dist\meditor\qt.conf"
+echo Prefix=PyQt5/Qt >> "dist\meditor\qt.conf"
 popd

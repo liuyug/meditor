@@ -1107,10 +1107,13 @@ def main():
     logger.warn('mathjax path: ' + __mathjax_full_path__ or __mathjax_min_path__)
     logger.warn('log file path: ' + log_file)
 
-    qt_path = os.path.join(os.path.dirname(QtCore.__file__))
-    QtWidgets.QApplication.addLibraryPath(qt_path)
-    # for pyinstaller
-    QtWidgets.QApplication.addLibraryPath(os.path.join(qt_path, 'PyQt5'))
+    # qt.conf
+    # [paths]
+    # Prefix=PyQt5/Qt
+
+    app = QtWidgets.QApplication(sys.argv)
+    logger.warn('app scale factor: %s' % app.devicePixelRatio())
+    logger.warn('qt plugin path: ' + ', '.join(app.libraryPaths()))
 
     settings = QtCore.QSettings(__app_path__, 'config')
     value = settings.value('highdpi', False, type=bool)
@@ -1118,9 +1121,6 @@ def main():
     if value:
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
 
-    app = QtWidgets.QApplication(sys.argv)
-    logger.warn('app scale factor: %s' % app.devicePixelRatio())
-    logger.debug('qt plugin path: ' + ', '.join(app.libraryPaths()))
     win = MainWindow(settings)
     if args.rstfile:
         win.tab_editor.loadFile(os.path.abspath(args.rstfile))
