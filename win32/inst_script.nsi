@@ -1,10 +1,10 @@
-;NSIS Modern User Interface
+﻿;NSIS Modern User Interface
 ;Basic Example Script
 ;Written by Joost Verburg
 
+Unicode True
 ;--------------------------------
 ;Include Modern UI
-
 !include "MUI2.nsh"
 
 ;--------------------------------
