@@ -1,10 +1,11 @@
 @echo off
 
+pushd ..
+for /F %%i in ('python -c "from meditor import __app_version__; print(__app_version__)"') do ( set version=%%i)
+popd
+
 set MAKENSIS="c:\Program Files (x86)\NSIS\Bin\makensis.exe"
 
-set ver=%1
-
-if "%ver%" == "" echo Please input version, such as v0.1.0.0 & exit /b
 
 echo on
-%MAKENSIS% /V4 /DPRODUCT_VER=%ver% inst_script.nsi
+%MAKENSIS% /V4 /DPRODUCT_VER=%version% inst_script.nsi
